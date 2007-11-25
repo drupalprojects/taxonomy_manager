@@ -835,10 +835,6 @@ function taxonomy_manager_form_submit($form_id, $form_values) {
 function taxonomy_manager_term_data_edit($vid) {
   $param = $_POST;
   
-  foreach ($param as $key => $entry) {
-    $param[$key] = check_plain($entry);
-  }
-  
   $tid = $param['tid'];
   $values = $param['value'];
   $attr_type = $param['attr_type'];
