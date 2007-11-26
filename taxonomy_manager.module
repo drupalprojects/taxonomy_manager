@@ -59,6 +59,14 @@ function taxonomy_manager_menu($may_cache) {
       'type' => MENU_CALLBACK, 
     );
     
+    $items[] = array('path' => 'admin/settings/taxonomy_manager', 
+      'title' => t('Taxonomy Manager'), 
+      'description' => t('Advanced settings for the Taxonomy Manager'),
+      'callback' => 'drupal_get_form', 
+      'callback arguments' => array('taxonomy_manager_settings'), 
+      'access' => user_access('administer site configuration'),
+    );
+    
     //override default term page so that we can consider merged terms
     $items[] = array('path' => 'taxonomy/term',
       'title' => t('Taxonomy term'),
@@ -126,7 +134,7 @@ function taxonomy_manager_form($vid, $tid = 0, $filter = NULL) {
   drupal_add_js('misc/textarea.js');  //because of term data form wich gets dynamically loaded
   
   drupal_add_js(array('termData' => array('url' => url("admin/content/taxonomy_manager/termdata/edit/". $vid), 'tid' => $tid, 'term_url' => url(taxonomy_manager_tree_link($vid) .'/'. $tid .'/true'))), 'setting');
-  drupal_add_js(array('updateWeight' => array('up' => 'edit-weight-up', 'down' => 'edit-weight-down', 'url' => url('admin/content/taxonomy_manager/weight/'. $vid))), 'setting');
+  drupal_add_js(array('updateWeight' => array('up' => 'edit-weight-up', 'down' => 'edit-weight-down', 'url' => url('admin/content/taxonomy_manager/weight/'. $vid), 'disable_mouseover' => variable_get('taxonomy_manager_disable_mouseover_weights', 0))), 'setting');
   
   $form = array();
   
@@ -279,10 +287,12 @@ function taxonomy_manager_form($vid, $tid = 0, $filter = NULL) {
  * return an form array with values to show next to every term value
  */
 function taxonomy_manager_tree_operations() {
-  $module_path = drupal_get_path('module', 'taxonomy_manager') .'/';
   $form = array();
-  $form['up'] = array('#value' => theme("image", $module_path ."images/go-up-small.png", "go up", NULL, array('class' => 'term-up')));
-  $form['down'] = array('#value' => theme("image", $module_path ."images/go-down-small.png", "go down", NULL, array('class' => 'term-down')));
+  if (!variable_get('taxonomy_manager_disable_mouseover_weights', 0)) {
+    $module_path = drupal_get_path('module', 'taxonomy_manager') .'/';
+    $form['up'] = array('#value' => theme("image", $module_path ."images/go-up-small.png", "go up", NULL, array('class' => 'term-up')));
+    $form['down'] = array('#value' => theme("image", $module_path ."images/go-down-small.png", "go down", NULL, array('class' => 'term-down')));
+  }
   return $form;
 }
 
@@ -930,6 +940,21 @@ function taxonomy_manager_term_data_edit($vid) {
   
   exit();
 }
+
+
+ /**
+ * Defines a settings form.
+ */
+function taxonomy_manager_settings() {
+  $form['taxonomy_manager_disable_mouseover_weights'] = array( 
+    '#type' => 'checkbox', 
+    '#title' => t('Disable mouse-over effect for weight arrows'), 
+    '#default_value' => variable_get('taxonomy_manager_disable_mouseover_weights', 0),
+    '#description' => t('Disabeling this feature speeds up the Taxonomy Manager'),
+  );
+  return system_settings_form($form);
+}
+
 /**
  * checks if voc has terms
  *
