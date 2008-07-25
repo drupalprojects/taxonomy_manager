@@ -592,9 +592,15 @@ function taxonomy_manager_form_term_data($tid) {
   $module_path = drupal_get_path('module', 'taxonomy_manager') .'/';
   $vocabulary = taxonomy_get_vocabulary($term->vid);
   
+  //prevent that title of the fieldset is too long
+  $title = check_plain($term->name);
+  if (strlen($title) >= 40) {
+    $title = substr($title, 0, 40) . "...";
+  }
+  
   $form['term_data'] = array( 
     '#type' => 'fieldset', 
-    '#title' => $term->name,
+    '#title' => $title,
     '#attributes' => array('id' => 'taxonomy-term-data-fieldset'),
     '#tree' => TRUE,
   );
