@@ -390,6 +390,19 @@ function taxonomy_manager_add_form($voc, $hide_form = TRUE) {
       '#type' => 'textfield', 
     );
   }
+  $form['add']['mass'] = array(
+    '#type' => 'fieldset', 
+    '#tree' => TRUE,
+    '#title' => t('Mass term import (with textarea)'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+  $form['add']['mass']['mass_add'] = array(
+    '#type' => 'textarea', 
+    '#title' => t('Terms'),
+    '#description' => t('One term per line'),
+    '#rows' => 10,
+  );
   $form['add']['add'] = array( 
     '#type' => 'submit',
     '#attributes' => array('class' => 'taxonomy-manager-buttons add'), 
@@ -798,16 +811,27 @@ function taxonomy_manager_form_submit($form_id, $form_values) {
       break;
       
     case t('Add'):
+      $terms = array();
       foreach ($form_values['add']['term'] as $value) {
         if (!empty($value)) {
-          $term = array();
-          $term['name'] = $value;
-          $term['vid'] = $form_values['vid'];
-          $term['parent'] = $selected_tids;
-          taxonomy_save_term($term);
+          $terms[] = $value;
         }
       }
-      drupal_set_message("Terms added");
+      if ($form_values['add']['mass']['mass_add']) {
+        foreach (explode ("\n", str_replace("\r", '', $form_values['add']['mass']['mass_add'])) as $term) {
+          if ($term) {
+            $terms[] = $term;
+          }
+        }
+      }
+      foreach ($terms as $name) {
+        $term = array();
+        $term['name'] = $name;
+        $term['vid'] = $form_values['vid'];
+        $term['parent'] = $selected_tids;
+        taxonomy_save_term($term);
+      }
+      drupal_set_message("Terms added: ". implode(', ', $terms));
       break;
       
     case t('Merge'):   
