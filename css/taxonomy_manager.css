@@ -137,6 +137,10 @@ input.merge {
   background-image: url(../images/merge.png);
 }
 
+input.export {
+  background-image: url(../images/csv.png);
+}
+
 input.cancel {
   background-image: url(../images/dialog-cancel.png);
 }

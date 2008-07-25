@@ -57,6 +57,12 @@ function taxonomy_manager_menu($may_cache) {
       'type' => MENU_CALLBACK, 
     );
     
+    $items[] = array('path' => 'admin/content/taxonomy_manager/export',
+      'callback' => 'taxonomy_manager_export',
+      'access' => user_access('administer taxonomy'),
+      'type' => MENU_CALLBACK,
+    );
+    
     $items[] = array('path' => 'admin/settings/taxonomy_manager', 
       'title' => t('Taxonomy Manager'), 
       'description' => t('Advanced settings for the Taxonomy Manager'),
@@ -267,6 +273,13 @@ function taxonomy_manager_form($vid, $tid = 0, $filter = NULL) {
     '#attributes' => array('class' => 'taxonomy-manager-buttons merge'),
     '#value' => t('Merge'), 
     '#theme' => 'no_submit_button', 
+  );
+  
+  $form['toolbar']['export_show'] = array( 
+    '#type' => 'button', 
+    '#attributes' => array('class' => 'taxonomy-manager-buttons export'),
+    '#value' => t('CSV Export'), 
+    '#theme' => 'no_submit_button', 
     '#suffix' => '</div>'
   );
   
@@ -283,6 +296,8 @@ function taxonomy_manager_form($vid, $tid = 0, $filter = NULL) {
   $form += taxonomy_manager_move_form($voc);
   
   $form += taxonomy_manager_confirm_delete($voc);
+  
+  $form += taxonomy_manager_export_form($voc);
   
   if ($tid) {
     $form += taxonomy_manager_form_term_data($tid);
@@ -557,6 +572,76 @@ function taxonomy_manager_move_form($voc) {
   );
    
   $form['move']['cancel'] = array( 
+    '#type' => 'button', 
+    '#value' => t('Cancel'),
+    '#attributes' => array('class' => 'taxonomy-manager-buttons cancel'),
+    '#theme' => 'no_submit_button',  
+  );
+  
+  return $form;
+}
+
+/**
+ * form for exporting terms
+ */
+function taxonomy_manager_export_form($voc) {
+  drupal_add_js(array('hideForm' => array(
+    'show_button' => 'edit-export-show', 
+    'hide_button' => 'edit-export-cancel',
+    'div' => 'export-form')), 'setting');
+  
+  $module_path = drupal_get_path('module', 'taxonomy_manager') .'/';
+  drupal_add_js($module_path .'js/csv_export.js');
+  
+  drupal_add_js(array('exportCSV' => array('url' => url("admin/content/taxonomy_manager/export"))), 'setting');
+  
+  $form = array();
+  
+  $form['export'] = array( 
+    '#type' => 'fieldset',
+    '#tree' => TRUE,
+    '#title' => t('CSV Export'),
+    '#description' => $description,
+    '#prefix' => '<div id="export-form">',
+    '#suffix' => '</div>',
+  );
+
+  
+  $form['export']['delimiter'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Delimiter for CSV File'),
+    '#required' => FALSE,
+    '#default_value' => ";",
+  );
+
+  $options['whole_voc'] = t('Whole Vocabulary');
+  $options['children'] = t('Child terms of a selected term');
+  $options['root_terms'] = t('Root level terms only');
+
+  $form['export']['options'] = array( 
+    '#type' => 'radios', 
+    '#title' => t('Terms to export'), 
+    '#options' => $options, 
+    '#default_value' => 'whole_voc',
+    '#prefix' => '<div id="taxonomy_manager_export_options">',
+    '#suffix' => '</div>',
+  );
+  
+  $form['export']['csv'] = array(
+    '#type' => 'textarea', 
+    '#title' => t('Exported CSV'),
+    '#description' => t('The generated code will appear here (per AJAX). You can copy and paste the code into a .csv file. The csv has following columns: voc id | term id | term name | description | parent id 1 | ... | parent id n'),
+    '#rows' => 8,
+  );
+  
+  $form['export']['submit'] = array( 
+    '#type' => 'submit',
+    '#attributes' => array('class' => 'taxonomy-manager-buttons export'), 
+    '#value' => t('Export now'),
+    '#theme' => 'no_submit_button', 
+  );
+   
+  $form['export']['cancel'] = array( 
     '#type' => 'button', 
     '#value' => t('Cancel'),
     '#attributes' => array('class' => 'taxonomy-manager-buttons cancel'),
@@ -904,6 +989,10 @@ function taxonomy_manager_form_submit($form_id, $form_values) {
       taxonomy_manager_move($parents, $selected_tids, $form_values['move']['options']);
       
       drupal_set_message("Terms moved");
+      break;
+      
+    case t('Export now'):
+      drupal_set_message('Needs JavaScript enabled');
       break;
       
   }
@@ -1371,6 +1460,55 @@ function taxonomy_manager_update_weights($vid) {
     }
   }
   exit();
+}
+
+/** 
+ * AJAX Callback that returns the CSV Output
+ */
+function taxonomy_manager_export() {
+  $edit = $_POST;
+  $output = taxonomy_manager_export_csv($edit['delimiter'], $edit['vid'], $edit['tid'], array($edit['option'] => TRUE));
+  print $output;
+  exit();
+}
+
+/** 
+ * Generates the CVS Ouput
+ */
+function taxonomy_manager_export_csv($delimiter = ";", $vid, $selected_tid = 0, $options = array()) {
+  $tree = taxonomy_manager_export_get_tree($vid, $selected_tid, $options);
+
+  foreach ($tree as $term) {
+    $array = array();
+    $array[] = '"'. $term->vid .'"';
+    $array[] = '"'. $term->tid .'"';
+    $array[] = '"'. $term->name .'"';
+    $array[] = '"'. $term->description .'"';
+    foreach ($term->parents as $parent) {
+      $array[] = '"'. $parent .'"';
+    }
+    $output .= implode($delimiter, $array) ."\n";
+  }
+  return $output;
+}
+
+/**
+ * Helper for cvs export to get taxonomy tree
+ */
+function taxonomy_manager_export_get_tree($vid, $selected_tid, $options) {
+  $tree = array();
+
+  if ($options['whole_voc']) {
+    $tree = taxonomy_get_tree($vid);
+  }
+  else if ($options['children'] && $selected_tid) {
+    $tree = taxonomy_get_tree($vid, $selected_tid);
+  }
+  else if ($options['root_terms']) {
+    $tree = taxonomy_get_tree($vid, 0, -1, 1);
+  }
+  
+  return $tree;
 }
 
 /**
