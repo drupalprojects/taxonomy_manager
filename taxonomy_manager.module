@@ -77,8 +77,8 @@ function taxonomy_manager_menu($may_cache) {
       $vid = arg(3);
       $items[] = array('path' => 'admin/content/taxonomy_manager/'. $vid,
         'title' => t('Taxonomy Manager'),
-        'callback' => 'drupal_get_form',
-        'callback arguments' => array('taxonomy_manager_form', $vid),
+        'callback' => 'taxonomy_manager_voc',
+        'callback arguments' => array($vid), 
         'access' => user_access('administer taxonomy'), 
         'type' => MENU_CALLBACK 
       );
@@ -114,6 +114,17 @@ function taxonomy_manager_voc_list() {
   }
   
   return theme('item_list', $voc_list, t("Vocabularies:"));
+}
+
+/**
+ * returns either form for deletion confirm or the taxonomy manager form
+ */
+function taxonomy_manager_voc($vid, $tid = 0, $filter = NULL) {
+  if ($_POST['op'] == t('Delete') || $_POST['confirm']) {
+    return drupal_get_form('taxonomy_manager_terms_confirm_delete', $vid, $_POST);
+  }
+  return drupal_get_form('taxonomy_manager_form', $vid, $tid, $filter);
+
 }
 
 /**
@@ -730,7 +741,51 @@ function _taxonomy_manager_form_term_data_lists($term, $values, $header_type, $a
   }
   
   return $form;
+}
 
+/** 
+ * Additional confirmation form for deletion
+ */
+function taxonomy_manager_terms_confirm_delete($vid, $edit) {
+  $selected = array();
+  if (is_array($edit['taxonomy']['manager']['tree'])) {
+    $selected = _taxonomy_manager_tree_get_selected_terms($edit['taxonomy']['manager']['tree']);
+  }
+  else if (is_array($edit['selected_terms'])) {
+    $selected = $edit['selected_terms'];
+  }
+  $form['selected_terms'] = array('#prefix' => '<ul>', '#suffix' => '</ul>', '#tree' => TRUE);
+  foreach ($selected as $tid) {
+    $term = taxonomy_get_term($tid);
+    $form['selected_terms'][$tid] = array('#type' => 'hidden', '#value' => $tid, '#prefix' => '<li>', '#suffix' => check_plain($term->name) ."</li>\n");
+  }
+
+  if (!count($selected)) {
+    return array('info' => array('#value' => t('No terms selected.') .'<br />'. l(t('Back'), 'admin/content/taxonomy_manager/'. $vid))); 
+  }
+  if (isset($edit['delete']['options']['delete_orphans']) || isset($edit['options']['delete_orphans'])) {
+    $form['options'] = array('#tree' => TRUE);
+    $form['options']['delete_orphans'] = array('#type' => 'hidden', '#value' => TRUE);
+  }
+  $form['vid'] = array('#type' => 'hidden', '#value' => $vid);
+  
+  $msg = isset($form['options']['delete_orphans']) ? t('Deleting a term will delete all its children if there are any. ') : '';
+  $msg .= t('This action cannot be undone.');
+  return confirm_form($form,
+                  t('Are you sure you want to delete the following terms: '),
+                  'admin/content/taxonomy_manager/'. $vid,
+                  $msg,
+                  t('Delete terms'),
+                  t('Cancel'));
+}
+
+/**
+ * Submit handler for deletion confirmation form
+ */
+function taxonomy_manager_terms_confirm_delete_submit($form_id, $form_values) {
+  taxonomy_manager_delete_terms($form_values['selected_terms'], $form_values['options']);
+  drupal_set_message("Selected terms deleted"); 
+  return 'admin/content/taxonomy_manager/'. $form_values['vid'];
 }
 
 /**
@@ -741,12 +796,6 @@ function taxonomy_manager_form_validate($form_id, $form_values) {
   $selected_tids = $form_values['taxonomy']['manager']['tree']['selected_terms'];
 
   switch ($form_values['op']) {
-    case t('Delete'): 
-      if (count($selected_tids) < 1) {
-        form_set_error('delete', t("No terms for deleting selected"));
-      }
-      break;
-      
     case t('Add'): 
       //check for parents concerning voc settings
       $voc = taxonomy_get_vocabulary($form_values['vid']);
@@ -809,11 +858,6 @@ function taxonomy_manager_form_submit($form_id, $form_values) {
       else {
         drupal_goto('admin/content/taxonomy_manager/'. $form_values['vid'] .'/0/'. $search_string);
       }
-      break;
-
-    case t('Delete'):
-      taxonomy_manager_delete_terms($selected_tids, $form_values['delete']['options']);
-      drupal_set_message("Selected terms deleted"); 
       break;
       
     case t('Add'):
