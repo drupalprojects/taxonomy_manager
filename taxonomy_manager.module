@@ -594,9 +594,10 @@ function taxonomy_manager_form_term_data($tid) {
   
   //prevent that title of the fieldset is too long
   $title = check_plain($term->name);
-  if (strlen($title) >= 40) {
-    $title = substr($title, 0, 40) . "...";
+  if (strlen($title) >= 33) {
+    $title = substr($title, 0, 33) . "...";
   }
+  $title .= " (". $term->tid .")";
   
   $form['term_data'] = array( 
     '#type' => 'fieldset', 
@@ -665,6 +666,7 @@ function taxonomy_manager_form_term_data($tid) {
     '#suffix' => '</div>', 
     '#title' => t('Weight'), 
   );
+  $form['term_data']['link'] = array('#value' => '<br />'. l(t('Go to the term page site'), taxonomy_term_path($term), array('rel' => 'tag', 'title' => $term->description, 'target' => '_blank')));
   return $form;
 }
 
