@@ -181,7 +181,7 @@ function taxonomy_manager_form($vid, $tid = 0, $filter = NULL) {
   
   $form['taxonomy']['manager'] = array( 
     '#type' => 'fieldset',
-    '#title' => $voc->name,
+    '#title' => check_plain($voc->name),
     '#weight' => 10,
     '#tree' => TRUE,
     '#prefix' => '<div id="taxonomy-manager-tree-outer-div">',
@@ -790,7 +790,7 @@ function _taxonomy_manager_form_term_data_lists($term, $values, $header_type, $a
       $id = $value;
     }
     $row[] = array(
-      'data' => $name, 
+      'data' => check_plain($name), 
       'class' => 'taxonomy-term-data-name',
       'id' => 'term-'. $id, 
     );
@@ -2118,6 +2118,9 @@ function theme_taxonomy_manager_tree_checkbox($element) {
   $title = $element['#title'];
   if ($element['#link']) {
     $title = l($title, $element['#link'], array("class" => "term-data-link"));
+  }
+  else {
+    $title = check_plain($title);
   }
   
   if (!is_null($title)) {
