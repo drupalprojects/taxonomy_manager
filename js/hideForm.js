@@ -4,17 +4,21 @@
  * @file shows / hides form elements
  */
  
-Drupal.behaviors.TaxonomyManagerHideForm = function(context) {
-  var settings = Drupal.settings.hideForm || [];
-  if (settings['div']) {
-    if (!$('#taxonomy-manager-toolbar' + '.tm-hideForm-processed').size()) {
-      $('#taxonomy-manager-toolbar').addClass('tm-hideForm-processed');
-      if (!(settings['div'] instanceof Array)) {
-        Drupal.attachHideForm(settings['div'], settings['show_button'], settings['hide_button']);
-      }
-      else {
-        for (var i=0; i<settings['div'].length; i++) {
-          Drupal.attachHideForm(settings['div'][i], settings['show_button'][i], settings['hide_button'][i]); 
+(function ($) {
+
+Drupal.behaviors.TaxonomyManagerHideForm = {
+  attach: function(context, settings) {
+    settings = settings.hideForm || [];
+    if (settings['div']) {
+      if (!$('#taxonomy-manager-toolbar-buttons.tm-hideForm-processed').length) {
+        $('#taxonomy-manager-toolbar-buttons').addClass('tm-hideForm-processed');
+        if (!(settings['div'] instanceof Array)) {
+          Drupal.attachHideForm(settings['div'], settings['show_button'], settings['hide_button']);
+        }
+        else {
+          for (var i=0; i<settings['div'].length; i++) {
+            Drupal.attachHideForm(settings['div'][i], settings['show_button'][i], settings['hide_button'][i]); 
+          }
         }
       }
     }
@@ -29,10 +33,10 @@ Drupal.attachHideForm = function(div, show_button, hide_button) {
   div = $("#"+ div);
   show_button = $("#"+ show_button);
   hide_button = $("#"+ hide_button);
-  
+
   //don't hide if there is an error in the form
   $(div).find("input").each(function() {
-    if($.className.has(this, "error")) {
+    if($(this).hasClass("error")) {
       hide = false;
     }
   });
@@ -40,7 +44,6 @@ Drupal.attachHideForm = function(div, show_button, hide_button) {
   if (!hide) { 
     $(div).show();
   }
-  
   $(show_button).click(function() {
     $(div).toggle();
     return false;
@@ -51,3 +54,5 @@ Drupal.attachHideForm = function(div, show_button, hide_button) {
     return false;
   });
 }
+
+})(jQuery);

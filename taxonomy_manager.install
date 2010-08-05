@@ -3,8 +3,10 @@
 // $Id: $
 
 /**
- * @file defines necessary schema the Taxonomy Manager
+ * @file 
+ * Install, update and uninstall functions for the Taxonomy Manager
  */
+ 
 
 /**
  * Implementation of hook_install

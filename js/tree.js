@@ -4,43 +4,42 @@
  * @files js for collapsible tree view with some helper functions for updating tree structure
  */
 
-Drupal.behaviors.TaxonomyManagerTree = function(context) {
-  var settings = Drupal.settings.taxonomytree || [];
-  var id, vid;
-  if (settings['id']) {
-    if (!(settings['id'] instanceof Array)) {
-       id = settings['id'];
-       vid = settings['vid'];
-       if (!$('#'+ id + '.tm-processed').size()) {
-         new Drupal.TaxonomyManagerTree(id, vid);
-       }
-    }
-    else {
-      var trees = new Array(settings['id'].length);
-      for (var i = 0; i < settings['id'].length; i++) {
-        id = settings['id'][i];
-        vid = settings['vid'][i];
-        if (!$('#'+ id + '.tm-processed').size()) {
-          trees[i] = new Drupal.TaxonomyManagerTree(id, vid); 
+(function ($) {
+
+Drupal.behaviors.TaxonomyManagerTree = {
+  attach: function(context, settings) {
+    var treeSettings = settings.taxonomytree || [];
+    if (treeSettings['id']) {
+      if (!(treeSettings['id'] instanceof Array)) {
+        if (!$('#'+ treeSettings['id'] +'.tm-processed').length) {
+           new Drupal.TaxonomyManagerTree(treeSettings['id'], treeSettings['vid']);
+         }
+      }
+      else {
+        var trees = new Array(treeSettings['id'].length);
+        for (var i = 0; i < treeSettings['id'].length; i++) {
+          if (!$('#'+ treeSettings['id'][i] +'.tm-processed').length) {
+            trees[i] = new Drupal.TaxonomyManagerTree(treeSettings['id'][i], treeSettings['vid'][i]); 
+          }
+        }
+        if (trees.length == 2) {
+          var doubleTreeSettings = settings.DoubleTree || [];
+          if (doubleTreeSettings['enabled']) {
+            new Drupal.DoubleTree(trees[0], trees[1]);
+          }
         }
       }
-      if (trees.length == 2) {
-        var doubleTreeSettings = Drupal.settings.DoubleTree || [];
-        if (doubleTreeSettings['enabled']) {
-          new Drupal.DoubleTree(trees[0], trees[1]);
-        }
-      }
     }
-  }
   
-  //only add throbber for TM sites
-  var throbberSettings = Drupal.settings.TMAjaxThrobber || [];
-  if (throbberSettings['add']) {
-    if (!$('#taxonomy-manager-toolbar' + '.tm-processed').size()) {
-      $('#taxonomy-manager-toolbar').addClass('tm-processed');
-      Drupal.attachThrobber();
-      Drupal.attachResizeableTreeDiv();
-    } 
+    //only add throbber for TM sites
+    var throbberSettings = settings.TMAjaxThrobber || [];
+    if (throbberSettings['add']) {
+      if (!$('#taxonomy-manager-toolbar-throbber.tm-processed').length) {
+        $('#taxonomy-manager-toolbar-throbber').addClass('tm-processed');
+        Drupal.attachThrobber();
+        Drupal.attachResizeableTreeDiv();
+      } 
+    }
   }
 }
 
@@ -451,3 +450,7 @@ Drupal.attachResizeableTreeDiv = function() {
     }
   });
 }
+
+
+})(jQuery);
+

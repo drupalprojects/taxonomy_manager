@@ -4,6 +4,9 @@
  * @file js support for term editing form for ajax saving and tree updating
  */
 
+
+(function ($) {
+  
 //global var that holds the current term link object
 var active_term = new Object();
 
@@ -13,14 +16,16 @@ var trees = new Object();
 /** 
  * attaches term data form, used after 'Saves changes' ahah submit
  */
-Drupal.behaviors.TaxonomyManagerTermData = function(context) {
-  if (!$('#taxonomy-manager-toolbar' + '.tm-termData-processed').size()) { 
-    var vid = $('#edit-term-data-vid').val();
-    for (var id in trees) {
-      var tree = trees[id];
-      if (tree.vocId == vid) {
-        Drupal.attachTermDataForm(tree);
-        break;
+Drupal.behaviors.TaxonomyManagerTermData = {
+  attach: function(context) {
+    if ($('#taxonomy-manager-toolbar:not(.tm-termData-processed)')) { 
+      var vid = $('#edit-term-data-vid').val();
+      for (var id in trees) {
+        var tree = trees[id];
+        if (tree.vocId == vid) {
+          Drupal.attachTermDataForm(tree);
+          break;
+        }
       }
     }
   }
@@ -137,9 +142,9 @@ Drupal.TermData.prototype.form = function() {
   this.param = new Object();
 
   try {
-    Drupal.behaviors.textarea(this.div);
-    Drupal.behaviors.autocomplete(this.div);
-    Drupal.behaviors.ahah(this.div);
+    Drupal.behaviors.textarea.attach(this.div, Drupal.settings);
+    Drupal.behaviors.autocomplete.attach(this.div, Drupal.settings);
+    Drupal.behaviors.AJAX.attach(this.div, Drupal.settings);
   } catch(e) {} //autocomplete or textarea js not added to page
   
   this.param['tid'] = this.tid;
@@ -158,8 +163,7 @@ Drupal.TermData.prototype.form = function() {
   $(this.div).find('td.taxonomy-term-data-operations > span').click(function() {
     termdata.param['attr_type'] = $(this).attr("class");
     termdata.param['info'] = $(this).attr("id");
-    var value = $(this).parent().siblings(".taxonomy-term-data-name").attr("id");
-    termdata.param['value'] = value.substring(5);
+    termdata.param['value'] = $(this).parent().siblings(".taxonomy-term-data-name").find(':hidden').attr("value");
     termdata.param['op'] = 'delete';
     $('#taxonomy-term-data-fieldset :input').each(function() {
       termdata.param[$(this).attr('id')] = $(this).attr('value');
@@ -289,3 +293,5 @@ Drupal.TermData.prototype.updateTermName = function() {
     .siblings('div.form-item')
     .find('label.option a').html(name);
 }
+
+})(jQuery);

@@ -2,6 +2,9 @@
 /**
  * Double Tree Object
  */
+ 
+(function ($) {
+   
 Drupal.DoubleTree = function(tree1, tree2) {
   this.leftTree = tree1;
   this.rightTree = tree2;
@@ -178,5 +181,7 @@ Drupal.DoubleTree.prototype.updateLi = function(li, tree) {
     });
   }
 }
+
+})(jQuery);
 
 
