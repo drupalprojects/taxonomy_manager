@@ -29,7 +29,7 @@
 #taxonomy-manager-tree-outer-div fieldset {
   margin: 0;
   padding: 0 5px;
-}
+} 
 
 .taxonomy-manager-tree-size {
   padding: 0px;
@@ -204,9 +204,7 @@
 }
 
 #double-tree-msg {
-  /*border: 2px solid #000000;
-  padding: 6px;
-  background: #FFFFE0; */
+  margin-bottom: 8px;
 }
 
 /**
@@ -298,6 +296,7 @@ input#edit-weight-down {
 #taxonomy-manager-double-tree-form input.save,
 #taxonomy-manager-form input.save {
   background-image: url(../images/document-save.png);
+  margin-bottom: 5px;
 }
 
 #taxonomy-manager-double-tree-form input.double-tree,
@@ -341,9 +340,6 @@ input#edit-weight-down {
  * Term Data Form
  */
 
-#taxonomy-term-data fieldset {
-  padding: 0.8em;
-}
 
 .term-data-overlay {
   position: absolute;
@@ -355,22 +351,20 @@ input#edit-weight-down {
 }
 
 .term-data-overlay fieldset {
-  border-width: 6px;
-  border-style: ridge;
+  border-width: 2px;
 }
 
-.term-data-overlay legend {
-  font-weight: bold;  
+.term-data-overlay legend span{
   cursor: move;
   background-image: url(../images/move-small.png);
   background-repeat:no-repeat;
-  background-position: 1px 4px;
-  padding-left: 16px;
+  background-position: 8px 3px;
+  padding-left: 24px;
   line-height: 150%;
 }
 
 #term-data-close {
-  padding: 0;
+  padding-top: 8px;
   margin: 0;
   text-align: right; 
   line-height: 100%;
@@ -445,6 +439,7 @@ input#edit-weight-down {
 
 #edit-term-data-name {
   width: 100%;
+  padding-right: 0px;
 }
 
 #term-data-description {
@@ -456,9 +451,6 @@ input#edit-weight-down {
   margin-top: 0.3em;
 }
 
-#taxonomy-term-data .form-item-term-data-name {
-  padding-top: 20px;
-}
 
 #taxonomy-term-data table .form-item {
   margin-bottom: 0.2em; 
@@ -474,11 +466,6 @@ input#edit-weight-down {
   padding-bottom: 0.1em;
   padding-left: 0.5em;
   padding-right: 0.5em;
-}
-
-#taxonomy-term-data .message, 
-#taxonomy-term-data .messages {
-  margin: 1px 0;
 }
 
 #edit-term-data-save {

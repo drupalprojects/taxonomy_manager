@@ -443,7 +443,7 @@ function _taxonomy_manager_tree_get_item($vid, $parent = 0, $pager = FALSE, $sib
         ->limit(variable_get('taxonomy_manager_pager_tree_page_size', 50));
       
       if ($search_string) {
-        $query->where("name LIKE ('%%:name%%')", array(':name' => $search_string));
+        $query->condition('name', '%' . db_like($search_string) . '%', 'LIKE');
       }
       $result = $query->execute();
     }
@@ -490,7 +490,7 @@ function _taxonomy_manager_tree_get_translated_item($vid, $parent = 0, $pager = 
         ->limit(variable_get('taxonomy_manager_pager_tree_page_size', 50));
       
       if ($search_string) {
-        $query->where("name LIKE ('%%:name%%')", array(':name' => $search_string));
+        $query->condition('name', '%' . db_like($search_string) . '%', 'LIKE');
       }
       $result = $query->execute();
        
@@ -891,7 +891,7 @@ function taxonomy_manager_tree_build_siblings_form($tree_id, $page, $prev_tid, $
   $GLOBALS['devel_shutdown'] = FALSE; //prevent devel queries footprint
   $form_state = array('submitted' => FALSE);
   
-  $vid = db_query("SELECT vid FROM {term_data} WHERE tid = :tid", array(':tid' => $prev_tid))->fetchField();
+  $vid = db_query("SELECT vid FROM {taxonomy_term_data} WHERE tid = :tid", array(':tid' => $prev_tid))->fetchField();
     
   $siblings_form = array( 
     '#type' => 'taxonomy_manager_tree', 
@@ -1016,7 +1016,7 @@ function _taxonomy_manager_tree_get_selected_terms($form_values) {
  */
 function _taxonomy_manager_term_get_lang($tid) {
   if (module_exists('i18ntaxonomy')) {
-    return db_query("SELECT language FROM {term_data} WHERE tid = :tid", array(':tid' => $tid))->fetchField(); 
+    return db_query("SELECT language FROM {taxonomy_term_data} WHERE tid = :tid", array(':tid' => $tid))->fetchField(); 
   }
   return "";
 }

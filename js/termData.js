@@ -38,7 +38,7 @@ Drupal.attachTermData = function(ul, tree) {
   trees[tree.treeId] = tree;
   Drupal.attachTermDataLinks(ul, tree);
   
-  if (!$('#taxonomy-manager-toolbar' + '.tm-termData-processed').size()) { 	 
+  if (!$('#taxonomy-manager-toolbar.tm-termData-processed').length) { 	 
 	  Drupal.attachTermDataForm(tree);
   }
 }
@@ -49,7 +49,7 @@ Drupal.attachTermData = function(ul, tree) {
 Drupal.attachTermDataLinks = function(ul, tree) {
   $(ul).find('a.term-data-link').click(function() {
     Drupal.activeTermSwapHighlight(this);
-    var li = $(this).parents("li");
+    var li = $(this).parents("li:first");
     var termdata = new Drupal.TermData(Drupal.getTermId(li), this.href +'/true', li, tree);
     termdata.load();
     return false;
@@ -73,7 +73,7 @@ Drupal.activeTermSwapHighlight = function(link) {
 Drupal.attachTermDataToSiblings = function(all, currentIndex, tree) {
   var nextSiblings = $(all).slice(currentIndex);
   $(nextSiblings).find('a.term-data-link').click(function() {
-    var li = $(this).parents("li");
+    var li = $(this).parents("li:first");
     var termdata = new Drupal.TermData(Drupal.getTermId(li), this.href +'/true', li, tree);
     termdata.load();
     return false;

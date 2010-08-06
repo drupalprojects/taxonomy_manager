@@ -352,37 +352,29 @@ function taxonomy_manager_double_tree_form($form, &$form_state, $vid1, $vid2, $t
   );
   $form['double-tree']['operations']['move_right'] = array(
     '#type' => 'image_button',
-    '#value' => 'Move right',
     '#attributes' => array('title' => t('Move right')),
     '#src' => $module_path ."images/go-next.png",
-    //'#executes_submit_callback' => FALSE,
     '#prefix' => '<div class="taxonomy-manager-double-tree-operations-buttons">',
     '#suffix' => '</div>',
   );
   $form['double-tree']['operations']['move_left'] = array(
     '#type' => 'image_button',
-    '#value' => 'Move left',
     '#attributes' => array('title' => t('Move left')),
     '#src' => $module_path ."images/go-previous.png",
-    //'#executes_submit_callback' => FALSE,
     '#prefix' => '<div class="taxonomy-manager-double-tree-operations-buttons">',
     '#suffix' => '</div>',
   );
 
   //switch operations
   if ($vid1 != $vid2) {
-    $form['double-tree']['operations']['move_right']['#value'] = t('Switch right');
     $form['double-tree']['operations']['move_right']['#attributes']['title'] = t('Switch selected terms and its children to the right voc');
-    $form['double-tree']['operations']['move_left']['#value'] = t('Switch left');
     $form['double-tree']['operations']['move_left']['#attributes']['title'] = t('Switch selected terms and its children to the left voc');
   }
   else if (isset($language)) {
     $form['double-tree']['operations']['add_translation'] = array(
       '#type' => 'image_button',
-      '#value' => 'translation',
       '#attributes' => array('title' => t('Add Translation')),
       '#src' => $module_path ."images/connect.png",
-      //'#executes_submit_callback' => FALSE,
       '#prefix' => '<div class="taxonomy-manager-double-tree-operations-buttons">',
       '#suffix' => '</div>',
     );
@@ -1064,7 +1056,7 @@ function taxonomy_manager_form_validate($form, &$form_state) {
 /**
  * submits the taxonomy manager form (only search button)
  **/
-function taxonomy_manager_form_submit($form, &$form_state) {  
+function taxonomy_manager_form_submit($form, &$form_state) {
   if ($form_state['values']['delete'] === TRUE) {
     return taxonomy_manager_term_confirm_delete_submit($form, $form_state);
   }
@@ -1124,14 +1116,14 @@ function taxonomy_manager_form_submit($form, &$form_state) {
  * validates taxonomy manager double tree
  **/
 function taxonomy_manager_double_tree_form_validate($form, &$form_state) {
-  return taxonomy_manager_form_validate($form, $form_state);
+  taxonomy_manager_form_validate($form, $form_state);
 }
 
 /**
  * submits the taxonomy manager double tree
 **/
 function taxonomy_manager_double_tree_form_submit($form, &$form_state) { 
-  return taxonomy_manager_form_submit($form, $form_state);
+  taxonomy_manager_form_submit($form, $form_state);
 }
 
 /**
@@ -1492,13 +1484,13 @@ function _taxonomy_manager_check_duplicates($vid, $autocomplete_value, &$msg) {
   return FALSE;
 }
 
-function taxonomy_manager_form_double_tree_submit($form, $form_state) {
+function taxonomy_manager_form_double_tree_submit($form, &$form_state) {
   $voc1 = $form_state['values']['vid'];
-  $voc2 = $form_state['values']['double_tree']['voc2'];
+  $voc2 = $form_state['values']['double-tree-settings']['voc2'];
   drupal_goto('admin/structure/taxonomy_manager/double-tree/'. $voc1 .'/'. $voc2);
 }
 
-function taxonomy_manager_form_double_tree_disable_submit($form, $form_state) {
+function taxonomy_manager_form_double_tree_disable_submit($form, &$form_state) {
   drupal_goto('admin/structure/taxonomy_manager/voc/'. $form_state['values']['vid']);
 }
 
@@ -2259,11 +2251,15 @@ function taxonomy_manager_autocomplete_tags_get_tids($typed_input, $vid, $insert
 
         if (!$typed_term_tid && $insert_new) {
           $edit = array('vid' => $vid, 'name' => $typed_term);
-          $status = taxonomy_save_term($edit);
+          $edit = new stdClass;
+          $edit->name = $typed_term;
+          $edit->vid = $vid;
+          
+          $status = taxonomy_term_save($edit);
           if (module_exists('i18ntaxonomy') && $lang != "") {
-            _i18ntaxonomy_term_set_lang($edit['tid'], $lang);
+            _i18ntaxonomy_term_set_lang($edit->tid, $lang);
           }
-          $typed_term_tid = $edit['tid'];
+          $typed_term_tid = $edit->tid;
           $tids[$typed_term_tid]['tid'] = $typed_term_tid;
           $tids[$typed_term_tid]['new'] = TRUE;
         }
