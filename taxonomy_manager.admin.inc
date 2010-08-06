@@ -1497,7 +1497,7 @@ function taxonomy_manager_form_double_tree_disable_submit($form, &$form_state) {
 /**
  * Defines a settings form.
  */
-function taxonomy_manager_settings() {
+function taxonomy_manager_settings($form) {
   $form['taxonomy_manager_disable_mouseover'] = array(
     '#type' => 'checkbox',
     '#title' => t('Disable mouse-over effect for terms (weights and direct link)'),

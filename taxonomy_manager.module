@@ -81,6 +81,7 @@ function taxonomy_manager_menu() {
     'type' => MENU_CALLBACK,
     'file' => 'taxonomy_manager.admin.inc', 
   );
+  
   $items['admin/structure/taxonomy_manager/double-tree'] = array(
     'title' => 'Taxonomy Manager',
     'page callback' => 'drupal_get_form',
@@ -90,12 +91,13 @@ function taxonomy_manager_menu() {
     'file' => 'taxonomy_manager.admin.inc', 
   );
   
-  $items['admin/config/taxonomy_manager/settings'] = array(
+  $items['admin/config/user-interface/taxonomy-manager-settings'] = array(
     'title' => 'Taxonomy Manager',
     'description' => 'Advanced settings for the Taxonomy Manager',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('taxonomy_manager_settings'),
     'access arguments' => array('administer site configuration'),
+    'type' => MENU_NORMAL_ITEM,
     'file' => 'taxonomy_manager.admin.inc',
   ); 
   
