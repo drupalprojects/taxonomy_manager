@@ -38,6 +38,8 @@ function taxonomy_manager_voc_list() {
  * @param $search_string a string to filter root level terms
  */
 function taxonomy_manager_form($form, &$form_state, $vid, $tid = 0, $filter = NULL) {
+  //print_r($form_state['triggering_element']['#ajax']);
+
   // Check for confirmation forms.
   if (isset($form_state['confirm_delete'])) {
     return taxonomy_manager_term_confirm_delete($form, $form_state, $vid);
@@ -76,8 +78,7 @@ function taxonomy_manager_form($form, &$form_state, $vid, $tid = 0, $filter = NU
     $form += taxonomy_manager_add_form($voc, FALSE);
     return $form;
   }
-  
-  $form['#cache'] = TRUE;
+  $form_state['cache'] = TRUE;
   
   $form['taxonomy']['#tree'] = TRUE;
   
@@ -252,31 +253,12 @@ function taxonomy_manager_form($form, &$form_state, $vid, $tid = 0, $filter = NU
   
   $form += taxonomy_manager_double_tree_settings_form($voc);
   
-  if ($tid) {
-    $form += taxonomy_manager_form_term_data($tid);
-  }
-  else {
-    $form['term_data'] = array('#tree' => TRUE);
+  if (isset($form_state['input']['term_data']['tid'])) {
+    $tid = $form_state['input']['term_data']['tid'];
   }
   
-  // add save button for term_data already to the form array, 
-  // but do not render (see theme_taxonomy_manager_form) if not needed
-  // otherwise an #ahah callback on dynamically added forms makes problems
-  $form['term_data']['save'] = array(
-    '#type' => 'submit',
-    '#value' => t('Save changes'),
-    '#submit' => array(),
-    '#attributes' => array('class' => array('taxonomy-manager-buttons', 'save')),
-    '#ajax' => array(
-      'callback' => 'taxonomy_manager_term_data_form_submit',
-      'method' => 'replace',
-      'event' => 'click',
-      'wrapper' => 'taxonomy-term-data',
-      'progress' => array('type' => ''),
-    ),
-    '#weight' => 20,
-  );
-
+  taxonomy_manager_form_term_data($form, $tid);
+  
   return $form;
 }
 
@@ -754,58 +736,24 @@ function taxonomy_manager_update_term_data_form($vid, $tid, $ahah = FALSE, $prin
   if (!$ahah) {
     drupal_goto('admin/structure/taxonomy_manager/voc/'. $vid .'/'. $tid);
   }
-  $GLOBALS['devel_shutdown'] = FALSE; //prevent devel queries footprint
   
-  $params = $_GET;
+  //todo do this with drupal_form_rebuild?
+  list($form, $form_state, $form_id, $form_build_id) = ajax_get_form();
+  taxonomy_manager_form_term_data($form, $tid, $msg, $is_error_msg);
+  drupal_prepare_form($form_id, $form, $form_state);
+  $form_state['values'] = isset($form_state['values']) ? $form_state['values'] : array();
+  $form = form_builder($form_id, $form, $form_state);
+  form_set_cache($form_build_id, $form, $form_state);
   
-  //actually we don not need do use the caching because the saving only happens through a AJAX callback
-  //and it's a bit faster, cache loading, form building and cache saving needs some time else.
-  /*$form_state = array('submitted' => FALSE);
-  $form = form_get_cache($params['form_build_id'], $form_state);
-  unset($form['term_data']);
-  $form = form_builder($param['form_id'], $form, $form_state);*/
+  $data = drupal_render($form['term_data']);
   
-  $term_form = taxonomy_manager_form_term_data($tid);
-  $term_form['term_data']['save'] = array(
-    '#type' => 'submit',
-    '#value' => t('Save changes'),
-    '#submit' => array(),
-    '#attributes' => array('class' => array('taxonomy-manager-buttons', 'save')),
-    '#ajax' => array(
-      'callback' => 'taxonomy_manager_term_data_form_submit',
-      'method' => 'replace',
-      'event' => 'click',
-      'wrapper' => 'taxonomy-term-data',
-      'progress' => array('type' => ''),
-    ),
-    '#weight' => 20,
-  );
-  if ($msg != "") {
-    $term_form['term_data']['msg'] = array(
-      '#type' => 'markup',
-      '#prefix' => '<div class="messages status">',
-      '#suffix' => '</div>',
-      '#markup' => $msg,
-      '#weight' => -20,
-    ); 
-    if ($is_error_msg) {
-     $term_form['term_data']['msg']['#markup'] = t("Error! Your last operation couldn't be performed because of following problem:") ." ". $msg;
-     $term_form['term_data']['msg']['#prefix'] = '<div class="message error">';
-    }
+  $scripts = drupal_add_js(NULL, NULL);
+  $settings = array();
+  if (!empty($scripts['settings'])) {
+    $settings = call_user_func_array('array_merge_recursive', $scripts['settings']['data']);
   }
-  $form = $term_form;
-
-  drupal_prepare_form('taxonomy_manager_form', $form, $form_state);
-  $form = form_builder('taxonomy_manager_form', $form, $form_state);
-  //form_set_cache($params['form_build_id'], $form, $form_state);
-  
-  $output = drupal_render($form['term_data']);
-  
-  if ($print) {
-    print $output;
-    exit();
-  }
-  return $output;
+  print drupal_json_output(array('data' => $data, "settings" => $settings));
+  ajax_footer();
 }
 
 /**
@@ -813,97 +761,121 @@ function taxonomy_manager_update_term_data_form($vid, $tid, $ahah = FALSE, $prin
  *
  * @param $tid
  */
-function taxonomy_manager_form_term_data($tid) {  
-  $term = taxonomy_term_load($tid);
+function taxonomy_manager_form_term_data(&$form, $tid = 0, $msg = "", $is_error_msg = FALSE) {  
   $module_path = drupal_get_path('module', 'taxonomy_manager') .'/';
-  $vocabulary = taxonomy_vocabulary_load($term->vid);
   
-  //prevent that title of the fieldset is too long
-  $title = $term->name;
-  if (drupal_strlen($title) >= 33) {
-    $title = drupal_substr($title, 0, 33) ."...";
-  }
-  $title .= " (". $term->tid .")";
-  $title = check_plain($title);
+  $title = "";
+  if ($tid) {
+    $term = taxonomy_term_load($tid);
+    $vocabulary = taxonomy_vocabulary_load($term->vid);
   
-  $form['term_data'] = array( 
-    '#type' => 'fieldset', 
-    '#title' => $title,
-    '#attributes' => array('id' => 'taxonomy-term-data-fieldset'),
-    '#tree' => TRUE,
-  );
-  
-  $form['term_data']['close'] = array(
-    '#markup' => '<div id="term-data-close"><span title="'. t('Close') .'">&nbsp;&nbsp;&nbsp;&nbsp;</span></div>',
-    '#weight' => -100,
-  );
-  
-  $form['term_data']['tid'] = array('#type' => 'hidden', '#value' => $tid);
-  
-  $form['term_data']['name'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Name'),
-    '#default_value' => $term->name,
-    '#size' => 35,
-    '#maxlength' => 255,
-    '#required' => TRUE,
-    '#weight' => -19,
-  );
-
-  $form['term_data']['description'] = array(
-    '#type' => 'textarea',
-    '#title' => t('Description'),
-    '#default_value' => $term->description,
-    '#cols' => 35,
-    '#rows' => 3,
-  );
-  
-  /*$synonyms = taxonomy_get_synonyms($term->tid);
-  asort($synonyms);
-  $form['term_data']['synonyms'] = _taxonomy_manager_form_term_data_lists($term, $synonyms, t('Synonyms'), 'synonym', FALSE); 
-  $form['term_data']['synonyms']['#tree'] = TRUE;
-  $form['term_data']['synonyms']['#weight'] = '50';
-  
-  $form['term_data']['relations'] = _taxonomy_manager_form_term_data_lists($term, taxonomy_get_related($term->tid), t('Relations'), 'related'); 
-  $form['term_data']['relations']['#tree'] = TRUE;
-  $form['term_data']['relations']['#weight'] = '51';*/
-  
-  $parents = taxonomy_get_parents($term->tid);
-  $form['term_data']['parents'] = _taxonomy_manager_form_term_data_lists($term, $parents, t('Parents'), 'parent', TRUE); 
-  $form['term_data']['parents']['#tree'] = TRUE;
-  $form['term_data']['parents']['#weight'] = '52';
-  
-  if (module_exists('i18ntaxonomy')) {
-    if (i18ntaxonomy_vocabulary($term->vid) == I18N_TAXONOMY_TRANSLATE) {
-      $translations = i18ntaxonomy_term_get_translations(array('tid' => $term->tid), FALSE);
-      $form['term_data']['translations'] = _taxonomy_manager_form_term_data_translations($term, $translations, t('Translations'), 'translation', TRUE); 
-      $form['term_data']['translations']['#tree'] = TRUE;
-      $form['term_data']['translations']['#weight'] = '53';
-      
-      $form['term_data']['language'] = array(
-        '#type' => 'select',
-        '#title' => t('Language'),
-        '#default_value' => isset($term) && !empty($term->language) ? $term->language : '',
-        '#options' => array('' => '') + locale_language_list('name'),
-        '#description' => t('This term belongs to a multilingual vocabulary. You can set a language for it.'),
-        '#weight' => 54,
-      );
+    //prevent that title of the fieldset is too long
+    $title = check_plain($term->name);
+    if (drupal_strlen($title) >= 33) {
+      $title = drupal_substr($title, 0, 33) ."...";
     }
+    
+    $form['term_data'] = array( 
+      '#type' => 'fieldset', 
+      '#title' => $title ." (". $term->tid .")",
+    );
+    
+    $form['term_data']['vid'] = array('#type' => 'hidden', '#value' => $term->vid);
+    $form['term_data']['tid'] = array('#type' => 'hidden', '#value' => $tid);
+  
+    $form['term_data']['close'] = array(
+      '#markup' => '<div id="term-data-close"><span title="'. t('Close') .'">&nbsp;&nbsp;&nbsp;&nbsp;</span></div>',
+      '#weight' => -100,
+    );
+    if ($msg != "") {
+      $form['term_data']['msg'] = array(
+        '#type' => 'markup',
+        '#prefix' => '<div class="messages status">',
+        '#suffix' => '</div>',
+        '#markup' => $msg,
+        '#weight' => -20,
+      ); 
+      if ($is_error_msg) {
+       $form['term_data']['msg']['#markup'] = t("Error! Your last operation couldn't be performed because of following problem:") ." ". $msg;
+       $form['term_data']['msg']['#prefix'] = '<div class="message error">';
+      }
+    }
+    $form['term_data']['name'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Name'),
+      '#default_value' => $tid ? $term->name : "",
+      '#size' => 35,
+      '#maxlength' => 255,
+      '#required' => TRUE,
+    );
+
+    $form['term_data']['description'] = array(
+      '#type' => 'textarea',
+      '#title' => t('Description'),
+      '#default_value' => $tid ? $term->description : "",
+      '#cols' => 35,
+      '#rows' => 3,
+    );
+    
+    $form['term_data']['weight'] = array( 
+      '#type' => 'weight', 
+      '#default_value' => $term->weight, 
+      '#delta' => 50,
+      '#prefix' => '<div id="term-data-weight">', 
+      '#suffix' => '</div>', 
+      '#title' => t('Weight'), 
+    );
+    
+    $parents = taxonomy_get_parents($term->tid);
+    $form['term_data']['parents'] = _taxonomy_manager_form_term_data_parents($term, $parents, t('Parents'), 'parent', TRUE); 
+    $form['term_data']['parents']['#tree'] = TRUE;
+    $form['term_data']['parents']['#weight'] = '52';
+  
+    /*if (module_exists('i18ntaxonomy')) {
+      if (i18ntaxonomy_vocabulary($term->vid) == I18N_TAXONOMY_TRANSLATE) {
+        $translations = i18ntaxonomy_term_get_translations(array('tid' => $term->tid), FALSE);
+        $form['term_data']['translations'] = _taxonomy_manager_form_term_data_translations($term, $translations, t('Translations'), 'translation', TRUE); 
+        $form['term_data']['translations']['#tree'] = TRUE;
+        $form['term_data']['translations']['#weight'] = '53';
+      
+        $form['term_data']['language'] = array(
+          '#type' => 'select',
+          '#title' => t('Language'),
+          '#default_value' => isset($term) && !empty($term->language) ? $term->language : '',
+          '#options' => array('' => '') + locale_language_list('name'),
+          '#description' => t('This term belongs to a multilingual vocabulary. You can set a language for it.'),
+          '#weight' => 54,
+        );
+      }
+    }
+  
+    
+  
+    $link_img = theme("image", array('path' => $module_path ."images/link-small.png", 'alt' => t("link to term page")));
+    $form['term_data']['link'] = array('#markup' => '<br />'. l($link_img .'&nbsp;'. t('Go to the term page'), 'taxonomy/term/'. $term->tid, array('attributes' => array('rel' => 'tag', 'title' => strip_tags($term->description), 'target' => '_blank'), 'html' => TRUE)), '#weight' => '56');    */ 
+    
+    
+     
   }
   
-  $form['term_data']['weight'] = array( 
-    '#type' => 'weight', 
-    '#default_value' => $term->weight, 
-    '#delta' => 50,
-    '#prefix' => '<div id="term-data-weight">', 
-    '#suffix' => '</div>', 
-    '#title' => t('Weight'), 
-    '#weight' => 55,
-  );
+  $form['term_data']['#tree'] = TRUE;
+  $form['term_data']['#prefix'] = '<div id="taxonomy-term-data-replace">';
+  $form['term_data']['#suffix'] = '</div>';
   
-  $link_img = theme("image", array('path' => $module_path ."images/link-small.png", 'alt' => t("link to term page")));
-  $form['term_data']['link'] = array('#markup' => '<br />'. l($link_img .'&nbsp;'. t('Go to the term page'), 'taxonomy/term/'. $term->tid, array('attributes' => array('rel' => 'tag', 'title' => strip_tags($term->description), 'target' => '_blank'), 'html' => TRUE)), '#weight' => '56');    
-  $form['term_data']['vid'] = array('#type' => 'hidden', '#value' => $term->vid);
+  $form['term_data']['save'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save changes'),
+    '#submit' => array('taxonomy_manager_term_data_form_submit'),
+    '#attributes' => array('class' => array('taxonomy-manager-buttons', 'save')),
+    '#ajax' => array(
+      'callback' => 'taxonomy_manager_term_data_form_ajax_callback',
+      'method' => 'replace',
+      'event' => 'click',
+      'wrapper' => 'taxonomy-term-data-replace',
+      'progress' => array('type' => ''),
+    ),
+    '#weight' => 20,
+  );
   
   return $form;
 }
@@ -919,7 +891,7 @@ function taxonomy_manager_form_term_data($tid) {
  * @param $add if true, shows add operation
  * @return an form array
  */
-function _taxonomy_manager_form_term_data_lists($term, $values, $header_type, $attr, $autocomplete = TRUE, $add = TRUE) {
+function _taxonomy_manager_form_term_data_parents($term, $values, $header_type, $attr, $autocomplete = TRUE, $add = TRUE) {
   $module_path = drupal_get_path('module', 'taxonomy_manager') .'/';
   $rows = array();
   
@@ -946,8 +918,19 @@ function _taxonomy_manager_form_term_data_lists($term, $values, $header_type, $a
       '#type' => 'hidden',
       '#value' => $id,
     );
-    $form['data'][$id][] = array(
-      '#markup' => '<span class="'. $attr .'" title="'. t('Remove') .'">&nbsp;</span>',
+    $form['data'][$id]['remove'] = array(
+      '#type' => 'image_button',
+      '#attributes' => array('title' => t('Remove')),
+      '#submit' => array('taxonomy_manager_term_data_form_submit_parents_remove'),
+      '#ajax' => array(
+        'callback' => 'taxonomy_manager_term_data_form_ajax_callback',
+        'progress' => array('type' => ''),
+        'method' => 'replaceWith',
+        'event' => 'click',
+        'wrapper' => 'taxonomy-term-data-replace',
+      ),
+      '#src' => $module_path ."images/list-remove.png",
+      //'#markup' => '<span class="'. $attr .'" title="'. t('Remove') .'">&nbsp;</span>',
       '#row-class' => 'taxonomy-term-data-operations',
     );
   }
@@ -967,9 +950,22 @@ function _taxonomy_manager_form_term_data_lists($term, $values, $header_type, $a
     }
   
     $form['op']['add_button'] = array( 
-      '#markup' => '<span class="'. $attr .'" title="'. t('Add') .'">&nbsp;</span>', 
-      '#prefix' => '<div class="term-data-autocomplete-add">',
-      '#suffix' => '</div>',
+      '#type' => 'image_button',
+      '#attributes' => array('title' => t('Add')),
+      '#submit' => array('taxonomy_manager_term_data_form_submit_parents_add'),
+      '#validate' => array('taxonomy_manager_term_data_form_validate_parents_add'),
+      '#ajax' => array(
+        'callback' => 'taxonomy_manager_term_data_form_ajax_callback',
+        'progress' => array('type' => ''),
+        'method' => 'replaceWith',
+        'event' => 'click',
+        'wrapper' => 'taxonomy-term-data-replace',
+      ),
+      '#src' => $module_path ."images/list-add.png",
+      '#row-class' => 'term-data-autocomplete-add',
+      //'#markup' => '<span class="'. $attr .'" title="'. t('Add') .'">&nbsp;</span>', 
+      //'#prefix' => '<div class="term-data-autocomplete-add">',
+      //'#suffix' => '</div>',
     );
   }
   
@@ -1520,13 +1516,100 @@ function taxonomy_manager_settings($form) {
   return system_settings_form($form);
 }
 
-function taxonomy_manager_term_data_form_submit() {
-  list($form, $form_state, $form_id, $form_build_id) = ajax_get_form();
-  $term = taxonomy_term_load($form_state['input']['term_data']['tid']);
-  $term->name = $form_state['input']['term_data']['name'];
-  $term->description = $form_state['input']['term_data']['description'];
+
+function taxonomy_manager_term_data_form_ajax_callback($form, $form_state) {
+  return $form['term_data'];
+}
+
+function taxonomy_manager_term_data_form_submit($form, &$form_state) {
+  $term_data = $form_state['input']['term_data'];
+    
+  $term = taxonomy_term_load($term_data['tid']);
+  $term->name = $term_data['name'];
+  $term->description = $term_data['description'];
+  
   //TODO: same for any fields
   taxonomy_term_save($term);
+  drupal_set_message("Updated term data");  
+  $form_state['rebuild'] = TRUE;
+}
+
+
+function taxonomy_manager_term_data_form_validate_parents_add($form, &$form_state) {
+  $term_data = $form_state['input']['term_data'];  
+  $term = taxonomy_term_load($term_data['tid']);
+  
+  $parent_names = $term_data['parents']['op']['add'];
+  $typed_terms = taxonomy_manager_autocomplete_tags_get_tids($parent_names, $term->vid, FALSE);
+  
+  $error_msg = "";
+  if (_taxonomy_manager_check_duplicates($term->vid, $parent_names, $error_msg)) {
+    form_set_error('term_data][parents', t("Warning: Your input matches with multiple terms, because of duplicated term names. Please enter a unique term name or the term id with 'term-id:[tid]'" ." (!error_msg).", array('!error_msg' => $error_msg)));
+  }
+  else if(!taxonomy_manager_check_language($term->vid, array($term->tid), $typed_terms)) {
+    form_set_error('term_data][parents', t("Terms must be of the same language."));
+  }
+  else {
+    //validation for consistent hierarchy
+    $parents = array();
+    foreach ($typed_terms as $parent_info) {
+      $parents[$parent_info['tid']] = $parent_info['tid'];
+    }
+    if (!taxonomy_manager_check_circular_hierarchy(array($term->tid => $term->tid), $parents)) {
+      form_set_error('term_data][parents', t('Invalid parent. The resulting hierarchy would contain circles, which is not allowed. A term cannot be a parent of itself.'));
+    }  
+  }
+
+}
+
+function taxonomy_manager_term_data_form_submit_parents_add($form, &$form_state) {
+  $term_data = $form_state['input']['term_data'];  
+  $term = taxonomy_term_load($term_data['tid']);
+  
+  $parent_names = $term_data['parents']['op']['add'];
+
+  $typed_terms = taxonomy_manager_autocomplete_tags_get_tids($parent_names, $term->vid, TRUE); //insert terms
+  foreach ($typed_terms as $parent_info) {
+    db_insert('taxonomy_term_hierarchy')
+      ->fields(array('tid', 'parent'))
+      ->values(array('tid' => $term->tid, 'parent' => $parent_info['tid']))
+      ->execute();
+  }
+  //TODO if empty, move to root level
+  taxonomy_term_save($term); //executes hooks and clears caches
+  drupal_set_message(t('Updated hierarchy'));
+  
+  $form_state['rebuild'] = TRUE;
+}
+
+function taxonomy_manager_term_data_form_submit_parents_remove($form, &$form_state) {
+  $term_data = $form_state['input']['term_data'];  
+  $term = taxonomy_term_load($term_data['tid']);
+    
+  //TODO as validation and add value to form_state
+  $splits = explode('][', $form_state['input']['_triggering_element_name']);
+  if (count($splits) == 4 && is_numeric($splits[2])) {
+    $parent = $splits[2];
+    $parents = taxonomy_get_parents($term->tid);
+    if (count($parents) == 1) {
+      //ensure that a term has a least parent 0
+      db_delete('taxonomy_term_hierarchy')
+        ->condition('tid', $term->tid)
+        ->condition('parent', 0)
+        ->execute();
+      db_insert('taxonomy_term_hierarchy')
+        ->fields(array('tid', 'parent'))
+        ->values(array('tid' => $term->tid, 'parent' => 0))
+        ->execute();
+    }
+    db_delete('taxonomy_term_hierarchy')
+      ->condition('tid', $term->tid)
+      ->condition('parent', $parent)
+      ->execute();
+    drupal_set_message(t("Removed parent"));
+  }
+
+  $form_state['rebuild'] = TRUE;
 }
 
 /**
@@ -2590,8 +2673,7 @@ function theme_taxonomy_manager_term_data_extra($variables) {
       if (is_array($element['data'][$tid][$key])) {
         $row[] = array(
           'data' => drupal_render($element['data'][$tid][$key]) . drupal_render($element['data'][$tid][$key]['tid']), 
-          'class' => $element['data'][$tid][$key]['#row-class'],
-          'id' => $element['data'][$tid][$key]['#id'],
+          'class' => isset($element['data'][$tid][$key]['#row-class']) ? $element['data'][$tid][$key]['#row-class'] : '',
         );
       }
     }
@@ -2600,7 +2682,11 @@ function theme_taxonomy_manager_term_data_extra($variables) {
   $row = array();
   foreach (element_children($element['op']) as $key) {
     if (is_array($element['op'][$key])) {
-      $row[] = drupal_render($element['op'][$key]);
+      //$row[] = drupal_render($element['op'][$key]);
+      $row[] = array(
+          'data' => drupal_render($element['op'][$key]),
+          'class' => isset($element['op'][$key]['#row-class']) ? $element['op'][$key]['#row-class'] : '',
+        );
     } 
   }
   $rows[] = $row;

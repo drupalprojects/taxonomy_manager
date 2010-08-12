@@ -18,7 +18,7 @@ var trees = new Object();
  */
 Drupal.behaviors.TaxonomyManagerTermData = {
   attach: function(context) {
-    if ($('#taxonomy-manager-toolbar:not(.tm-termData-processed)')) { 
+    if (!$('#taxonomy-manager.tm-termData-processed').length) { 
       var vid = $('#edit-term-data-vid').val();
       for (var id in trees) {
         var tree = trees[id];
@@ -38,7 +38,7 @@ Drupal.attachTermData = function(ul, tree) {
   trees[tree.treeId] = tree;
   Drupal.attachTermDataLinks(ul, tree);
   
-  if (!$('#taxonomy-manager-toolbar.tm-termData-processed').length) { 	 
+  if (!$('#taxonomy-manager.tm-termData-processed').length) { 	 
 	  Drupal.attachTermDataForm(tree);
   }
 }
@@ -84,7 +84,7 @@ Drupal.attachTermDataToSiblings = function(all, currentIndex, tree) {
  * adds click events to term data form, which is already open, when page gets loaded
  */
 Drupal.attachTermDataForm = function(tree) {
-  $('#taxonomy-manager-toolbar').addClass('tm-termData-processed');
+  $('#taxonomy-manager').addClass('tm-termData-processed');
   var tid = $('#edit-term-data-tid').val();
   if (tid) {
     var li = tree.getLi(tid);
@@ -106,6 +106,7 @@ Drupal.TermData = function(tid, href, li, tree) {
   this.tree = tree
   this.form_build_id = tree.form_build_id;
   this.form_id = tree.form_id;
+  this.form_token = tree.form_token;
   this.vid = tree.vocId;
   this.div = $('#taxonomy-term-data');
 }
@@ -120,9 +121,17 @@ Drupal.TermData.prototype.load = function() {
   var param = new Object();
   param['form_build_id'] = this.form_build_id;
   param['form_id'] = this.form_id;
-  
-  $.get(url, param, function(data) {
-    termdata.insertForm(data);
+  param['form_token'] = this.form_token;
+ 
+  $.ajax({
+    data: param, 
+    type: "POST", 
+    url: url,
+    dataType: 'json',
+    success: function(response, status) {
+      termdata.insertForm(response.data);
+      Drupal.attachBehaviors(termdata.div, response.settings);
+    },
   });
 }
 
@@ -141,12 +150,15 @@ Drupal.TermData.prototype.form = function() {
   var termdata = this;
   this.param = new Object();
 
-  try {
+  /*try {
     Drupal.behaviors.textarea.attach(this.div, Drupal.settings);
     Drupal.behaviors.autocomplete.attach(this.div, Drupal.settings);
     Drupal.behaviors.AJAX.attach(this.div, Drupal.settings);
   } catch(e) {} //autocomplete or textarea js not added to page
+  */
   
+  //Drupal.attachBehaviors(this.div, Drupal.settings);
+    
   this.param['tid'] = this.tid;
   this.param['vid'] = this.vid;
   

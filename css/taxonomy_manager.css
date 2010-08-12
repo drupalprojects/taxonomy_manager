@@ -384,7 +384,12 @@ input#edit-weight-down {
   background-image: url(../images/dialog-cancel-small-hover.png);
 }
 
-.term-data-autocomplete-add span {
+td.term-data-autocomplete-add,
+td.taxonomy-term-data-operations {
+  text-align: center; 
+}
+
+/*.term-data-autocomplete-add span {
   text-decoration: none;
   width: 22px;
   height: 22px;
@@ -408,7 +413,7 @@ input#edit-weight-down {
 .taxonomy-term-data-operations span:hover {
   text-decoration: none;
   background-image: url(../images/list-remove-hover.png);
-}
+}*/
 
 #taxonomy-term-data #edit-term-data-name-wrapper {
   margin-top: 0; 
@@ -422,6 +427,16 @@ input#edit-weight-down {
   margin-top: 0;
   padding-top: 0;
 }
+
+#taxonomy-term-data .messages {
+  margin-top: 0px;
+  margin-bottom: 5px;
+}
+
+#taxonomy-term-data input.form-submit {
+  margin-bottom: 0px;
+}
+
 .taxonomy-term-data-operations {
   cursor: pointer;
 }
@@ -430,7 +445,7 @@ input#edit-weight-down {
   display: inline;
 }
 .term-data-autocomplete-add {
-  display: inline;
+  /*display: inline;*/
   cursor: pointer;
 }
 .term-data-autocomplete-add img {

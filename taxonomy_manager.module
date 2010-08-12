@@ -600,7 +600,7 @@ function taxonomy_manager_get_partial_tree($path, $depth = 0) {
     $child->depth = $depth;
     $child->parents = array(0 => $root_term->tid);
     $tree[] = $child;
-    if ($child->tid == $next_term->tid) {
+    if (isset($next_term) && $child->tid == $next_term->tid) {
       $tree = array_merge($tree, taxonomy_manager_get_partial_tree($path, $depth));
     } 
   }
@@ -638,12 +638,12 @@ function taxonomy_manager_tree_build_form(&$index, $tree, &$form, $root_form, $p
       }
     }
     $form[$term->tid]['checkbox'] = array(
-      //'#type' => ($multiple) ? 'checkbox' : 'radio', 
+      '#type' => ($multiple) ? 'checkbox' : 'radio', 
       '#title' => $term->name, 
       '#value' => $value,
       '#return_value' => $term->tid,
       '#required' => FALSE,
-      '#theme' => ($multiple) ? 'taxonomy_manager_tree_checkbox' : 'taxonomy_manager_tree_radio',
+      '#theme_wrappers' => ($multiple) ? array('taxonomy_manager_tree_checkbox') : array('taxonomy_manager_tree_radio'),
     );
     $form[$term->tid]['#attributes'] = array();
     
