@@ -962,9 +962,13 @@ function _taxonomy_manager_tree_sub_forms_set_parents($tree_id, $parent, &$form)
  */
 function taxonomy_manager_tree_validate($form, &$form_state) {
   $selected = array();
-
+  
+  //this can be useful for more complex processing, where the parent of the selecte term in the tree view is need (releveant if multi parent)
+  //used in double tree
+  $direct_parents = array();
+  
   if ($form['#multiple']) {
-    $selected = _taxonomy_manager_tree_get_selected_terms($form['#value']);
+    $selected = _taxonomy_manager_tree_get_selected_terms($form['#value'], $direct_parents);
   }
   else if (is_numeric($form['#value'])) {
     $selected[$form['#value']] = $form['#value'];
@@ -976,7 +980,7 @@ function taxonomy_manager_tree_validate($form, &$form_state) {
       form_set_error('', t('An illegal choice has been detected. Please contact the site administrator.'));
     }
   }
-  form_set_value($form, array('selected_terms' => $selected), $form_state);
+  form_set_value($form, array('selected_terms' => $selected, 'selected_terms_direct_parents' => $direct_parents), $form_state);
 }
 
 /**
@@ -1000,15 +1004,18 @@ function _taxonomy_manager_tree_term_valid($tid, $vid) {
  * @param $form_values
  * @return an array with ids of selected terms
  */
-function _taxonomy_manager_tree_get_selected_terms($form_values) {
+function _taxonomy_manager_tree_get_selected_terms($form_values, &$direct_parents = array(), $direct_parent = 0) {
   $tids = array();
   if (is_array($form_values)) {
     foreach ($form_values as $tid => $form_value) {
       if (isset($form_value['checkbox']) && $tid && ($tid == $form_value['checkbox'])) {
         $tids[$tid] = $tid;
+        if ($direct_parent) {
+          $direct_parents[$tid] = $direct_parent; 
+        }
       }
       if (isset($form_value['children']) && is_array($form_value['children'])) {
-        $tids += _taxonomy_manager_tree_get_selected_terms($form_value['children']);
+        $tids += _taxonomy_manager_tree_get_selected_terms($form_value['children'], $direct_parents, $tid);
       }
     }
   }

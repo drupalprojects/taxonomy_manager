@@ -149,6 +149,10 @@ Drupal.TermData.prototype.insertForm = function(data) {
 Drupal.TermData.prototype.form = function() {
   var termdata = this;
   
+  $(this.div).find('#term-data-close span').click(function() {
+    termdata.div.children().hide();
+  });
+  
   $(this.div).find("legend").each(function() {
     var staticOffsetX, staticOffsetY = null;
     var left, top = 0;

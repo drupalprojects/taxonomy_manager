@@ -81,8 +81,8 @@ Drupal.TaxonomyManagerTree.prototype.attachTreeview = function(ul, currentIndex)
   var expandableParent = $(ul).find("div.hitArea");
   $(expandableParent).click(function() {
     var li = $(this).parent();
-    tree.toggleTree(li);
     tree.loadChildForm(li);
+    tree.toggleTree(li);
   });
   $(expandableParent).parent("li.expandable, li.lastExpandable").children("ul").hide();
 }
@@ -433,11 +433,11 @@ Drupal.attachThrobber = function() {
   throbber.appendTo("#taxonomy-manager-toolbar-throbber").hide();
   throbber.ajaxStart(function(){
       $(this).show();
-      $(div).css('opacity', '0.5');
+      //$(div).css('opacity', '0.5');
     })
     .ajaxStop(function(){
       $(this).hide();
-      $(div).css('opacity', '1');
+      //$(div).css('opacity', '1');
     });
 }
 

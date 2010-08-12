@@ -428,13 +428,17 @@ td.taxonomy-term-data-operations {
   padding-top: 0;
 }
 
-#taxonomy-term-data .messages {
+#taxonomy-manager .messages {
   margin-top: 0px;
   margin-bottom: 5px;
 }
 
 #taxonomy-term-data input.form-submit {
   margin-bottom: 0px;
+}
+
+#taxonomy-term-data .filter-wrapper .fieldset-wrapper {
+  padding-bottom: 0px;
 }
 
 .taxonomy-term-data-operations {
@@ -452,7 +456,7 @@ td.taxonomy-term-data-operations {
   vertical-align: bottom;
 }
 
-#edit-term-data-name {
+#taxonomy-term-data .form-item-term-data-name input {
   width: 100%;
   padding-right: 0px;
 }
