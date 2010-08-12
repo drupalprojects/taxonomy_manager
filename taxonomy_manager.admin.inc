@@ -258,7 +258,7 @@ function taxonomy_manager_form($form, &$form_state, $vid, $tid = 0, $filter = NU
   
   $form += taxonomy_manager_double_tree_settings_form($voc);
   
-  taxonomy_manager_form_term_data($form, $tid);
+  taxonomy_manager_form_term_data($form, $tid, $form_state);
   
   return $form;
 }
@@ -736,7 +736,7 @@ function taxonomy_manager_double_tree_settings_form($voc) {
 function taxonomy_manager_update_term_data_form($vid, $tid) {
   //todo do this with drupal_form_rebuild?
   list($form, $form_state, $form_id, $form_build_id) = ajax_get_form();
-  taxonomy_manager_form_term_data($form, $tid);
+  taxonomy_manager_form_term_data($form, $tid, $form_state);
   drupal_prepare_form($form_id, $form, $form_state);
   $form_state['values'] = isset($form_state['values']) ? $form_state['values'] : array();
   $form = form_builder($form_id, $form, $form_state);
@@ -758,7 +758,7 @@ function taxonomy_manager_update_term_data_form($vid, $tid) {
  *
  * @param $tid
  */
-function taxonomy_manager_form_term_data(&$form, $tid = 0) {  
+function taxonomy_manager_form_term_data(&$form, $tid = 0, $form_state) {  
   $module_path = drupal_get_path('module', 'taxonomy_manager') .'/';
   
   $title = "";
@@ -794,9 +794,10 @@ function taxonomy_manager_form_term_data(&$form, $tid = 0) {
     );
 
     $form['term_data']['description'] = array(
-      '#type' => 'textarea',
+      '#type' => 'text_format',
       '#title' => t('Description'),
       '#default_value' => $tid ? $term->description : "",
+      '#format' => $term->format,
       '#cols' => 35,
       '#rows' => 3,
     );
@@ -809,6 +810,8 @@ function taxonomy_manager_form_term_data(&$form, $tid = 0) {
       '#suffix' => '</div>', 
       '#title' => t('Weight'), 
     );
+    
+    field_attach_form('taxonomy_term', $term, $form['term_data'], $form_state);
     
     $parents = taxonomy_get_parents($term->tid);
     $form['term_data']['parents'] = _taxonomy_manager_form_term_data_parents($term, $parents, t('Parents'), 'parent', TRUE); 
@@ -831,26 +834,28 @@ function taxonomy_manager_form_term_data(&$form, $tid = 0) {
           '#weight' => 54,
         );
       }
-    }
-  
-    
+    }*/
   
     $link_img = theme("image", array('path' => $module_path ."images/link-small.png", 'alt' => t("link to term page")));
-    $form['term_data']['link'] = array('#markup' => '<br />'. l($link_img .'&nbsp;'. t('Go to the term page'), 'taxonomy/term/'. $term->tid, array('attributes' => array('rel' => 'tag', 'title' => strip_tags($term->description), 'target' => '_blank'), 'html' => TRUE)), '#weight' => '56');    */ 
-    
-    
-     
+    $form['term_data']['link'] = array('#markup' => '<br />'. l($link_img .'&nbsp;'. t('Go to the term page'), 'taxonomy/term/'. $term->tid, array('attributes' => array('rel' => 'tag', 'title' => strip_tags($term->description), 'target' => '_blank'), 'html' => TRUE)), '#weight' => '56'); 
+  } 
+  else {
+    //TODO lazy load bug of format js
+    $form['term_data']['format'] = array(
+      '#type' => 'text_format',
+    ); 
   }
   
   $form['term_data']['#tree'] = TRUE;
   $form['term_data']['#prefix'] = '<div id="taxonomy-term-data-replace">';
   $form['term_data']['#suffix'] = '</div>';
   
-  //TODO lazy load bug
+  //TODO lazy load bug of ajax
   $form['term_data']['save'] = array(
     '#type' => 'submit',
     '#value' => t('Save changes'),
     '#submit' => array('taxonomy_manager_term_data_form_submit'),
+    '#validate' => array('taxonomy_manager_term_data_form_validate'),
     '#attributes' => array('class' => array('taxonomy-manager-buttons', 'save')),
     '#ajax' => array(
       'callback' => 'taxonomy_manager_term_data_form_ajax_callback',
@@ -1516,8 +1521,13 @@ function taxonomy_manager_term_data_form_ajax_callback($form, $form_state) {
   return array('#type' => 'ajax', '#commands' => $commands);
 }
 
+function taxonomy_manager_term_data_form_validate($form, &$form_state) {
+  $entity = $form_state['values']['term_data'];
+  field_attach_form_validate('taxonomy_term', $entity, $form, $form_state);
+}
+
 function taxonomy_manager_term_data_form_submit($form, &$form_state) {
-  $term_data = $form_state['input']['term_data'];
+  $term_data = $form_state['values']['term_data'];
     
   $term = taxonomy_term_load($term_data['tid']);
   
@@ -1528,11 +1538,16 @@ function taxonomy_manager_term_data_form_submit($form, &$form_state) {
     form_set_value(array('#parents' => array('tree-update')), array('update-name' => array('name' => $term_data['name'], 'tid' => $term_data['tid'])), $form_state);
   }
   
+  //submit fields
+  $term_form_state = array();
+  $term_form_state['values'] = $term_data; //needs flat array structure
+  entity_form_submit_build_entity('taxonomy_term', $term, $form, $term_form_state);
+  
   $term->name = $term_data['name'];
-  $term->description = $term_data['description'];
+  $term->description = $term_data['description']['value'];
+  $term->format = $term_data['description']['format'];
   $term->weight = $term_data['weight'];
   
-  //TODO: same for any fields
   taxonomy_term_save($term);
   drupal_set_message("Updated term data");  
   $form_state['rebuild'] = TRUE;
@@ -1540,7 +1555,7 @@ function taxonomy_manager_term_data_form_submit($form, &$form_state) {
 
 
 function taxonomy_manager_term_data_form_validate_parents_add($form, &$form_state) {
-  $term_data = $form_state['input']['term_data'];  
+  $term_data = $form_state['values']['term_data'];  
   $term = taxonomy_term_load($term_data['tid']);
   
   $parent_names = $term_data['parents']['op']['add'];
@@ -1571,7 +1586,7 @@ function taxonomy_manager_term_data_form_validate_parents_add($form, &$form_stat
 }
 
 function taxonomy_manager_term_data_form_submit_parents_add($form, &$form_state) {
-  $term_data = $form_state['input']['term_data'];  
+  $term_data = $form_state['values']['term_data'];  
   $term = taxonomy_term_load($term_data['tid']);
   
   $parent_names = $term_data['parents']['op']['add'];
@@ -1607,7 +1622,7 @@ function  taxonomy_manager_term_data_form_validate_parents_remove($form, &$form_
 }
 
 function taxonomy_manager_term_data_form_submit_parents_remove($form, &$form_state) {
-  $term_data = $form_state['input']['term_data'];  
+  $term_data = $form_state['values']['term_data'];  
   $term = taxonomy_term_load($term_data['tid']);
   
   $parent = $form_state['values']['remove_parent_tid'];
