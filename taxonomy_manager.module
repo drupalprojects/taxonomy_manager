@@ -347,6 +347,8 @@ function taxonomy_manager_element_info() {
     '#add_term_info' => TRUE,
     '#required' => FALSE,
     '#expand_all' => FALSE,
+    '#render_whole_tree' => FALSE,
+    '#search_string' => ''
   );
   
   return $type;
@@ -833,11 +835,13 @@ function _taxonomy_manager_tree_get_next_siblings_count($vid, $page, $parent = 0
  */
 function taxonomy_manager_tree_build_child_form($tree_id, $vid, $parent, $tid = 0) { 
   $params = $_GET;
-  
-  $GLOBALS['devel_shutdown'] = FALSE;
-  
-  $form_state = array('submitted' => FALSE);
-  
+  $form_state = form_state_defaults();
+  $form_state['method'] = 'get';
+  $form_state['values'] = array();
+  $form_state['process_input'] = TRUE;
+  $form_state['input'] = array();
+  $form_state['complete form'] = array();
+    
   if (isset($tid) && $tid != 0) {
     $language = _taxonomy_manager_term_get_lang($tid); 
   }
@@ -852,11 +856,9 @@ function taxonomy_manager_tree_build_child_form($tree_id, $vid, $parent, $tid = 
     '#pager' => TRUE,
     '#language' => $language,
     '#term_to_expand' => $tid,
+    '#siblings_page' => 1,
   );
-  if (!$root_level) { //TODO ?
-    $child_form['#siblings_page'] = 1;
-  }
-  
+
   $opertions_callback = 'taxonomy_manager_'. str_replace('-', '_', $tree_id) .'_operations';
   if (function_exists($opertions_callback)) {
     $child_form['#operations_callback'] = $opertions_callback;
@@ -869,15 +871,10 @@ function taxonomy_manager_tree_build_child_form($tree_id, $vid, $parent, $tid = 
   
   _taxonomy_manager_tree_sub_forms_set_parents($tree_id, $parent, $child_form);
   
-  //TODO use caching functions
-  //$form = form_get_cache($param['form_build_id'], $form_state);
-  //form_set_cache($param['form_build_id'], $form, $form_state);
+  $child_form = form_builder('taxonomy_manager_form', $child_form, $form_state);
   
-  $child_form = form_builder($param['form_id'], $child_form, $form_state);
-  
-  print drupal_render($child_form);
-
-  exit(); 
+  print drupal_json_output(array('data' => drupal_render($child_form)));
+  ajax_footer();
 }
 
 /**
@@ -890,8 +887,12 @@ function taxonomy_manager_tree_build_child_form($tree_id, $vid, $parent, $tid = 
  */
 function taxonomy_manager_tree_build_siblings_form($tree_id, $page, $prev_tid, $parent = 0) {
   $params = $_GET;
-  $GLOBALS['devel_shutdown'] = FALSE; //prevent devel queries footprint
-  $form_state = array('submitted' => FALSE);
+  $form_state = form_state_defaults();
+  $form_state['method'] = 'get';
+  $form_state['values'] = array();
+  $form_state['process_input'] = TRUE;
+  $form_state['input'] = array();
+  $form_state['complete form'] = array();
   
   $vid = db_query("SELECT vid FROM {taxonomy_term_data} WHERE tid = :tid", array(':tid' => $prev_tid))->fetchField();
     
@@ -923,8 +924,9 @@ function taxonomy_manager_tree_build_siblings_form($tree_id, $page, $prev_tid, $
   //cutting of <ul> and ending </ul> ... can this be done cleaner?
   $output = drupal_substr($output, 21, -5);
 
-  print $output;
-  exit();
+  print drupal_json_output(array('data' => $output));
+  ajax_footer();
+
 }
 
 /**
@@ -1116,7 +1118,8 @@ function theme_taxonomy_manager_tree_checkbox($variables) {
   $title = $element['#title'];
   if ($element['#link']) {
     $attr = array();
-    $attr["class"] = "term-data-link";
+    $attr["class"][] = "term-data-link";
+    $attr["class"][] = "term-data-link-id-". $element['#return_value'];
     if (isset($element['#extra_info'])) {
       $attr["title"] = $element['#extra_info'];
     }
@@ -1153,7 +1156,7 @@ function theme_taxonomy_manager_tree_radio($variables) {
   
   $title = $element['#title'];
   if ($element['#link']) {
-    $title = l($title, $element['#link'], array('attributes' => array("class" => "term-data-link")));
+    $title = l($title, $element['#link'], array('attributes' => array("class" => "term-data-link term-data-link-id-". $element['#return_value'] ."")));
   }
   else {
     $title = check_plain($title);

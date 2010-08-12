@@ -45,6 +45,11 @@ function taxonomy_manager_form($form, &$form_state, $vid, $tid = 0, $filter = NU
     return taxonomy_manager_term_confirm_delete($form, $form_state, $vid);
   }
   
+  //always rebuilds tree!!
+  if (isset($form_state['input']['term_data']['tid'])) {
+    $tid = $form_state['input']['term_data']['tid'];
+  }
+  
   $module_path = drupal_get_path('module', 'taxonomy_manager') .'/';
   drupal_add_css($module_path .'css/taxonomy_manager.css');
   drupal_add_js($module_path .'js/hideForm.js');
@@ -252,10 +257,6 @@ function taxonomy_manager_form($form, &$form_state, $vid, $tid = 0, $filter = NU
   $form += taxonomy_manager_export_form($voc);
   
   $form += taxonomy_manager_double_tree_settings_form($voc);
-  
-  if (isset($form_state['input']['term_data']['tid'])) {
-    $tid = $form_state['input']['term_data']['tid'];
-  }
   
   taxonomy_manager_form_term_data($form, $tid);
   
@@ -732,14 +733,10 @@ function taxonomy_manager_double_tree_settings_form($voc) {
  * @param $tid
  * @param $ahah if true, return rendered form, else redirect
  */
-function taxonomy_manager_update_term_data_form($vid, $tid, $ahah = FALSE, $print = TRUE, $msg = "", $is_error_msg = FALSE) {
-  if (!$ahah) {
-    drupal_goto('admin/structure/taxonomy_manager/voc/'. $vid .'/'. $tid);
-  }
-  
+function taxonomy_manager_update_term_data_form($vid, $tid) {
   //todo do this with drupal_form_rebuild?
   list($form, $form_state, $form_id, $form_build_id) = ajax_get_form();
-  taxonomy_manager_form_term_data($form, $tid, $msg, $is_error_msg);
+  taxonomy_manager_form_term_data($form, $tid);
   drupal_prepare_form($form_id, $form, $form_state);
   $form_state['values'] = isset($form_state['values']) ? $form_state['values'] : array();
   $form = form_builder($form_id, $form, $form_state);
@@ -761,7 +758,7 @@ function taxonomy_manager_update_term_data_form($vid, $tid, $ahah = FALSE, $prin
  *
  * @param $tid
  */
-function taxonomy_manager_form_term_data(&$form, $tid = 0, $msg = "", $is_error_msg = FALSE) {  
+function taxonomy_manager_form_term_data(&$form, $tid = 0) {  
   $module_path = drupal_get_path('module', 'taxonomy_manager') .'/';
   
   $title = "";
@@ -787,19 +784,6 @@ function taxonomy_manager_form_term_data(&$form, $tid = 0, $msg = "", $is_error_
       '#markup' => '<div id="term-data-close"><span title="'. t('Close') .'">&nbsp;&nbsp;&nbsp;&nbsp;</span></div>',
       '#weight' => -100,
     );
-    if ($msg != "") {
-      $form['term_data']['msg'] = array(
-        '#type' => 'markup',
-        '#prefix' => '<div class="messages status">',
-        '#suffix' => '</div>',
-        '#markup' => $msg,
-        '#weight' => -20,
-      ); 
-      if ($is_error_msg) {
-       $form['term_data']['msg']['#markup'] = t("Error! Your last operation couldn't be performed because of following problem:") ." ". $msg;
-       $form['term_data']['msg']['#prefix'] = '<div class="message error">';
-      }
-    }
     $form['term_data']['name'] = array(
       '#type' => 'textfield',
       '#title' => t('Name'),
@@ -862,6 +846,7 @@ function taxonomy_manager_form_term_data(&$form, $tid = 0, $msg = "", $is_error_
   $form['term_data']['#prefix'] = '<div id="taxonomy-term-data-replace">';
   $form['term_data']['#suffix'] = '</div>';
   
+  //TODO lazy load bug
   $form['term_data']['save'] = array(
     '#type' => 'submit',
     '#value' => t('Save changes'),
@@ -869,7 +854,7 @@ function taxonomy_manager_form_term_data(&$form, $tid = 0, $msg = "", $is_error_
     '#attributes' => array('class' => array('taxonomy-manager-buttons', 'save')),
     '#ajax' => array(
       'callback' => 'taxonomy_manager_term_data_form_ajax_callback',
-      'method' => 'replace',
+      'method' => 'replaceWith',
       'event' => 'click',
       'wrapper' => 'taxonomy-term-data-replace',
       'progress' => array('type' => ''),
@@ -922,6 +907,7 @@ function _taxonomy_manager_form_term_data_parents($term, $values, $header_type, 
       '#type' => 'image_button',
       '#attributes' => array('title' => t('Remove')),
       '#submit' => array('taxonomy_manager_term_data_form_submit_parents_remove'),
+      '#validate' => array('taxonomy_manager_term_data_form_validate_parents_remove'),
       '#ajax' => array(
         'callback' => 'taxonomy_manager_term_data_form_ajax_callback',
         'progress' => array('type' => ''),
@@ -930,7 +916,6 @@ function _taxonomy_manager_form_term_data_parents($term, $values, $header_type, 
         'wrapper' => 'taxonomy-term-data-replace',
       ),
       '#src' => $module_path ."images/list-remove.png",
-      //'#markup' => '<span class="'. $attr .'" title="'. t('Remove') .'">&nbsp;</span>',
       '#row-class' => 'taxonomy-term-data-operations',
     );
   }
@@ -963,9 +948,6 @@ function _taxonomy_manager_form_term_data_parents($term, $values, $header_type, 
       ),
       '#src' => $module_path ."images/list-add.png",
       '#row-class' => 'term-data-autocomplete-add',
-      //'#markup' => '<span class="'. $attr .'" title="'. t('Add') .'">&nbsp;</span>', 
-      //'#prefix' => '<div class="term-data-autocomplete-add">',
-      //'#suffix' => '</div>',
     );
   }
   
@@ -1518,15 +1500,37 @@ function taxonomy_manager_settings($form) {
 
 
 function taxonomy_manager_term_data_form_ajax_callback($form, $form_state) {
-  return $form['term_data'];
+  $commands = array();
+  $commands[] = ajax_command_insert(NULL, drupal_render($form['term_data']));
+  $commands[] = ajax_command_prepend(NULL, theme('status_messages'));
+  if (isset($form_state['values']['tree-update'])) {
+    if (isset($form_state['values']['tree-update']['update']) && $form_state['values']['tree-update']['update']) {
+      $commands[] = ajax_command_insert('#taxonomy-manager .form-item-taxonomy-manager-tree', drupal_render($form['taxonomy']['manager']['tree']));
+    }
+    else if (isset($form_state['values']['tree-update']['update-name'])) {
+       $selector = 'a.term-data-link-id-'. $form_state['values']['tree-update']['update-name']['tid'];
+       //TODO bug with addional divs: https://drupal.org/node/736066
+       $commands[] = ajax_command_html($selector, $form_state['values']['tree-update']['update-name']['name']);
+    }
+  }
+  return array('#type' => 'ajax', '#commands' => $commands);
 }
 
 function taxonomy_manager_term_data_form_submit($form, &$form_state) {
   $term_data = $form_state['input']['term_data'];
     
   $term = taxonomy_term_load($term_data['tid']);
+  
+  if ($term->weight != $term_data['weight']) {
+    form_set_value(array('#parents' => array('tree-update')), array('update' => TRUE), $form_state); 
+  }
+  else if ($term->name != $term_data['name']) {
+    form_set_value(array('#parents' => array('tree-update')), array('update-name' => array('name' => $term_data['name'], 'tid' => $term_data['tid'])), $form_state);
+  }
+  
   $term->name = $term_data['name'];
   $term->description = $term_data['description'];
+  $term->weight = $term_data['weight'];
   
   //TODO: same for any fields
   taxonomy_term_save($term);
@@ -1543,7 +1547,11 @@ function taxonomy_manager_term_data_form_validate_parents_add($form, &$form_stat
   $typed_terms = taxonomy_manager_autocomplete_tags_get_tids($parent_names, $term->vid, FALSE);
   
   $error_msg = "";
-  if (_taxonomy_manager_check_duplicates($term->vid, $parent_names, $error_msg)) {
+
+  if ($parent_names == "") {
+    form_set_error('term_data][parents][op][add', t("Field is required."));
+  }
+  else if (_taxonomy_manager_check_duplicates($term->vid, $parent_names, $error_msg)) {
     form_set_error('term_data][parents', t("Warning: Your input matches with multiple terms, because of duplicated term names. Please enter a unique term name or the term id with 'term-id:[tid]'" ." (!error_msg).", array('!error_msg' => $error_msg)));
   }
   else if(!taxonomy_manager_check_language($term->vid, array($term->tid), $typed_terms)) {
@@ -1569,255 +1577,63 @@ function taxonomy_manager_term_data_form_submit_parents_add($form, &$form_state)
   $parent_names = $term_data['parents']['op']['add'];
 
   $typed_terms = taxonomy_manager_autocomplete_tags_get_tids($parent_names, $term->vid, TRUE); //insert terms
+
   foreach ($typed_terms as $parent_info) {
     db_insert('taxonomy_term_hierarchy')
       ->fields(array('tid', 'parent'))
       ->values(array('tid' => $term->tid, 'parent' => $parent_info['tid']))
       ->execute();
   }
-  //TODO if empty, move to root level
+  //remove root level entry
+  db_delete('taxonomy_term_hierarchy')
+    ->condition('tid', $term->tid)
+    ->condition('parent', 0)
+    ->execute();  
+    
   taxonomy_term_save($term); //executes hooks and clears caches
   drupal_set_message(t('Updated hierarchy'));
-  
   $form_state['rebuild'] = TRUE;
+  form_set_value(array('#parents' => array('tree-update')), array('update' => TRUE), $form_state); 
+}
+
+function  taxonomy_manager_term_data_form_validate_parents_remove($form, &$form_state) {
+  $splits = explode('][', $form_state['input']['_triggering_element_name']);
+  if (count($splits) == 4 && is_numeric($splits[2])) {
+    form_set_value(array('#parents' => array('remove_parent_tid')), $splits[2], $form_state);
+  }
+  else {
+    form_set_error('term_data][parents', t('Invalid term selection.'));
+  }
 }
 
 function taxonomy_manager_term_data_form_submit_parents_remove($form, &$form_state) {
   $term_data = $form_state['input']['term_data'];  
   $term = taxonomy_term_load($term_data['tid']);
-    
-  //TODO as validation and add value to form_state
-  $splits = explode('][', $form_state['input']['_triggering_element_name']);
-  if (count($splits) == 4 && is_numeric($splits[2])) {
-    $parent = $splits[2];
-    $parents = taxonomy_get_parents($term->tid);
-    if (count($parents) == 1) {
-      //ensure that a term has a least parent 0
-      db_delete('taxonomy_term_hierarchy')
-        ->condition('tid', $term->tid)
-        ->condition('parent', 0)
-        ->execute();
-      db_insert('taxonomy_term_hierarchy')
-        ->fields(array('tid', 'parent'))
-        ->values(array('tid' => $term->tid, 'parent' => 0))
-        ->execute();
-    }
+  
+  $parent = $form_state['values']['remove_parent_tid'];
+  $parents = taxonomy_get_parents($term->tid);
+  if (count($parents) == 1) {
+    //ensure that a term has a least parent 0
     db_delete('taxonomy_term_hierarchy')
       ->condition('tid', $term->tid)
-      ->condition('parent', $parent)
+      ->condition('parent', 0)
       ->execute();
-    drupal_set_message(t("Removed parent"));
+    db_insert('taxonomy_term_hierarchy')
+      ->fields(array('tid', 'parent'))
+      ->values(array('tid' => $term->tid, 'parent' => 0))
+      ->execute();
   }
-
+  db_delete('taxonomy_term_hierarchy')
+    ->condition('tid', $term->tid)
+    ->condition('parent', $parent)
+    ->execute();
+  
+  taxonomy_term_save($term); //executes hooks and clears caches
+  drupal_set_message(t("Removed parent"));
   $form_state['rebuild'] = TRUE;
+  form_set_value(array('#parents' => array('tree-update')), array('update' => TRUE), $form_state); 
 }
 
-/**
- * callback handler for updating term data
- *
- * @param $vid
- */
-function taxonomy_manager_term_data_edit() {
-  $param = $_POST;
-  
-  $msg = t("Changes successfully saved");
-  $is_error_msg = FALSE;
-  
-  $tid = $param['tid'];
-  if (!$tid) {
-    $tid = $param['term_data']['tid'];
-  }
-  $vid = $param['vid'];
-  if (!$vid) {
-    $vid = $param['term_data']['vid'];
-  }
-  $values = $param['value'];
-  $attr_type = $param['attr_type'];
-  $op = $param['op'];
-  
-  $term = taxonomy_term_load($tid);
-
-
-  if ($op == 'add') {
-    $typed_terms = taxonomy_manager_autocomplete_tags_get_tids($values, $vid, FALSE);
-  }
-  
-  if ($op == 'add' && ($attr_type == 'parent' || $attr_type == 'related')) {
-    //check for unique names
-    $error_msg = "";
-    if (_taxonomy_manager_check_duplicates($vid, $values, $error_msg)) {
-      $msg = t("Warning: Your input matches with multiple terms, because of duplicated term names. Please enter a unique term name or the term id with 'term-id:[tid]'") ." (". $error_msg .").";
-      $is_error_msg = TRUE; 
-    }
-    if(!taxonomy_manager_check_language($vid, array($tid), $typed_terms)) {
-      $msg = t("Terms must be of the same language");
-      $is_error_msg = TRUE; 
-    }
-    if ($attr_type == 'parent') {
-      //validation for consistent hierarchy
-      $parents = array();
-      foreach ($typed_terms as $parent_info) {
-        $parents[$parent_info['tid']] = $parent_info['tid'];
-      }
-      $tids = array();
-      $tids[$tid] = $tid;
-      if (!taxonomy_manager_check_circular_hierarchy($tids, $parents)) {
-        $msg = t('Invalid parent. The resulting hierarchy would contain circles, which is not allowed. A term cannot be a parent of itself.');
-        $is_error_msg = TRUE;
-      } 
-    } 
-  }
-  else if ($op == 'add' && $attr_type == 'translation') {
-    $regexp = '%(?:^|,\ *)("(?>[^"]*)(?>""[^"]* )*"|(?: [^",]*))%x';
-    preg_match_all($regexp, $values, $matches);
-    $translation_terms = array_unique($matches[1]);
-    if (count($translation_terms) > 1) {
-       $msg = t('Please provide only one term for translation');
-       $is_error_msg = TRUE; 
-    }
-    else if ($param['edit-term-data-translations-op-lang'] == $param['edit-term-data-language']) {
-      $msg = t('Invalid language selection');
-      $is_error_msg = TRUE; 
-    }
-    else if (empty($param['edit-term-data-translations-op-lang'])) {
-      $msg = t('Missing language for new term');
-      $is_error_msg = TRUE; 
-    }
-    else {
-      $translations = i18ntaxonomy_term_get_translations(array('tid' => $tid), FALSE);
-      foreach ($translations as $translation) {
-        if ($translation->language == $param['edit-term-data-translations-op-lang']) {
-          $msg = t('Invalid language selection. Translation already exists');
-          $is_error_msg = TRUE;
-          break; 
-        }
-      }
-    }
-  }
-  else if ($attr_type == "language") {
-    $translations = i18ntaxonomy_term_get_translations(array('tid' => $tid), FALSE);
-    foreach ($translations as $translation) {
-      if ($translation->language == $values) {
-        $msg = t('Invalid language selection.');
-        $is_error_msg = TRUE;
-        break; 
-      }
-    }
-  }
-  
-  if (!$is_error_msg) {
-    if ($op == 'add') {
-      if ($attr_type == 'synonym') {
-        $regexp = '%(?:^|,\ *)("(?>[^"]*)(?>""[^"]* )*"|(?: [^",]*))%x';
-        preg_match_all($regexp, $values, $matches);
-        $synonyms = array_unique($matches[1]);
-        $values = array();
-        foreach ($synonyms as $syn) {
-          $values[] = trim($syn);
-        }
-      }
-      else {
-        $typed_term_tids = array();
-        if ($attr_type == "translation") {
-          $typed_term_tids = taxonomy_manager_autocomplete_tags_get_tids($values, $vid, TRUE, $param['edit-term-data-translations-op-lang']);
-        }
-        else {
-          $typed_term_tids = taxonomy_manager_autocomplete_tags_get_tids($values, $vid, TRUE, $param['edit-term-data-language']);
-        }
-        $values = array();
-        foreach ($typed_term_tids as $term_info) {
-          $values[] = $term_info['tid'];
-        }
-      }
-    }
-                
-    switch ($attr_type) {    
-      case 'parent':
-        if (!is_array($values)) $values = array($values);
-        foreach ($values as $value) {
-          db_delete('taxonomy_term_hierarchy')
-            ->condition('tid', $tid)
-            ->condition('parent', $value)
-            ->execute();
-          if ($op == 'add') {
-            db_insert('taxonomy_term_hierarchy')
-              ->fields(array('tid', 'parent'))
-              ->values(array('tid' => $tid, 'parent' => $value))
-              ->execute();
-          }
-        }
-        if ($op == 'delete') {
-          $parents = taxonomy_get_parents($tid);
-          if (count($parents) == 0) {
-            //ensure that a term has a least parent 0
-            db_delete('taxonomy_term_hierarchy')
-              ->condition('tid', $tid)
-              ->condition('parent', 0)
-              ->execute();
-            db_insert('taxonomy_term_hierarchy')
-              ->fields(array('tid', 'parent'))
-              ->values(array('tid' => $tid, 'parent' => 0))
-              ->execute();
-          }
-        }
-        else if ($op == 'add') {
-          db_delete('taxonomy_term_hierarchy')
-            ->condition('tid', $tid)
-            ->condition('parent', 0)
-            ->execute();
-        }
-        taxonomy_manager_update_voc($vid, taxonomy_get_parents($tid));
-        $msg = t("Successfully updated parents");
-        break; 
-    
-      case 'weight': 
-        if (is_numeric($values)) {
-          $term->weight = $values;
-          $msg = t("Successfully updated weight to !weight", array('!weight' => $values));
-        }
-        break;
-      
-      case 'language':
-        if (module_exists('i18ntaxonomy')) {
-          _i18ntaxonomy_term_set_lang($tid, $values);
-          $msg = t("Successfully updated language");
-        }
-        else {
-          $is_error_msg = TRUE;
-          $msg = t("Module i18ntaxonomy not enabled");
-        }
-        break;
-      
-      case 'translation':
-        if (module_exists('i18ntaxonomy')) {
-          /*if ($op == "add") {
-            taxonomy_manager_add_translation($tid, $values[0]);
-            $msg = t("Successfully added translation");
-          }
-          else if ($op == "delete") {
-            db_query('UPDATE {term_data} SET trid = 0 WHERE tid = %d', $values);
-            if (count(i18ntaxonomy_term_get_translations(array('tid' => $tid), FALSE)) == 0) {
-              db_query('UPDATE {term_data} SET trid = 0 WHERE tid = %d', $tid);
-            }
-            $msg = t("Successfully removed translation");
-          }*/
-          $msg = "Operation not yet implemented";
-        }
-        else {
-          $is_error_msg = TRUE;
-          $msg = t("Module i18ntaxonomy not enabled");
-        }
-        break;
-      
-    }
-    taxonomy_term_save($term);
-    module_invoke_all('taxonomy_manager_term_data_submit', $param, $values);
-  }
-  
-  drupal_json_output(array('data' => taxonomy_manager_update_term_data_form($vid, $tid, TRUE, FALSE, $msg, $is_error_msg)));
-  //taxonomy_manager_update_term_data_form($vid, $tid, TRUE);
-  exit;
-}
 
 /**
  * AJAX Callback for Double Tree operations

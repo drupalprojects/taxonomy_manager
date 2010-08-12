@@ -131,7 +131,7 @@ Drupal.TermData.prototype.load = function() {
     success: function(response, status) {
       termdata.insertForm(response.data);
       Drupal.attachBehaviors(termdata.div, response.settings);
-    },
+    }
   });
 }
 
@@ -148,74 +148,6 @@ Drupal.TermData.prototype.insertForm = function(data) {
  */
 Drupal.TermData.prototype.form = function() {
   var termdata = this;
-  this.param = new Object();
-
-  /*try {
-    Drupal.behaviors.textarea.attach(this.div, Drupal.settings);
-    Drupal.behaviors.autocomplete.attach(this.div, Drupal.settings);
-    Drupal.behaviors.AJAX.attach(this.div, Drupal.settings);
-  } catch(e) {} //autocomplete or textarea js not added to page
-  */
-  
-  //Drupal.attachBehaviors(this.div, Drupal.settings);
-    
-  this.param['tid'] = this.tid;
-  this.param['vid'] = this.vid;
-  
-  $(this.div).find('div.term-data-autocomplete-add > span').click(function() {
-    termdata.param['attr_type'] = $(this).attr("class");
-    termdata.param['value'] = $(this).parents("tr").find('input:text').attr('value');
-    termdata.param['op'] = 'add';
-    $('#taxonomy-term-data-fieldset :input').each(function() {
-      termdata.param[$(this).attr('id')] = $(this).attr('value');
-    });
-    termdata.send();
-  });
-  
-  $(this.div).find('td.taxonomy-term-data-operations > span').click(function() {
-    termdata.param['attr_type'] = $(this).attr("class");
-    termdata.param['info'] = $(this).attr("id");
-    termdata.param['value'] = $(this).parent().siblings(".taxonomy-term-data-name").find(':hidden').attr("value");
-    termdata.param['op'] = 'delete';
-    $('#taxonomy-term-data-fieldset :input').each(function() {
-      termdata.param[$(this).attr('id')] = $(this).attr('value');
-    });
-    termdata.send();
-  });
-  
-  $(this.div).find('#edit-term-data-weight').change(function() {
-    termdata.param['value'] = this.value;
-    termdata.param['attr_type'] = 'weight';
-    termdata.param['op'] = 'update';
-    termdata.send();
-  });
-  
-  $(this.div).find('#edit-term-data-language').change(function() {
-    termdata.param['value'] = this.value;
-    termdata.param['attr_type'] = 'language';
-    termdata.param['op'] = 'update';
-    termdata.send(); 
-  });
-  
-  $(this.div).find('#edit-term-data-save').click(function() {
-    $('#taxonomy-manager-toolbar').removeClass("tm-termData-processed");
-    termdata.param['value'] = $('#edit-term-data-name').attr('value');
-    termdata.updateTermName();
-  });
-  
-  $(this.div).find('#term-data-close span').click(function() {
-    termdata.div.children().hide();
-  });
-  
-  $(this.div).find('a.taxonomy-term-data-name-link').click(function() {
-    var url = this.href;
-    var tid = url.split("/").pop();
-    var li = termdata.tree.getLi(tid);
-    termdata.tree.loadRootForm(tid);
-    termdata_new = new Drupal.TermData(tid, this.href +'/true', li, termdata.tree);
-    termdata_new.load();
-    return false;
-  });
   
   $(this.div).find("legend").each(function() {
     var staticOffsetX, staticOffsetY = null;
@@ -244,66 +176,6 @@ Drupal.TermData.prototype.form = function() {
       $(document).unbind("mousemove", performDrag).unbind("mouseup", endDrag);
     }
   });
-}
-
-/**
- * sends updated data through param
- */
-Drupal.TermData.prototype.send = function() {
-  var termdata = this;
-  var url= Drupal.settings.termData['url'];
-  if (this.param['value'] != '' && this.param['attr_type'] != '') {
-    $.ajax({
-      data: termdata.param, 
-      type: "POST", 
-      url: url,
-      dataType: 'json',
-      success: function(response, status) {
-        termdata.update(); 
-        termdata.insertForm(response.data);
-      }
-    });
-  }
-}
-
-/**
- * updates term data form and if necessary tree structure
- */
-Drupal.TermData.prototype.update = function() {
-  for (var id in trees) {
-    var tree = trees[id];
-    if (tree.vocId == this.vid) {
-       this.updateTree(tree); 
-    }
-  }
-}
-
-Drupal.TermData.prototype.updateTree = function(tree) {
-  if (this.param['attr_type'] == 'parent' || (this.param['attr_type'] == 'related' && this.param['op'] == 'add') || (this.param['attr_type'] == 'language' && this.param['op'] == 'update')) {
-    tree.loadRootForm(this.tid);
-  }
-  else if (this.param['attr_type'] == 'weight') {
-    var parentLi = $(this.li).parents("li");
-    if ($(parentLi).is("li")) {
-      tree.loadChildForm(parentLi, true);
-    }
-    else {
-      //no parent li --> root level terms
-      //load whole Tree
-      tree.loadRootForm(this.tid);
-    }
-  }
-}
-
-/**
- * updates term name in tree structure
- */
-Drupal.TermData.prototype.updateTermName = function() {
-  var name = Drupal.checkPlain(this.param['value']);
-  $('fieldset#taxonomy-term-data-fieldset legend').html(name);
-  $('ul.treeview li input:hidden[class=term-id][value='+ this.tid +']')
-    .siblings('div.form-item')
-    .find('label.option a').html(name);
 }
 
 })(jQuery);
