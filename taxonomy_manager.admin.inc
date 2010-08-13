@@ -46,8 +46,8 @@ function taxonomy_manager_form($form, &$form_state, $vid, $tid = 0, $filter = NU
   }
   
   //always rebuilds tree!!
-  if (isset($form_state['input']['term_data']['tid'])) {
-    $tid = $form_state['input']['term_data']['tid'];
+  if (isset($form_state['values']['term_data']['tid'])) {
+    $tid = $form_state['values']['term_data']['tid'];
   }
   
   $module_path = drupal_get_path('module', 'taxonomy_manager') .'/';
@@ -271,8 +271,8 @@ function taxonomy_manager_double_tree_form($form, &$form_state, $vid1, $vid2, $t
   if (isset($form_state['confirm_delete'])) {
     return taxonomy_manager_term_confirm_delete($form_state, $vid1, $vid2);
   }
-  if (isset($form_state['input']['term_data']['tid'])) {
-    $tid = $form_state['input']['term_data']['tid'];
+  if (isset($form_state['values']['term_data']['tid'])) {
+    $tid = $form_state['values']['term_data']['tid'];
   }
   $module_path = drupal_get_path('module', 'taxonomy_manager') .'/';
   
@@ -762,13 +762,13 @@ function taxonomy_manager_double_tree_settings_form($voc) {
  * @param $ahah if true, return rendered form, else redirect
  */
 function taxonomy_manager_update_term_data_form($vid, $tid) {
-  //todo do this with drupal_form_rebuild?
+  //similar to ajax_form_callback()
   list($form, $form_state, $form_id, $form_build_id) = ajax_get_form();
-  taxonomy_manager_form_term_data($form, $tid, $form_state);
-  drupal_prepare_form($form_id, $form, $form_state);
   $form_state['values'] = isset($form_state['values']) ? $form_state['values'] : array();
   $form = form_builder($form_id, $form, $form_state);
-  form_set_cache($form_build_id, $form, $form_state);
+ 
+  $form_state['values']['term_data']['tid'] = $tid;
+  $form = drupal_rebuild_form($form_id, $form_state, $form);
   
   $data = drupal_render($form['term_data']);
   
@@ -786,7 +786,7 @@ function taxonomy_manager_update_term_data_form($vid, $tid) {
  *
  * @param $tid
  */
-function taxonomy_manager_form_term_data(&$form, $tid = 0, $form_state) {  
+function taxonomy_manager_form_term_data(&$form, $tid = 0, &$form_state) {  
   $module_path = drupal_get_path('module', 'taxonomy_manager') .'/';
   
   $title = "";
@@ -1553,8 +1553,13 @@ function taxonomy_manager_term_data_form_ajax_callback($form, $form_state) {
 }
 
 function taxonomy_manager_term_data_form_validate($form, &$form_state) {
-  $entity = $form_state['values']['term_data'];
-  field_attach_form_validate('taxonomy_term', $entity, $form, $form_state);
+  $term_data = $form_state['values']['term_data'];
+  //needs flat array structure
+  foreach ($term_data as $key => $value) {
+    $form_state['values'][$key] = $value;
+  }
+  $term = taxonomy_term_load($term_data['tid']);
+  field_attach_form_validate('taxonomy_term', $term, $form, $form_state);
 }
 
 function taxonomy_manager_term_data_form_submit($form, &$form_state) {
@@ -1570,9 +1575,7 @@ function taxonomy_manager_term_data_form_submit($form, &$form_state) {
   }
   
   //submit fields
-  $term_form_state = array();
-  $term_form_state['values'] = $term_data; //needs flat array structure
-  entity_form_submit_build_entity('taxonomy_term', $term, $form, $term_form_state);
+  entity_form_submit_build_entity('taxonomy_term', $term, $form, $form_state);
   
   $term->name = $term_data['name'];
   $term->description = $term_data['description']['value'];
