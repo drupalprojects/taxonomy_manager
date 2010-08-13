@@ -121,6 +121,9 @@ function taxonomy_manager_form($form, &$form_state, $vid, $tid = 0, $filter = NU
  
   $form['taxonomy']['manager']['top']['size'] = array('#markup' => '<div class="taxonomy-manager-tree-size">'. theme("image", array('path' =>$module_path ."images/grippie.png", 'alt' => t("Resize tree"), 'title' => t("Resize tree"), 'attributes' => array('class' => "div-grippie"))) .'</div>');
   
+  if (isset($form_state['values']['double_tree_values']['left_tree_expand_terms']) && count($form_state['values']['double_tree_values']['left_tree_expand_terms'])) {
+    $tid = array_shift($form_state['values']['double_tree_values']['left_tree_expand_terms']); //take the first value to expand in the tree, at the moment only one term can be expanded 
+  }
   $form['taxonomy']['manager']['tree'] = array( 
     '#type' => 'taxonomy_manager_tree', 
     '#vid' => $vid, 
@@ -275,9 +278,6 @@ function taxonomy_manager_double_tree_form($form, &$form_state, $vid1, $vid2, $t
   
   $form = taxonomy_manager_form($form, $form_state, $vid1, $tid, $filter);
   
-  //drupal_add_js(array('DoubleTree' => array('enabled' => TRUE, 'url' => url('admin/structure/taxonomy_manager/double-tree/edit'))), 'setting');
-  //drupal_add_js($module_path .'js/doubleTree.js');
-  
   $form['disable'] = array(
     '#markup' => l(t('Disable Double Tree'), 'admin/structure/taxonomy_manager/voc/'. $vid1),
     '#weight' => -100,
@@ -323,6 +323,10 @@ function taxonomy_manager_double_tree_form($form, &$form_state, $vid1, $vid2, $t
   }
   
   $form['taxonomy2']['manager']['top']['size'] = array('#markup' => '<div class="taxonomy-manager-tree-size">'. theme("image", array('path' => $module_path ."images/grippie.png", 'alt' => t("Resize tree"), 'title' => t("Resize tree"), 'attributes' => array('class' => "div-grippie"))) .'</div>');
+  
+  if (isset($form_state['values']['double_tree_values']['right_tree_expand_terms']) && count($form_state['values']['double_tree_values']['right_tree_expand_terms'])) {
+    $tid = array_shift($form_state['values']['double_tree_values']['right_tree_expand_terms']); //take the first value to expand in the tree, at the moment only one term can be expanded 
+  }
   
   $form['taxonomy2']['manager']['tree'] = array( 
     '#type' => 'taxonomy_manager_tree', 
@@ -1685,46 +1689,51 @@ function taxonomy_manager_double_tree_ajax_callback($form, $form_state) {
 }
 
 function taxonomy_manager_double_tree_move_validate($form, &$form_state) {
-  $selected_terms = array();
-  $selected_terms_direct_parents = array();
-  $selected_parents = array();
-    
+  $values = array();
+  
   if (strpos($form_state['input']['_triggering_element_name'], 'right') !== FALSE) {
     //move right
-    $selected_parents = $form_state['values']['taxonomy2']['manager']['tree']['selected_terms'];
-    $selected_terms = $form_state['values']['taxonomy']['manager']['tree']['selected_terms'];
-    $selected_terms_direct_parents = $form_state['values']['taxonomy']['manager']['tree']['selected_terms_direct_parents'];
+    $values = array(
+      'selected_parents' => $form_state['values']['taxonomy2']['manager']['tree']['selected_terms'], 
+      'selected_terms' => $form_state['values']['taxonomy']['manager']['tree']['selected_terms'], 
+      'selected_terms_direct_parents' => $form_state['values']['taxonomy']['manager']['tree']['selected_terms_direct_parents'],
+      'left_tree_expand_terms' => $form_state['values']['taxonomy']['manager']['tree']['selected_terms_direct_parents'],
+      'right_tree_expand_terms' => $form_state['values']['taxonomy2']['manager']['tree']['selected_terms'],
+    );
   }
   else {
     //move left
-    $selected_parents = $form_state['values']['taxonomy']['manager']['tree']['selected_terms'];
-    $selected_terms = $form_state['values']['taxonomy2']['manager']['tree']['selected_terms'];
-    $selected_terms_direct_parents = $form_state['values']['taxonomy2']['manager']['tree']['selected_terms_direct_parents'];
+    $values = array(
+      'selected_parents' => $form_state['values']['taxonomy']['manager']['tree']['selected_terms'], 
+      'selected_terms' => $form_state['values']['taxonomy2']['manager']['tree']['selected_terms'], 
+      'selected_terms_direct_parents' => $form_state['values']['taxonomy2']['manager']['tree']['selected_terms_direct_parents'],
+      'left_tree_expand_terms' => $form_state['values']['taxonomy']['manager']['tree']['selected_terms'],
+      'right_tree_expand_terms' => $form_state['values']['taxonomy2']['manager']['tree']['selected_terms_direct_parents'],
+    );
   }
   
-  if (!count($selected_terms)) {
+  if (!count($values['selected_terms'])) {
     form_set_error('', t("No terms selected."));
   }
-  else if (is_array($selected_parents) && count($selected_parents)) {
+  else if (is_array($values['selected_parents']) && count($values['selected_parents'])) {
     $p_array = array();
-    foreach ($selected_parents as $parent) {
+    foreach ($values['selected_parents'] as $parent) {
       $p_array[$parent]['tid'] = $parent;
     }
-    if (!taxonomy_manager_check_language($form_state['values']['vid'], $selected_terms, $p_array)) {
+    if (!taxonomy_manager_check_language($form_state['values']['vid'], $values['selected_terms'], $p_array)) {
       form_set_error('', t("Terms must be of the same language."));
     }
-    else if (!taxonomy_manager_check_circular_hierarchy($selected_terms, $selected_parents)) {
+    else if (!taxonomy_manager_check_circular_hierarchy($values['selected_terms'], $values['selected_parents'])) {
       form_set_error('', t('Invalid parent. The resulting hierarchy would contain circles, which is not allowed. A term cannot be a parent of itself.'));
     }
   }
- 
-  form_set_value(array('#parents' => array('double-tree-values')), array('selected-terms' => $selected_terms, 'selected-parents' => $selected_parents, 'selected_terms_direct_parents' => $selected_terms_direct_parents), $form_state);
+  form_set_value(array('#parents' => array('double_tree_values')), $values, $form_state);
 }
 
 function taxonomy_manager_double_tree_move_submit($form, &$form_state) {
-  $selected_terms = $form_state['values']['double-tree-values']['selected-terms'];
-  $selected_parents = $form_state['values']['double-tree-values']['selected-parents'];
-  $selected_terms_direct_parents = $form_state['values']['double-tree-values']['selected_terms_direct_parents'];
+  $selected_terms = $form_state['values']['double_tree_values']['selected_terms'];
+  $selected_parents = $form_state['values']['double_tree_values']['selected_parents'];
+  $selected_terms_direct_parents = $form_state['values']['double_tree_values']['selected_terms_direct_parents'];
   
   $selected_terms_names = array();
   

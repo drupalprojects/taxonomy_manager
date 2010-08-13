@@ -60,6 +60,7 @@ Drupal.TaxonomyManagerTree = function(id, vid) {
   this.attachSiblingsForm(this.ul);
   this.attachSelectAllChildren(this.ul);
   this.attachLanguageSelector();
+  this.attachMsgCloseLink();
   
   //attach term data js, if enabled
   var term_data_settings = Drupal.settings.termData || [];
@@ -422,6 +423,15 @@ Drupal.TaxonomyManagerTree.prototype.getSelectedTerms = function() {
  */
 Drupal.TaxonomyManagerTree.prototype.getLi = function(termId) {
   return $(this.div).find("input:hidden[class=term-id][value="+ termId +"]").parent().parent();
+}
+
+Drupal.TaxonomyManagerTree.prototype.attachMsgCloseLink = function() {
+  $('#'+ this.form_id.replace(/_/g, '-')).find('div.messages').once(function() {
+    $(this).append(' <a href="">'+ Drupal.t('Close') +'</a>').click(function() {
+      $(this).parent().remove();
+      return false;
+    });
+  });
 }
 
 /**

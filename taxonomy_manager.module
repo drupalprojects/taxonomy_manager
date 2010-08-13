@@ -731,8 +731,14 @@ function _taxonomy_manager_tree_term_set_class(&$class, $current_index, $tree, $
   $children = FALSE;
   if (!empty($next)) {
     while ($next->depth > $term->depth) {
-      $children = TRUE;
-      $next = $tree[++$current_index];
+      ++$current_index;
+      if (isset($tree[$current_index])) {
+        $children = TRUE;
+        $next = $tree[$current_index];
+      }
+      else {
+        break;
+      }
     }
   }
     
