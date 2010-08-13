@@ -379,7 +379,12 @@ function taxonomy_manager_double_tree_form($form, &$form_state, $vid1, $vid2, $t
   //switch operations
   if ($vid1 != $vid2) {
     $form['double-tree']['operations']['move_right']['#attributes']['title'] = t('Switch selected terms and its children to the right voc');
+    $form['double-tree']['operations']['move_right']['#submit'] = array('taxonomy_manager_double_tree_switch_submit');
+    $form['double-tree']['operations']['move_right']['#validate'] = array('taxonomy_manager_double_tree_switch_validate');
+    
     $form['double-tree']['operations']['move_left']['#attributes']['title'] = t('Switch selected terms and its children to the left voc');
+    $form['double-tree']['operations']['move_left']['#submit'] = array('taxonomy_manager_double_tree_switch_submit');
+    $form['double-tree']['operations']['move_left']['#validate'] = array('taxonomy_manager_double_tree_switch_validate');
   }
   else if (isset($language)) {
     $form['double-tree']['operations']['add_translation'] = array(
@@ -1770,7 +1775,6 @@ function taxonomy_manager_double_tree_move_submit($form, &$form_state) {
   
   $term_names = implode(', ', $selected_terms_names);
   
-  //TODO remove status message after a short time and add close link
   if (count($selected_parents) == 0) {
     drupal_set_message(t("Removed current parent form terms %terms.", array('%terms' => $term_names)));
   }
@@ -1780,34 +1784,75 @@ function taxonomy_manager_double_tree_move_submit($form, &$form_state) {
   $form_state['rebuild'] = TRUE;
 }
 
-/**
- * AJAX Callback for Double Tree operations
- */
-function taxonomy_manager_double_tree_edit() {
-  $params = $_POST;
-  $op = $params['op'];
+function taxonomy_manager_double_tree_switch_validate($form, &$form_state) {
+  $values = array();
   
-  $msg = "";
-  $is_error_msg = FALSE;
+  if (strpos($form_state['input']['_triggering_element_name'], 'right') !== FALSE) {
+    //move right
+    $values = array(
+      'selected_parents' => $form_state['values']['taxonomy2']['manager']['tree']['selected_terms'], 
+      'selected_terms' => $form_state['values']['taxonomy']['manager']['tree']['selected_terms'], 
+      'left_tree_expand_terms' => $form_state['values']['taxonomy']['manager']['tree']['selected_terms_direct_parents'],
+      'right_tree_expand_terms' => $form_state['values']['taxonomy']['manager']['tree']['selected_terms'],
+      'voc1' => $form_state['values']['vid'],
+      'voc2' => $form_state['values']['vid2'],
+    );
+  }
+  else {
+    //move left
+    $values = array(
+      'selected_parents' => $form_state['values']['taxonomy']['manager']['tree']['selected_terms'], 
+      'selected_terms' => $form_state['values']['taxonomy2']['manager']['tree']['selected_terms'], 
+      'left_tree_expand_terms' => $form_state['values']['taxonomy2']['manager']['tree']['selected_terms'],
+      'right_tree_expand_terms' => $form_state['values']['taxonomy2']['manager']['tree']['selected_terms_direct_parents'],
+      'voc1' => $form_state['values']['vid2'],
+      'voc2' => $form_state['values']['vid'],
+    );
+  }
   
-  if ($op == "translation") {
-    taxonomy_manager_doube_tree_edit_translate($params, $msg, $is_error_msg); 
+  if (!count($values['selected_terms'])) {
+    form_set_error('', t("No terms selected."));
   }
-  else if ($op == "switch") {
-    taxonomy_manager_double_tree_edit_switch($params, $msg, $is_error_msg); 
-  }
-    
-  if ($msg == "") {
-    $msg = t("Invalid operation.");
-    $is_error_msg = TRUE; 
-  }
-  $msg_type = ($is_error_msg) ? "error" : "status";
+  form_set_value(array('#parents' => array('double_tree_values')), $values, $form_state);
+}
+
+function taxonomy_manager_double_tree_switch_submit($form, &$form_state) {
+  $selected_terms = $form_state['values']['double_tree_values']['selected_terms'];
+  $selected_parents = $form_state['values']['double_tree_values']['selected_parents'];
+  $voc1 = $form_state['values']['double_tree_values']['voc1'];
+  $voc2 = $form_state['values']['double_tree_values']['voc2'];
+
+  $voc1 = taxonomy_vocabulary_load($voc1);
+  $voc2 = taxonomy_vocabulary_load($voc2);
   
-  drupal_json_output(array('data' => $msg, 'type' => $msg_type));
+  taxonomy_manager_switch($selected_terms, $voc1->vid, $voc2->vid, $selected_parents);
+  
+  $selected_terms_names = array();
+  foreach ($selected_terms as $tid) {
+    $term = taxonomy_term_load($tid);
+    $selected_terms_names[] = $term->name;
+  }
+  $selected_parent_names = array();
+  if (count($selected_parents)) {
+    foreach ($selected_parents as $parent) {
+      $term = taxonomy_term_load($parent);
+      $selected_parent_names[] = $term->name;
+      $term_parents_array[$term->tid] = $term->tid;  
+    }
+  }
+  $term_names = implode(', ', $selected_terms_names);
+  if (count($selected_parents) == 0) {
+    drupal_set_message(t("Terms %terms moved to vocabulary %voc.", array('%terms' => $term_names, '%voc' => $voc2->name)));
+  }
+  else {
+    drupal_set_message(t("Terms %terms moved to vocabulary %voc under parents %parents.", array('%terms' => $term_names, '%voc' => $voc2->name, '%parents' => implode(', ', $selected_parent_names))));
+  }
+  
+  $form_state['rebuild'] = TRUE;
 }
 
 
-function taxonomy_manager_doube_tree_edit_translate($params, &$msg, &$is_error_msg) {
+/*function taxonomy_manager_doube_tree_edit_translate($params, &$msg, &$is_error_msg) {
   $msg = "Operation not yet implemented";
   $is_error_msg = TRUE;
   //TODO
@@ -1853,39 +1898,10 @@ function taxonomy_manager_doube_tree_edit_translate($params, &$msg, &$is_error_m
   if (!$is_error_msg) {
     taxonomy_manager_add_translation($term1->tid, $term2->tid);
     $msg = t("Translation for %term2 - %term1 added.", array('%term2' => $term2->name, '%term1' => $term1->name)); 
-  }*/
-}
+  }
+}*/
 
-function taxonomy_manager_double_tree_edit_switch($params, &$msg, &$is_error_msg) {
-  $selected_terms = $params['selected_terms'];
-  $selected_parents = $params['selected_parents'];
-  $voc1 = taxonomy_vocabulary_load($params['voc1']);
-  $voc2 = taxonomy_vocabulary_load($params['voc2']);
-  
-  taxonomy_manager_switch($selected_terms, $voc1->vid, $voc2->vid, $selected_parents);
-  
-  $selected_terms_names = array();
-  foreach ($selected_terms as $tid) {
-    $term = taxonomy_term_load($tid);
-    $selected_terms_names[] = $term->name;
-  }
-  $selected_parent_names = array();
-  if (count($selected_parents)) {
-    foreach ($selected_parents as $parent) {
-      $term = taxonomy_term_load($parent);
-      $selected_parent_names[] = $term->name;
-      $term_parents_array[$term->tid] = $term->tid;  
-    }
-  }
-  $term_names = implode(', ', $selected_terms_names);
-  if (count($selected_parents) == 0) {
-    $msg = t("Terms %terms moved to vocabulary %voc.", array('%terms' => $term_names, '%voc' => $voc2->name));
-  }
-  else {
-    $msg = t("Terms %terms moved to vocabulary %voc under parents %parents.", array('%terms' => $term_names, '%voc' => $voc2->name, '%parents' => implode(', ', $selected_parent_names)));
-  }
-  $is_error_msg = FALSE;
-}
+
 
 /**
  * adds translation between two terms
@@ -2045,7 +2061,7 @@ function taxonomy_manager_move($parents, $children, $options = array()) {
   if (!is_array($parents)) array($parents);
   
   foreach ($children as $child) {
-    if (!$options['keep_old_parents']) {
+    if (!isset($options['keep_old_parents']) || !$options['keep_old_parents']) {
       db_delete('taxonomy_term_hierarchy')
         ->condition('tid', $child)
         ->execute();

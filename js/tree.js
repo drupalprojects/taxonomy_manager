@@ -428,7 +428,9 @@ Drupal.TaxonomyManagerTree.prototype.getLi = function(termId) {
 Drupal.TaxonomyManagerTree.prototype.attachMsgCloseLink = function() {
   $('#'+ this.form_id.replace(/_/g, '-')).find('div.messages').once(function() {
     $(this).append(' <a href="">'+ Drupal.t('Close') +'</a>').click(function() {
-      $(this).parent().remove();
+      $(this).parent().fadeOut('fast', function() {
+        $(this).remove();
+      });
       return false;
     });
   });
@@ -443,11 +445,9 @@ Drupal.attachThrobber = function() {
   throbber.appendTo("#taxonomy-manager-toolbar-throbber").hide();
   throbber.ajaxStart(function(){
       $(this).show();
-      //$(div).css('opacity', '0.5');
     })
     .ajaxStop(function(){
       $(this).hide();
-      //$(div).css('opacity', '1');
     });
 }
 
