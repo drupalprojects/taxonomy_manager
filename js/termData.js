@@ -18,8 +18,8 @@ var trees = new Object();
  */
 Drupal.behaviors.TaxonomyManagerTermData = {
   attach: function(context) {
-    if (!$('#taxonomy-manager.tm-termData-processed').length) { 
-      var vid = $('#edit-term-data-vid').val();
+    if (!$('#taxonomy-term-data .processed').length) { 
+      var vid = $('#taxonomy-term-data').find('input:hidden[name=vid]').val();
       for (var id in trees) {
         var tree = trees[id];
         if (tree.vocId == vid) {
@@ -38,7 +38,7 @@ Drupal.attachTermData = function(ul, tree) {
   trees[tree.treeId] = tree;
   Drupal.attachTermDataLinks(ul, tree);
   
-  if (!$('#taxonomy-manager.tm-termData-processed').length) { 	 
+  if (!$('#taxonomy-term-data .processed').length) { 	 
 	  Drupal.attachTermDataForm(tree);
   }
 }
@@ -84,8 +84,8 @@ Drupal.attachTermDataToSiblings = function(all, currentIndex, tree) {
  * adds click events to term data form, which is already open, when page gets loaded
  */
 Drupal.attachTermDataForm = function(tree) {
-  $('#taxonomy-manager').addClass('tm-termData-processed');
-  var tid = $('#edit-term-data-tid').val();
+  $('#taxonomy-term-data').addClass('processed');
+  var tid = $('#taxonomy-term-data').find('input:hidden[name=tid]').val();;
   if (tid) {
     var li = tree.getLi(tid);
     var termLink = $(li).children("div.term-line").find("a.term-data-link");
@@ -151,6 +151,16 @@ Drupal.TermData.prototype.form = function() {
   
   $(this.div).find('#term-data-close span').click(function() {
     termdata.div.children().hide();
+  });
+  
+  $(this.div).find('a.taxonomy-term-data-name-link').click(function() {
+    var url = this.href;
+    var tid = url.split("/").pop();
+    var li = termdata.tree.getLi(tid);
+    termdata.tree.loadRootForm(tid);
+    termdata_new = new Drupal.TermData(tid, this.href +'/true', li, termdata.tree);
+    termdata_new.load();
+    return false;
   });
   
   $(this.div).find("legend").each(function() {

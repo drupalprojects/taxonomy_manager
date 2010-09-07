@@ -441,6 +441,10 @@ td.taxonomy-term-data-operations {
   padding-bottom: 0px;
 }
 
+#taxonomy-term-data .filter-guidelines {
+  display:none; //hide descriptions, they use too much space
+}
+
 .taxonomy-term-data-operations {
   cursor: pointer;
 }

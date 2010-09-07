@@ -7,10 +7,23 @@
  * Install, update and uninstall functions for the Taxonomy Manager
  */
  
+/**
+ * Implements hook_install().
+ */
+function taxonomy_manager_install() {
+  variable_set('taxonomy_override_selector', TRUE);
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function taxonomy_manager_uninstall() {
+  variable_set('taxonomy_override_selector', FALSE);
+}
 
 
 /**
- * Implementation of hook_schema()
+ * Implements of hook_schema().
  */
 function taxonomy_manager_schema() {
   $schema['taxonomy_manager_merge'] = array( 
