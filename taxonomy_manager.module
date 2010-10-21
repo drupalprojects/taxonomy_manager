@@ -421,7 +421,7 @@ function taxonomy_manager_tree_process_elements($element) {
   }
   
   $terms_to_expand = array();
-  if ($element['#term_to_expand']) {
+  if (isset($element['#term_to_expand'])) {
     _taxonomy_manager_tree_get_first_path($element['#term_to_expand'], $tree, $terms_to_expand);
     $terms_to_expand = taxonomy_manager_tree_get_terms_to_expand($tree, array($element['#term_to_expand']), TRUE);
   }
@@ -693,19 +693,14 @@ function taxonomy_manager_tree_build_form(&$index, $tree, &$form, $root_form, $p
     
     if ($page) {
       if ($index == (variable_get('taxonomy_manager_pager_tree_page_size', 50) - 1) && !isset($tree[$index+1])) {
-        $module_path = drupal_get_path('module', 'taxonomy_manager') .'/';
-        $form[$term->tid]['has-more-siblings'] = array( 
-          '#type' => 'markup', 
-          '#value' => theme("image", array('path' => $module_path ."images/2downarrow.png", 'alt' => "more", 'attributes' => array('class' => 'load-siblings'))), 
-        );
         $form[$term->tid]['page'] = array( 
           '#type' => 'hidden', 
           '#value' => $page, 
           '#attributes' => array('class' => 'page'), 
         );
         $next_count = _taxonomy_manager_tree_get_next_siblings_count($term->vid, $page, $root_form['#parent']);
-        $form[$term->tid]['next_count'] = array('#value' => $next_count);
-        $form[$term->tid]['#attributes']['class'][] = 'has-more-siblings ';
+        $form[$term->tid]['next_count'] = array('#markup' => $next_count);
+        $form[$term->tid]['#attributes']['class'][] = 'has-more-siblings';
       }
     }
     
@@ -782,7 +777,7 @@ function _taxonomy_manager_tree_term_set_class(&$class, $current_index, $tree, $
     }      
   }
   else if ((count($tree) == $current_index) || (!empty($next) && $term->depth > $next->depth)) {
-    $class = 'last'; 
+    $class[] = 'last'; 
   }
   
   return $class;
@@ -839,7 +834,7 @@ function taxonomy_manager_tree_term_extra_info($term) {
  * @return next page size
  */
 function _taxonomy_manager_tree_get_next_siblings_count($vid, $page, $parent = 0) {
-  $query = db_select('taxonomy_term_data', 't')->extend('PagerDefault');
+  $query = db_select('taxonomy_term_data', 't');
   $query->join('taxonomy_term_hierarchy', 'h', 't.tid = h.tid');
   $query->condition('t.vid', $vid);
   $query->condition('h.parent', $parent);
@@ -1109,16 +1104,15 @@ function theme_taxonomy_manager_tree_elements($variables) {
           $output .= drupal_render($element[$tid]['tid']); 
         }
         
-        if (isset($element[$tid]['has-more-siblings']) && is_array($element[$tid]['has-more-siblings'])) {
-          $output .= '<div class="term-has-more-siblings">';
-          $output .= '<div class="term-next-count">next '. drupal_render($element[$tid]['next_count']) .'</div>';
-          $output .= '<div class="term-downarrow-img">';
-          $output .= drupal_render($element[$tid]['has-more-siblings']);
-          $output .= drupal_render($element[$tid]['page']);
-          $output .= '</div><div class="clear"></div></div>';
-        }
-        
         $output .= '</div>';
+        
+        // Siblings Pager.
+        if (isset($element[$tid]['next_count'])) {
+          $output .= '<div class="term-has-more-siblings">';
+          $output .= '<div class="term-next-count">' . t('next') . " " . drupal_render($element[$tid]['next_count']) . '</div>';
+          $output .= drupal_render($element[$tid]['page']);
+          $output .= '</div>';
+        }
         
         if (isset($element[$tid]['children']) && is_array($element[$tid]['children'])) {
           $output .= theme('taxonomy_manager_tree_elements', array('element' => $element[$tid]['children']));

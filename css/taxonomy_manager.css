@@ -119,16 +119,17 @@
 .term-has-more-siblings {
   height: 38px;
   cursor: pointer;
+  background-image: url(../images/2downarrow.png);
+  background-repeat: no-repeat;
 }
 
 .term-next-count {
-  float: left;
-  padding-top: 10px;
+  display: inline;
   color: #4ca108;
+  line-height: 38px;
+  padding-left: 38px;
 }
 
-.term-downarrow-img {
-}
 
 .term-operations {
   display: inline;

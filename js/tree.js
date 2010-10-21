@@ -229,7 +229,7 @@ Drupal.TaxonomyManagerTree.prototype.attachSiblingsForm = function(ul) {
   
   $(list).bind('click', function() {
     $(this).unbind("click");
-    var li = this.parentNode.parentNode;
+    var li = this.parentNode;
     var all = $('li', li.parentNode);
     var currentIndex = all.index(li);
 
