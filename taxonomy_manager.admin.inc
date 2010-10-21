@@ -1120,8 +1120,8 @@ function taxonomy_manager_double_tree_form_submit($form, &$form_state) {
  */
 function taxonomy_manager_form_add_submit($form, &$form_state) {
   $terms = array();
-  $selected_tids = array();
-  $selected_tids = $form_state['values']['taxonomy']['manager']['tree']['selected_terms'];
+  $selected_tids = isset($form_state['values']['taxonomy']['manager']['tree']['selected_terms']) ? $form_state['values']['taxonomy']['manager']['tree']['selected_terms'] : array();
+
   foreach ($form_state['values']['add']['term'] as $value) {
     if (!empty($value)) {
       $terms[] = $value;
@@ -1149,7 +1149,7 @@ function taxonomy_manager_form_add_submit($form, &$form_state) {
     }
   }
   taxonomy_manager_update_voc($form_state['values']['vid'], $selected_tids);
-  
+
   if (isset($updated_lang) && $updated_lang == TRUE) {
     drupal_set_message(t("Saving terms to language @lang", array('@lang' => locale_language_name($form_state['values']['taxonomy']['manager']['top']['language']))));
   }
