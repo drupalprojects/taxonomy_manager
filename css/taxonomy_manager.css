@@ -345,7 +345,7 @@ input#edit-weight-down {
 .term-data-overlay {
   position: absolute;
   left: 280px; 
-  top: 270px; 
+  top: 100px; 
   width: 400px; 
   z-index: 100;
   background: #FFFFFF;
