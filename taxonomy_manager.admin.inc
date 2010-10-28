@@ -392,6 +392,23 @@ function taxonomy_manager_double_tree_form($form, &$form_state, $voc1, $voc2, $t
     $form['double-tree']['operations']['move_left']['#attributes']['title'] = t('Switch selected terms and its children to the left voc');
     $form['double-tree']['operations']['move_left']['#submit'] = array('taxonomy_manager_double_tree_switch_submit');
     $form['double-tree']['operations']['move_left']['#validate'] = array('taxonomy_manager_double_tree_switch_validate');
+    
+    // Copy buttons
+    $form['double-tree']['operations']['copy_right'] = $form['double-tree']['operations']['move_right'];
+    $form['double-tree']['operations']['copy_left'] = $form['double-tree']['operations']['move_left'];
+    
+    $form['double-tree']['operations']['copy_right']['#attributes']['title'] = t('Copy selected term names to the right voc.');
+    $form['double-tree']['operations']['copy_right']['#src'] = $module_path ."images/copy-right.png";
+    $form['double-tree']['operations']['copy_right']['#submit'] = array('taxonomy_manager_double_tree_copy_submit');
+    $form['double-tree']['operations']['copy_right']['#validate'] = array('taxonomy_manager_double_tree_copy_validate');
+    $form['double-tree']['operations']['copy_right']['#weight'] = 22;
+    
+    $form['double-tree']['operations']['copy_left']['#attributes']['title'] = t('Copy selected term names to the left voc.');
+    $form['double-tree']['operations']['copy_left']['#src'] = $module_path ."images/copy-left.png";
+    $form['double-tree']['operations']['copy_left']['#submit'] = array('taxonomy_manager_double_tree_copy_submit');
+    $form['double-tree']['operations']['copy_left']['#validate'] = array('taxonomy_manager_double_tree_copy_validate');
+    $form['double-tree']['operations']['copy_left']['#weight'] = 23;
+
   }
   else if (isset($language)) {
     $form['double-tree']['operations']['add_translation'] = array(
@@ -1658,8 +1675,12 @@ function taxonomy_manager_term_data_form_submit_parents_remove($form, &$form_sta
 function taxonomy_manager_double_tree_ajax_callback($form, $form_state) {
   $commands = array();
   $commands[] = ajax_command_prepend(NULL, theme('status_messages'));
-  $commands[] = ajax_command_insert('#taxonomy-manager .form-item-taxonomy-manager-tree', drupal_render($form['taxonomy']['manager']['tree']));
-  $commands[] = ajax_command_insert('#taxonomy-manager .form-item-taxonomy2-manager-tree', drupal_render($form['taxonomy2']['manager']['tree']));
+  if ($form_state['values']['double_tree_values']['update_tree_left']) {
+    $commands[] = ajax_command_insert('#taxonomy-manager .form-item-taxonomy-manager-tree', drupal_render($form['taxonomy']['manager']['tree']));
+  }
+  if ($form_state['values']['double_tree_values']['update_tree_right']) {
+    $commands[] = ajax_command_insert('#taxonomy-manager .form-item-taxonomy2-manager-tree', drupal_render($form['taxonomy2']['manager']['tree']));
+  }
   return array('#type' => 'ajax', '#commands' => $commands);
 }
 
@@ -1686,6 +1707,9 @@ function taxonomy_manager_double_tree_move_validate($form, &$form_state) {
       'right_tree_expand_terms' => $form_state['values']['taxonomy2']['manager']['tree']['selected_terms_direct_parents'],
     );
   }
+  
+  $values['update_tree_right'] = TRUE;
+  $values['update_tree_left'] = TRUE;
   
   if (!count($values['selected_terms'])) {
     form_set_error('', t("No terms selected."));
@@ -1776,11 +1800,64 @@ function taxonomy_manager_double_tree_switch_validate($form, &$form_state) {
       'voc2' => $form_state['values']['voc']->vid,
     );
   }
+  $values['update_tree_right'] = TRUE;
+  $values['update_tree_left'] = TRUE;
   
   if (!count($values['selected_terms'])) {
     form_set_error('', t("No terms selected."));
   }
   form_set_value(array('#parents' => array('double_tree_values')), $values, $form_state);
+}
+
+function taxonomy_manager_double_tree_copy_validate($form, &$form_state) {
+  taxonomy_manager_double_tree_switch_validate($form, $form_state);
+  $values = $form_state['values']['double_tree_values'];
+  if (strpos($form_state['input']['_triggering_element_name'], 'right') !== FALSE) {
+    $form_state['values']['double_tree_values']['update_tree_left'] = FALSE;
+  }
+  else {
+    $form_state['values']['double_tree_values']['update_tree_right'] = FALSE;
+  }
+}
+
+function taxonomy_manager_double_tree_copy_submit($form, &$form_state) {
+  $selected_terms = $form_state['values']['double_tree_values']['selected_terms'];
+  $selected_parents = $form_state['values']['double_tree_values']['selected_parents'];
+  $voc1 = $form_state['values']['double_tree_values']['voc1'];
+  $voc2 = $form_state['values']['double_tree_values']['voc2'];
+
+  $voc1 = taxonomy_vocabulary_load($voc1);
+  $voc2 = taxonomy_vocabulary_load($voc2);
+  
+  $new_tids = taxonomy_manager_copy($selected_terms, $voc1->vid, $voc2->vid, $selected_parents);
+  if (count($new_tids)) {
+    $new_tid = array_pop($new_tids);
+    $form_state['values']['double_tree_values']['left_tree_expand_terms'] = array($new_tid);
+    $form_state['values']['double_tree_values']['right_tree_expand_terms'] = array($new_tid); 
+  }
+  
+  $selected_terms_names = array();
+  foreach ($selected_terms as $tid) {
+    $term = taxonomy_term_load($tid);
+    $selected_terms_names[] = $term->name;
+  }
+  $selected_parent_names = array();
+  if (count($selected_parents)) {
+    foreach ($selected_parents as $parent) {
+      $term = taxonomy_term_load($parent);
+      $selected_parent_names[] = $term->name;
+      $term_parents_array[$term->tid] = $term->tid;  
+    }
+  }
+  $term_names = implode(', ', $selected_terms_names);
+  if (count($selected_parents) == 0) {
+    drupal_set_message(t("Copied %termsto vocabulary %voc.", array('%terms' => $term_names, '%voc' => $voc2->name)));
+  }
+  else {
+    drupal_set_message(t("Copied %terms to vocabulary %voc under parents %parents.", array('%terms' => $term_names, '%voc' => $voc2->name, '%parents' => implode(', ', $selected_parent_names))));
+  }
+  
+  $form_state['rebuild'] = TRUE;
 }
 
 function taxonomy_manager_double_tree_switch_submit($form, &$form_state) {
@@ -1891,6 +1968,25 @@ function taxonomy_manager_add_translation($tid1, $tid2) {
     $trid = max($trid1, $trid2); 
     db_query('UPDATE {term_data} SET trid = %d WHERE trid = %d OR trid = %d', $trid, $trid1, $trid2);
   }*/
+}
+
+/**
+ * Duplicates a term to another voc
+ */
+function taxonomy_manager_copy($tids, $from_voc, $to_voc, $selected_parents) {
+  $new_tids = array();
+  foreach ($tids as $tid) {
+    $term = taxonomy_term_load($tid);
+    $new_term = clone $term;
+    unset($new_term->tid);
+    $new_term->parent = count($selected_parents) ? $selected_parents : 0;
+    $new_term->vid = $to_voc;
+    taxonomy_term_save($new_term);
+    $new_tids[] = $new_term->tid;
+  }
+  taxonomy_manager_update_voc($to_voc, $selected_parents);
+  taxonomy_terms_static_reset();
+  return $new_tids;
 }
 
 /**
