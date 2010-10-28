@@ -403,29 +403,32 @@ function taxonomy_manager_tree_process_elements($element) {
     }
   }
   
+  $element['#elements'] = array();
   $tree = _taxonomy_manager_tree_get_item($element['#vid'], $element['#parent'], $element['#pager'], $element['#siblings_page'], $element['#search_string'], $element['#language']);
+  if (count($tree)) {
+    if ($element['#pager'] && !($element['#parent'] || $element['#siblings_page'])) {
+      $element['pager'] = array('#value' => theme('pager'));
+    }
+  
+    $terms_to_expand = array();
+    if (isset($element['#term_to_expand'])) {
+      _taxonomy_manager_tree_get_first_path($element['#term_to_expand'], $tree, $terms_to_expand);
+      $terms_to_expand = taxonomy_manager_tree_get_terms_to_expand($tree, array($element['#term_to_expand']), TRUE);
+    }
+  
+    if (count($element['#default_value']) && !$element['#expand_all']) {
+      $terms_to_expand = taxonomy_manager_tree_get_terms_to_expand($tree, $element['#default_value'], $element['#multiple']);
+    }
 
-  if ($element['#pager'] && !($element['#parent'] || $element['#siblings_page'])) {
-    $element['pager'] = array('#value' => theme('pager'));
-  }
+    if (!empty($element['#language'])) {
+      $element['#elements']['language'] = array('#type' => 'hidden', '#value' => $element['#language'], '#attributes' => array('class' => 'tree-lang'));
+      _taxonomy_manager_tree_element_set_params($element['#parents'], $element['#elements']);
+    }
   
-  $terms_to_expand = array();
-  if (isset($element['#term_to_expand'])) {
-    _taxonomy_manager_tree_get_first_path($element['#term_to_expand'], $tree, $terms_to_expand);
-    $terms_to_expand = taxonomy_manager_tree_get_terms_to_expand($tree, array($element['#term_to_expand']), TRUE);
-  }
-  
-  if (count($element['#default_value']) && !$element['#expand_all']) {
-    $terms_to_expand = taxonomy_manager_tree_get_terms_to_expand($tree, $element['#default_value'], $element['#multiple']);
+    $index = 0;
+    taxonomy_manager_tree_build_form($index, $tree, $element['#elements'], $element, $element['#parents'], $element['#siblings_page'], $element['#default_value'], $element['#multiple'], $terms_to_expand);
   }
 
-  if (!empty($element['#language'])) {
-    $element['#elements']['language'] = array('#type' => 'hidden', '#value' => $element['#language'], '#attributes' => array('class' => 'tree-lang'));
-    _taxonomy_manager_tree_element_set_params($element['#parents'], $element['#elements']);
-  }
-  
-  taxonomy_manager_tree_build_form($index = 0, $tree, $element['#elements'], $element, $element['#parents'], $element['#siblings_page'], $element['#default_value'], $element['#multiple'], $terms_to_expand);
-  
   return $element;
 }
 
