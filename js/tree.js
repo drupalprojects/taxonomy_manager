@@ -427,11 +427,15 @@ Drupal.TaxonomyManagerTree.prototype.getLi = function(termId) {
 
 Drupal.TaxonomyManagerTree.prototype.attachMsgCloseLink = function() {
   $('#'+ this.form_id.replace(/_/g, '-')).find('div.messages').once(function() {
-    $(this).append(' <a href="">'+ Drupal.t('Close') +'</a>').click(function() {
+    $('<span>&nbsp;</span><a href="">'+ Drupal.t('Close') +'</a>').appendTo(this).click(function() {
       $(this).parent().fadeOut('fast', function() {
         $(this).remove();
       });
       return false;
+    });
+    // Remove the message after some time...
+    $(this).parent().delay(5000).fadeOut('slow', function() {
+      $(this).remove();
     });
   });
 }
