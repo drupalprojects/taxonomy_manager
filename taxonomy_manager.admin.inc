@@ -1854,7 +1854,7 @@ function taxonomy_manager_double_tree_copy_submit($form, &$form_state) {
   }
   $term_names = implode(', ', $selected_terms_names);
   if (count($selected_parents) == 0) {
-    drupal_set_message(t("Copied %termsto vocabulary %voc.", array('%terms' => $term_names, '%voc' => $voc2->name)));
+    drupal_set_message(t("Copied %terms to vocabulary %voc.", array('%terms' => $term_names, '%voc' => $voc2->name)));
   }
   else {
     drupal_set_message(t("Copied %terms to vocabulary %voc under parents %parents.", array('%terms' => $term_names, '%voc' => $voc2->name, '%parents' => implode(', ', $selected_parent_names))));
