@@ -1913,7 +1913,9 @@ function taxonomy_manager_switch($tids, $from_voc, $to_voc, $parents = array()) 
       ->fields(array('vid' => $to_voc))
       ->condition('tid', $terms_to_switch, 'IN')
       ->execute();
-      
+    
+    taxonomy_terms_static_reset();
+    
     //delete references to parents from the old voc
     foreach ($children as $child) {
       $term_parents = taxonomy_get_parents($child->tid);
