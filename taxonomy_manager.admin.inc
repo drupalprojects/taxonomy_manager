@@ -797,8 +797,11 @@ function taxonomy_manager_update_term_data_form($term, $ajax = FALSE) {
   // Load the current taxonomy manager tree form to get vocabulary ids 
   // which will be needed when the tree should be updated.
   list($form, $form_state, $form_id, ) = ajax_get_form();
-
-  $term_data_form = drupal_get_form('taxonomy_manager_term_data_form', $term->tid, $form['vid']['#value'], isset($form['vid2']['#value']) ? $form['vid2']['#value'] : 0);
+  
+  $voc1 = $form['voc']['#value'];
+  $voc2 = isset($form['voc2']['#value']) ? $form['vid2']['#value'] : NULL;
+  
+  $term_data_form = drupal_get_form('taxonomy_manager_term_data_form', $term->tid, $voc1->vid, $voc2 ? $voc2->vid : 0);
   $data = drupal_render($term_data_form);
   
   $scripts = drupal_add_js(NULL, NULL);
@@ -833,13 +836,13 @@ function taxonomy_manager_term_data_form($form, &$form_state, $tid = 0, $vid1, $
     unset($form['term_data']['actions']);
 
     $parents = taxonomy_get_parents($term->tid);
-    $form['term_data']['parents'] = _taxonomy_manager_form_term_data_parents($term, $parents, t('Parents'), 'parent', TRUE); 
+    $form['term_data']['parents'] = _taxonomy_manager_form_term_data_parents($term, $parents, t('Parents'), 'parent', TRUE, TRUE, TRUE); 
     $form['term_data']['parents']['#weight'] = '52';
     
     //settings form the underlying tree form
     $form['tree-settings'] = array('#tree' => TRUE);
     $form['tree-settings']['vid1'] = array('#value' => $vid1);
-    if (isset($vid2)) {
+    if ($vid2) {
       $form['tree-settings']['vid2'] = array('#value' => $vid2);
     }
     $form['term_data']['close'] = array(
@@ -966,7 +969,7 @@ function _taxonomy_manager_form_term_data_parents($term, $values, $header_type, 
       '#row-class' => 'term-data-autocomplete-add',
     );
     if ($ajax) {
-      $form['op']['add_button'] = array(
+      $form['op']['add_button']['#ajax'] = array(
         'callback' => 'taxonomy_manager_term_data_form_ajax_callback',
         'progress' => array('type' => ''),
         'method' => 'replaceWith',
@@ -1530,17 +1533,18 @@ function taxonomy_manager_term_data_form_ajax_callback($form, $form_state) {
   $commands = array();
   $commands[] = ajax_command_insert(NULL, drupal_render($form));
   $commands[] = ajax_command_after('#term-data-close', theme('status_messages'));
-  
   // Update tree if necessary.
   if (isset($form_state['values']['tree-update'])) {
     if (isset($form_state['values']['tree-update']['update']) && $form_state['values']['tree-update']['update']) {
       $vid1 = $form['tree-settings']['vid1']['#value']; // didn't work with form_state!?
+      $voc1 = taxonomy_vocabulary_load($vid1);
       $term = taxonomy_term_load($form_state['values']['tid']);
-      $tree_form = drupal_get_form('taxonomy_manager_form', $vid1, ($term->vid == $vid1) ? $term->tid : 0);
+      $tree_form = drupal_get_form('taxonomy_manager_form', $voc1, ($term->vid == $vid1) ? $term->tid : 0);
       $commands[] = ajax_command_insert('#taxonomy-manager .form-item-taxonomy-manager-tree', drupal_render($tree_form['taxonomy']['manager']['tree']));
       if (isset($form['tree-settings']['vid2'])) {
         $vid2 = $form['tree-settings']['vid2']['#value'];
-        $tree2_form = drupal_get_form('taxonomy_manager_form', $vid2, ($term->vid == $vid2) ? $term->tid : 0);
+        $voc2 = taxonomy_vocabulary_load($vid2);
+        $tree2_form = drupal_get_form('taxonomy_manager_form', $voc2, ($term->vid == $vid2) ? $term->tid : 0);
         $commands[] = ajax_command_insert('#taxonomy-manager .form-item-taxonomy2-manager-tree', drupal_render($tree2_form['taxonomy']['manager']['tree']));
       }
     }
