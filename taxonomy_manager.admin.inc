@@ -1546,8 +1546,7 @@ function taxonomy_manager_term_data_form_ajax_callback($form, $form_state) {
     }
     else if (isset($form_state['values']['tree-update']['update-name'])) {
        $selector = 'a.term-data-link-id-'. $form_state['values']['tree-update']['update-name']['tid'];
-       //TODO bug with addional divs: https://drupal.org/node/736066
-       $commands[] = ajax_command_html($selector, $form_state['values']['tree-update']['update-name']['name']);
+       $commands[] = ajax_command_html($selector, '<span>' . $form_state['values']['tree-update']['update-name']['name'] . '</span>');
     }
   }
   
