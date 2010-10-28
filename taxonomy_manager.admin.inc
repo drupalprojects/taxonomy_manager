@@ -2477,13 +2477,13 @@ function taxonomy_manager_export_get_tree($vid, $selected_tid, $depth, $options)
   $tree = array();
 
   if ($options['whole_voc']) {
-    $tree = taxonomy_get_tree($vid, 0, NULL, $depth);
+    $tree = taxonomy_get_tree($vid, 0, $depth);
   }
   else if ($options['children'] && $selected_tid) {
-    $tree = taxonomy_get_tree($vid, $selected_tid, NULL, $depth);
+    $tree = taxonomy_get_tree($vid, $selected_tid, $depth);
   }
   else if ($options['root_terms']) {
-    $tree = taxonomy_get_tree($vid, 0, NULL, 1);
+    $tree = taxonomy_get_tree($vid, 0, 1);
   }
   return $tree;
 }
