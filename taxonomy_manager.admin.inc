@@ -2454,7 +2454,6 @@ function taxonomy_manager_export() {
  */
 function taxonomy_manager_export_csv($delimiter = ";", $vid, $selected_tid = 0, $depth = -1, $options = array()) {
   $output = "";
-  $vid = 1;
   $tree = taxonomy_manager_export_get_tree($vid, $selected_tid, $depth, $options);  
   foreach ($tree as $term) {
     $array = array();
@@ -2476,13 +2475,13 @@ function taxonomy_manager_export_csv($delimiter = ";", $vid, $selected_tid = 0, 
 function taxonomy_manager_export_get_tree($vid, $selected_tid, $depth, $options) {
   $tree = array();
 
-  if ($options['whole_voc']) {
+  if (isset($options['whole_voc'])) {
     $tree = taxonomy_get_tree($vid, 0, $depth);
   }
-  else if ($options['children'] && $selected_tid) {
+  else if (isset($options['children']) && $selected_tid) {
     $tree = taxonomy_get_tree($vid, $selected_tid, $depth);
   }
-  else if ($options['root_terms']) {
+  else if (isset($options['root_terms'])) {
     $tree = taxonomy_get_tree($vid, 0, 1);
   }
   return $tree;
