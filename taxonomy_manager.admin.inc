@@ -1244,14 +1244,27 @@ function taxonomy_manager_term_confirm_delete($form, &$form_state, $vid, $vid2 =
  *
  */
 function taxonomy_manager_term_confirm_delete_submit($form, &$form_state) {
-  taxonomy_manager_delete_terms($form_state['values']['selected_terms'], $form_state['values']['options']);
+  $info = taxonomy_manager_delete_terms($form_state['values']['selected_terms'], $form_state['values']['options']);
+  $deleted_term_names = array();
+  $remaining_child_term_names = array();
+
+  foreach ($info['deleted_terms'] as $term) {
+    $deleted_term_names[] = $term->name;
+  }
+  foreach ($info['remaining_child_terms'] as $term) {
+    $remaining_child_term_names[] = $term->name;
+  }
+  
   if (isset($form_state['values']['voc2'])) {
     $form_state['redirect'] = 'admin/structure/taxonomy_manager/double-tree/'. $form_state['values']['voc']->machine_name .'/'. $form_state['values']['voc2']->machine_name;
   }
   else {
     $form_state['redirect'] = 'admin/structure/taxonomy_manager/voc/'. $form_state['values']['voc']->machine_name;
   }
-  drupal_set_message(t("Selected terms deleted")); 
+  drupal_set_message(t("Deleted terms: %deleted_term_names", array('%deleted_term_names' => check_plain(implode(', ', $deleted_term_names)))));
+  if (count($remaining_child_term_names)) {
+    drupal_set_message(t("Remaining child terms with different parents: %remaining_child_term_names", array('%remaining_child_term_names' => check_plain(implode(', ', $remaining_child_term_names))))); 
+  }
   return;
 }
 
@@ -2061,6 +2074,9 @@ function _taxonomy_manager_voc_is_empty($vid) {
  *   if $options['delete_orphans'] is true, orphans get deleted
  */
 function taxonomy_manager_delete_terms($tids, $options = array()) {
+  $deleted_term = array();
+  $remaining_child_terms = array();
+
   if (!is_array($tids)) array($tids);
   while (count($tids) > 0) {
     $orphans = array();
@@ -2072,8 +2088,12 @@ function taxonomy_manager_delete_terms($tids, $options = array()) {
             if (count($parents) == 1) {
               $orphans[] = $child->tid;
             }
+            else {
+              $remaining_child_terms[] = $child;
+            }
           }
           else {
+            $remaining_child_terms[] = $child;
             db_delete('taxonomy_term_hierarchy')
               ->condition('tid', $child->tid)
               ->condition('parent', $tid)
@@ -2093,7 +2113,8 @@ function taxonomy_manager_delete_terms($tids, $options = array()) {
       }
       
       $term = taxonomy_term_load($tid);
-
+      $deleted_terms[] = $term;
+      
       db_delete('taxonomy_term_data')
         ->condition('tid', $tid)
         ->execute();
@@ -2109,6 +2130,7 @@ function taxonomy_manager_delete_terms($tids, $options = array()) {
   } 
   cache_clear_all();
   taxonomy_terms_static_reset();
+  return array('deleted_terms' => $deleted_terms, 'remaining_child_terms' => $remaining_child_terms);
 }
 
 
