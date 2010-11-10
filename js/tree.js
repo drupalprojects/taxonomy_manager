@@ -65,9 +65,8 @@ Drupal.TaxonomyManagerTree = function(id, vid) {
   //attach term data js, if enabled
   var term_data_settings = Drupal.settings.termData || [];
   if (term_data_settings['url']) {
-    Drupal.attachTermData(this.ul, this);
+    Drupal.attachTermData(this.ul);
   }
-  
   $(this.div).addClass("tm-processed");
 }
 
@@ -154,7 +153,7 @@ Drupal.TaxonomyManagerTree.prototype.loadChildForm = function(li, update, callba
         }
         var term_data_settings = Drupal.settings.termData || [];
         if (term_data_settings['url']) {
-          Drupal.attachTermDataLinks(ul, tree);
+          Drupal.attachTermDataLinks(ul);
         }
         if (typeof(callback) == "function") {
           callback(li, tree);
@@ -195,7 +194,7 @@ Drupal.TaxonomyManagerTree.prototype.loadRootForm = function(tid) {
         tree.attachSiblingsForm(ul);
         tree.attachSelectAllChildren(ul);
         Drupal.attachUpdateWeightTerms(ul);
-        Drupal.attachTermDataLinks(ul, tree);
+        Drupal.attachTermDataLinks(ul);
         if (tid) {
           var termLink = $("#"+ tree.treeId).find(":input[value="+ tid +"]").parent().find("a.term-data-link");
           Drupal.activeTermSwapHighlight(termLink);
@@ -263,7 +262,7 @@ Drupal.TaxonomyManagerTree.prototype.attachSiblingsForm = function(ul) {
         }
         var term_data_settings = Drupal.settings.termData || [];
         if (term_data_settings['url']) {
-          Drupal.attachTermDataToSiblings($('li', li.parentNode), currentIndex, tree);
+          Drupal.attachTermDataToSiblings($('li', li.parentNode), currentIndex);
         }
       
         $(li).removeClass("last").removeClass("has-more-siblings");

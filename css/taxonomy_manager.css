@@ -208,6 +208,10 @@
   margin-bottom: 8px;
 }
 
+.taxonomy-manager-term-load-helper {
+  display: none;
+}
+
 /**
  * Taxonomy Manger Toolbar
  */

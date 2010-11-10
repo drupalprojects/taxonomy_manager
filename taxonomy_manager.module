@@ -38,15 +38,7 @@ function taxonomy_manager_menu() {
     'type' => MENU_CALLBACK,
     'file' => 'taxonomy_manager.admin.inc',
   );
-    
-  $items['admin/structure/taxonomy_manager/termdata/%taxonomy_term'] = array(
-    'page callback' => 'taxonomy_manager_update_term_data_form',
-    'page arguments' => array(4),
-    'access arguments' => array('administer taxonomy'),
-    'type' => MENU_CALLBACK,
-    'file' => 'taxonomy_manager.admin.inc', 
-  );
-      
+  
   $items['admin/structure/taxonomy_manager/siblingsform'] = array(
     'page callback' => 'taxonomy_manager_tree_build_siblings_form',
     'access arguments' => array('administer taxonomy'), 
@@ -62,8 +54,8 @@ function taxonomy_manager_menu() {
   
   $items['admin/structure/taxonomy_manager/voc/%taxonomy_vocabulary_machine_name'] = array(
     'title' => 'Taxonomy Manager',
-    'page callback' => 'taxonomy_manager_page',
-    'page arguments' => array(4),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('taxonomy_manager_form', 4),
     'access arguments' => array('administer taxonomy'), 
     'type' => MENU_CALLBACK,
     'file' => 'taxonomy_manager.admin.inc', 
@@ -71,8 +63,8 @@ function taxonomy_manager_menu() {
   
   $items['admin/structure/taxonomy_manager/double-tree/%taxonomy_vocabulary_machine_name/%taxonomy_vocabulary_machine_name'] = array(
     'title' => 'Taxonomy Manager',
-    'page callback' => 'taxonomy_manager_double_tree_page',
-    'page arguments' => array(4, 5),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('taxonomy_manager_double_tree_form', 4, 5),
     'access arguments' => array('administer taxonomy'), 
     'type' => MENU_CALLBACK,
     'file' => 'taxonomy_manager.admin.inc', 
@@ -116,9 +108,6 @@ function taxonomy_manager_theme() {
       'render element' => 'form',
     ),
     'taxonomy_manager_double_tree_form' => array( 
-      'render element' => 'form',
-    ),
-    'taxonomy_manager_term_data_form' => array( 
       'render element' => 'form',
     ),
     'no_submit_button' => array( 

@@ -10,23 +10,14 @@
 //global var that holds the current term link object
 var active_term = new Object();
 
-//holds tree objects, useful in double tree interface, when both trees needs to be updated
-var trees = new Object();
-
 /** 
- * attaches term data form, used after 'Saves changes' ahah submit
+ * attaches term data form, used after 'Saves changes' submit
  */
 Drupal.behaviors.TaxonomyManagerTermData = {
   attach: function(context) {
-    if (!$('#taxonomy-term-data .processed').length) { 
-      var vid = $('#taxonomy-term-data').find('input:hidden[name=vid]').val();
-      for (var id in trees) {
-        var tree = trees[id];
-        if (tree.vocId == vid) {
-          Drupal.attachTermDataForm(tree);
-          break;
-        }
-      }
+    if (!$('#taxonomy-term-data-replace').hasClass('processed')) {
+      $('#taxonomy-term-data-replace').addClass('processed');
+      Drupal.attachTermDataForm();
     }
   }
 }
@@ -34,48 +25,30 @@ Drupal.behaviors.TaxonomyManagerTermData = {
 /**
  * attaches Term Data functionality, called by tree.js
  */
-Drupal.attachTermData = function(ul, tree) {
-  trees[tree.treeId] = tree;
-  Drupal.attachTermDataLinks(ul, tree);
-  
-  if (!$('#taxonomy-term-data .processed').length) { 	 
-	  Drupal.attachTermDataForm(tree);
-  }
+Drupal.attachTermData = function(ul) {
+  Drupal.attachTermDataLinks(ul);
 }
 
 /**
  * adds click events to the term links in the tree structure
  */
-Drupal.attachTermDataLinks = function(ul, tree) {
+Drupal.attachTermDataLinks = function(ul) {
   $(ul).find('a.term-data-link').click(function() {
     Drupal.activeTermSwapHighlight(this);
     var li = $(this).parents("li:first");
-    var termdata = new Drupal.TermData(Drupal.getTermId(li), this.href +'/true', li, tree);
-    termdata.load();
+    new Drupal.TermData(Drupal.getTermId(li)).load();
     return false;
   });
 }
 
 /**
-* hightlights current term
-*/
-Drupal.activeTermSwapHighlight = function(link) {
-  try {
-    $(active_term).parent().removeClass('highlightActiveTerm');
-  } catch(e) {}
-  active_term = link;
-  $(active_term).parent().addClass('highlightActiveTerm');
-}
-
-/**
  * attaches click events to next siblings
  */
-Drupal.attachTermDataToSiblings = function(all, currentIndex, tree) {
+Drupal.attachTermDataToSiblings = function(all, currentIndex) {
   var nextSiblings = $(all).slice(currentIndex);
   $(nextSiblings).find('a.term-data-link').click(function() {
     var li = $(this).parents("li:first");
-    var termdata = new Drupal.TermData(Drupal.getTermId(li), this.href +'/true', li, tree);
-    termdata.load();
+    new Drupal.TermData(Drupal.getTermId(li)).load();
     return false;
   });
 }
@@ -83,64 +56,33 @@ Drupal.attachTermDataToSiblings = function(all, currentIndex, tree) {
 /**
  * adds click events to term data form, which is already open, when page gets loaded
  */
-Drupal.attachTermDataForm = function(tree) {
-  $('#taxonomy-term-data').addClass('processed');
-  var tid = $('#taxonomy-term-data').find('input:hidden[name=tid]').val();;
+Drupal.attachTermDataForm = function() {
+  var tid = $('#taxonomy-term-data').find('input:hidden[name="tid"]').val();
   if (tid) {
-    var li = tree.getLi(tid);
-    var termLink = $(li).children("div.term-line").find("a.term-data-link");
+    var termLink = $('input[class="term-id"][value="'+ tid +'"]').parent().find("a.term-data-link");
     Drupal.activeTermSwapHighlight(termLink);
-    var url = Drupal.settings.termData['term_url'] +'/'+ tid +'/true';
-    var termdata = new Drupal.TermData(tid, url, li, tree);
-    termdata.form();
+    new Drupal.TermData(tid).form();
   }  
 }
 
 /**
  * TermData Object
  */
-Drupal.TermData = function(tid, href, li, tree) {
-  this.href = href;
-  this.tid = tid;
-  this.li = li;
-  this.tree = tree
-  this.form_build_id = tree.form_build_id;
-  this.form_id = tree.form_id;
-  this.form_token = tree.form_token;
-  this.vid = tree.vocId;
+Drupal.TermData = function(tid) {
+  this.tid = tid; 
   this.div = $('#taxonomy-term-data');
+  this.tidField = $('#edit-load-tid');
+  this.tidFieldSubmit = $('#edit-load-tid-submit');
 }
 
 
 /**
- * loads ahah form from given link and displays it on the right side
+ * loads term data form and displays it on the right side
  */
 Drupal.TermData.prototype.load = function() {
-  var url = this.href;
-  var termdata = this;
-  var param = new Object();
-  param['form_build_id'] = this.form_build_id;
-  param['form_id'] = this.form_id;
-  param['form_token'] = this.form_token;
- 
-  $.ajax({
-    data: param, 
-    type: "POST", 
-    url: url,
-    dataType: 'json',
-    success: function(response, status) {
-      termdata.insertForm(response.data);
-      Drupal.attachBehaviors(termdata.div, response.settings);
-    }
-  });
-}
-
-/**
- * inserts received html data into form wrapper
- */
-Drupal.TermData.prototype.insertForm = function(data) { 
-  $(this.div).html(data);
-  this.form(); 
+  // Triggers an AJAX button
+  $(this.tidField).val(this.tid);
+  $(this.tidFieldSubmit).click();
 }
 
 /**
@@ -154,12 +96,8 @@ Drupal.TermData.prototype.form = function() {
   });
   
   $(this.div).find('a.taxonomy-term-data-name-link').click(function() {
-    var url = this.href;
-    var tid = url.split("/").pop();
-    var li = termdata.tree.getLi(tid);
-    termdata.tree.loadRootForm(tid);
-    termdata_new = new Drupal.TermData(tid, this.href +'/true', li, termdata.tree);
-    termdata_new.load();
+    var tid = this.href.split("/").pop();
+    new Drupal.TermData(tid).load();
     return false;
   });
   
@@ -190,6 +128,17 @@ Drupal.TermData.prototype.form = function() {
       $(document).unbind("mousemove", performDrag).unbind("mouseup", endDrag);
     }
   });
+}
+
+/**
+* hightlights current term
+*/
+Drupal.activeTermSwapHighlight = function(link) {
+  try {
+    $(active_term).parent().removeClass('highlightActiveTerm');
+  } catch(e) {}
+  active_term = link;
+  $(active_term).parent().addClass('highlightActiveTerm');
 }
 
 })(jQuery);
