@@ -46,11 +46,9 @@ function taxonomy_manager_form($form, &$form_state, $voc, $tid = 0, $filter = NU
   if (isset($form_state['confirm_delete'])) {
     return taxonomy_manager_term_confirm_delete($form, $form_state, $voc->vid);
   }
-  if (isset($form_state['triggering_element']['#value']) && $form_state['triggering_element']['#value'] == t('Save changes') && isset($form_state['values']['tid'])) {
+  // Use tid from term data form, if not submitted through load-tid helper.
+  if (isset($form_state['values']['tid']) && !(isset($form_state['triggering_element']['#value']) && $form_state['triggering_element']['#value'] == "load term")) {
     $tid = $form_state['values']['tid'];
-  }
-  else if (isset($form_state['values']['load-tid'])) {
-    $tid = $form_state['values']['load-tid'];
   }
 	   
   $module_path = drupal_get_path('module', 'taxonomy_manager') .'/';
@@ -69,7 +67,10 @@ function taxonomy_manager_form($form, &$form_state, $voc, $tid = 0, $filter = NU
 
   $form['voc'] = array('#type' => 'value', "#value" => $voc);
 
-  // Helper forms for load term data form.
+  // Helper forms for loading the term data form.
+  // When a term link in the tree view gets clicked, the term id is written into the 
+  // load-tid textfield and aftwards the load-tid-submit button gets clicked, which 
+  // triggers the ajax system.
   $form['load-tid'] = array(
     '#type' => 'textfield',
     '#prefix' => '<div class="taxonomy-manager-term-load-helper">',
@@ -274,6 +275,13 @@ function taxonomy_manager_form($form, &$form_state, $voc, $tid = 0, $filter = NU
   
   $form += taxonomy_manager_double_tree_settings_form($voc);
   
+  // A term clicked in tree-view and submitted through load-tid helper, 
+  // generate term data form.
+  // Moved this code snippet to the bottom here to prevent needless 
+  // expanding of the tree for this tid.
+  if (!$tid && isset($form_state['values']['load-tid'])) {
+    $tid = $form_state['values']['load-tid'];
+  }
   taxonomy_manager_term_data_form($form, $form_state, $tid, $voc->vid);
   
   return $form;
