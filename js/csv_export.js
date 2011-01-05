@@ -10,17 +10,17 @@ Drupal.behaviors.TaxonomyManagerCSVExport = {
     if (!$('#edit-export-show.csv-processed').length) {
       $('#edit-export-show').addClass('csv-processed');
       var url = settings.exportCSV['url'];
-      var vid = settings.taxonomytree['vid'];
+      var vid = settings.taxonomytree[0].vid;
   
       $("#edit-export-submit").click(function() {
         var area = $("#edit-export-csv");
         var param = new Object();
         param['delimiter'] = $("#edit-export-delimiter").val();
         param['depth'] = $("#edit-export-depth").val();
-        param['option'] = $("#taxonomy_manager_export_options").find("input[type=radio][checked]").val();
+        param['option'] = $("#taxonomy_manager_export_options").find("input:checked").val();
         param['vid'] = vid;
         var tid = 0;
-        $('.treeview').find("input[type=checkbox][checked]").each(function() {
+        $('.treeview').find("input:checked").each(function() {
          tid = Drupal.getTermId($(this).parents("li").eq(0));
         });
         param['tid'] = tid;
