@@ -279,7 +279,7 @@ function taxonomy_manager_form($form, &$form_state, $voc, $tid = 0, $filter = NU
   // generate term data form.
   // Moved this code snippet to the bottom here to prevent needless 
   // expanding of the tree for this tid.
-  if (!$tid && isset($form_state['values']['load-tid'])) {
+  if (isset($form_state['values']['load-tid'])) {
     $tid = $form_state['values']['load-tid'];
   }
   taxonomy_manager_term_data_form($form, $form_state, $tid, $voc->vid);
@@ -1533,7 +1533,7 @@ function taxonomy_manager_term_data_form_ajax_callback($form, $form_state) {
 
 function taxonomy_manager_term_data_form_submit($form, &$form_state) {
   $old_term = taxonomy_term_load($form_state['values']['tid']);
-  $term = taxonomy_form_term_submit_builder($form, $form_state);
+  $term = taxonomy_form_term_submit_build_taxonomy_term($form, $form_state);
   if ($term->weight != $old_term->weight) {
     form_set_value(array('#parents' => array('tree-update')), array('update' => TRUE), $form_state); 
   }
