@@ -146,21 +146,17 @@ Drupal.TaxonomyManagerTree.prototype.loadChildForm = function(li, update, callba
 /**
  * function for reloading root tree elements
  */
-Drupal.TaxonomyManagerTree.prototype.loadRootForm = function(tid) {
-  if (!(Drupal.settings.childForm['url'] instanceof Array)) {
-    url = Drupal.settings.childForm['url'];
-  }
-  else {
-    url = Drupal.settings.childForm['url'][0];
-  }
+Drupal.TaxonomyManagerTree.prototype.loadRootForm = function(tids) {
   var tree = this;
-  url += '/'+ this.treeId +'/'+ this.vocId +'/0/'+ tid;
+  var url = Drupal.settings.childForm['url'];
+  url += '/'+ this.treeId +'/'+ this.vocId +'/0/';
   
   var param = new Object();
-    param['form_build_id'] = this.form_build_id;
-    param['form_id'] = this.form_id;
-    param['tree_id'] = this.treeId;
-    param['language'] = this.language;
+  param['form_build_id'] = this.form_build_id;
+  param['form_id'] = this.form_id;
+  param['tree_id'] = this.treeId;
+  param['language'] = this.language;
+  param['terms_to_expand'] = tids; // can either be a single term id or concatinated ids
     
    $.ajax({
       data: param, 

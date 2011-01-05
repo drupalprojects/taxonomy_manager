@@ -306,7 +306,7 @@ function taxonomy_manager_term_page($str_tids = '', $depth = 0, $op = 'page') {
  *     whether to use pagers (drupal pager, load of nested children, load of siblings) 
  *     or to load the whole tree on page generation
  *   #parent: only children on this parent will be loaded
- *   #term_to_expand: loads and opens the first path to a given term id
+ *   #terms_to_expand: loads and opens the first path of given term ids
  *   #siblings_page: current page for loading pf next siblings, internal use
  *   #default_value: an array of term ids, which get selected by default
  *   #render_whole_tree: set this option to TRUE, if you have defined a parent for the tree and you want
@@ -400,9 +400,14 @@ function taxonomy_manager_tree_process_elements($element) {
     }
   
     $terms_to_expand = array();
-    if (isset($element['#term_to_expand'])) {
-      _taxonomy_manager_tree_get_first_path($element['#term_to_expand'], $tree, $terms_to_expand);
-      $terms_to_expand = taxonomy_manager_tree_get_terms_to_expand($tree, array($element['#term_to_expand']), TRUE);
+    if (isset($element['#terms_to_expand'])) {
+      // allow multiple terms to be expanded
+      $requested_terms_to_expand = is_array($element['#terms_to_expand']) ? $element['#terms_to_expand'] : array($element['#terms_to_expand']);
+      foreach ($requested_terms_to_expand as $term_to_expand) {
+        // Multiple term version
+        _taxonomy_manager_tree_get_first_path($term_to_expand, $tree, $terms_to_expand);
+      }
+      $terms_to_expand = taxonomy_manager_tree_get_terms_to_expand($tree, $requested_terms_to_expand, TRUE);
     }
   
     if (count($element['#default_value']) && !$element['#expand_all']) {
@@ -564,19 +569,52 @@ function _taxonomy_manager_tree_get_first_path($tid, &$tree, &$terms_to_expand) 
 
   $root_term = $path[0];
   $root_term_index;
+
+  // build a map of the path keyed on tid - helps in avoiding duplicates when merging multiple paths to the tree
+  $term_map = array();
   if (count($path) > 1) {
     foreach ($tree as $index => $term) {
+      $term_map[$term->tid] = $index;
       if ($term->tid == $root_term->tid) {
         $root_term_index = $index;
-        break;
       } 
     }
+    reset($tree);
   }
+
   if (isset($root_term_index)) {
     $path_tree = taxonomy_manager_get_partial_tree($path);
-    $first_part = array_slice($tree, 0, $root_term_index+1);
-    $last_part = array_slice($tree, $root_term_index+1, count($tree));
-    $tree = array_merge($first_part, $path_tree, $last_part);
+
+    // build map of path tree keyed on tids
+    $path_term_map = array();
+    foreach ($path_tree as $index => $term) {
+      $path_term_map[$term->tid] = $index;
+    }
+
+    reset($path_tree);
+
+    // first find the set of new terms that we need to add - new terms should be contiguous within $path_tree
+    $new_path_terms_map = array_diff_key($path_term_map, $term_map);
+
+    if (!empty($new_path_terms_map)) {
+      // something to add
+      $insert_term_index = reset($new_path_terms_map);
+      if ($insert_term_index > 0) {
+        // use previous term as insertion point
+        $previous_tid = $path_tree[$insert_term_index-1]->tid;
+        $insertion_index = $term_map[$previous_tid];
+      }
+      else {
+        // use root index as insertion point
+        $insertion_index = $root_term_index;
+      }
+
+      // get the new terms to add from the path tree
+      $new_path_tree = array_slice($path_tree, $insert_term_index, count($new_path_terms_map));
+
+      // stick the new terms into the tree at the insertion point
+      array_splice($tree, $insertion_index+1, 0, $new_path_tree);
+    }
   }
 }
 
@@ -837,7 +875,7 @@ function _taxonomy_manager_tree_get_next_siblings_count($vid, $page, $parent = 0
  * @param $tree_id 
  * @param $parent term id of parent, that is expanded and of which children have to be loaded
  */
-function taxonomy_manager_tree_build_child_form($tree_id, $vid, $parent, $tid = 0) { 
+function taxonomy_manager_tree_build_child_form($tree_id, $vid, $parent) { 
   $params = $_GET;
   $form_state = form_state_defaults();
   $form_state['method'] = 'get';
@@ -846,8 +884,14 @@ function taxonomy_manager_tree_build_child_form($tree_id, $vid, $parent, $tid = 
   $form_state['input'] = array();
   $form_state['complete form'] = array();
     
-  if (isset($tid) && $tid != 0) {
-    $language = _taxonomy_manager_term_get_lang($tid); 
+  $tids = array();
+  if (isset($params['#terms_to_expand']) && $params['#terms_to_expand'] != 0) {
+    // convert to array
+    $tids = explode(',', $params['#terms_to_expand']);
+  }
+
+  if (count($tids) == 1) {
+    $language = _taxonomy_manager_term_get_lang($tids[0]);
   }
   else {
     $language = $params['language'];
@@ -859,7 +903,7 @@ function taxonomy_manager_tree_build_child_form($tree_id, $vid, $parent, $tid = 
     '#parent' => $parent, 
     '#pager' => TRUE,
     '#language' => $language,
-    '#term_to_expand' => $tid,
+    '#terms_to_expand' => $tids,
     '#siblings_page' => 1,
   );
 

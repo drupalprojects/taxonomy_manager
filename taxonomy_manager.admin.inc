@@ -135,16 +135,19 @@ function taxonomy_manager_form($form, &$form_state, $voc, $tid = 0, $filter = NU
   $form['taxonomy']['manager']['top']['size'] = array('#markup' => '<div class="taxonomy-manager-tree-size">'. theme("image", array('path' =>$module_path ."images/grippie.png", 'alt' => t("Resize tree"), 'title' => t("Resize tree"), 'attributes' => array('class' => "div-grippie"))) .'</div>');
   
   if (isset($form_state['values']['double_tree_values']['left_tree_expand_terms']) && count($form_state['values']['double_tree_values']['left_tree_expand_terms'])) {
-    $tid = array_shift($form_state['values']['double_tree_values']['left_tree_expand_terms']); //take the first value to expand in the tree, at the moment only one term can be expanded 
+    $tids_to_expand = $form_state['values']['double_tree_values']['left_tree_expand_terms'];
   }
-
+  else {
+    $tids_to_expand = $tid;
+  }
+  $tids_to_expand = array(2545, 2572);
   $form['taxonomy']['manager']['tree'] = array( 
     '#type' => 'taxonomy_manager_tree', 
     '#vid' => $voc->vid, 
     '#pager' => TRUE,
     '#search_string' => ($tid) ? NULL : $filter,
     '#language' => isset($language) ? $language : '',
-    '#term_to_expand' => $tid,
+    '#terms_to_expand' => $tids_to_expand,
   );
   
   $search_description = t("You can search directly for exisiting terms. 
@@ -344,7 +347,10 @@ function taxonomy_manager_double_tree_form($form, &$form_state, $voc1, $voc2, $t
   $form['taxonomy2']['manager']['top']['size'] = array('#markup' => '<div class="taxonomy-manager-tree-size">'. theme("image", array('path' => $module_path ."images/grippie.png", 'alt' => t("Resize tree"), 'title' => t("Resize tree"), 'attributes' => array('class' => "div-grippie"))) .'</div>');
   
   if (isset($form_state['values']['double_tree_values']['right_tree_expand_terms']) && count($form_state['values']['double_tree_values']['right_tree_expand_terms'])) {
-    $tid = array_shift($form_state['values']['double_tree_values']['right_tree_expand_terms']); //take the first value to expand in the tree, at the moment only one term can be expanded 
+    $tids_to_expand = $form_state['values']['double_tree_values']['right_tree_expand_terms'];
+  }
+  else {
+    $tids_to_expand = $tid;
   }
   
   $form['taxonomy2']['manager']['tree'] = array( 
@@ -353,7 +359,7 @@ function taxonomy_manager_double_tree_form($form, &$form_state, $voc1, $voc2, $t
     '#pager' => TRUE,
     '#search_string' => ($tid) ? NULL : $filter,
     '#language' => isset($language) ? $language : '',
-    '#term_to_expand' => $tid, //@todo check if term coming through ajax
+    '#terms_to_expand' => $tids_to_expand, //@todo check if term coming through ajax
   );
   
   $form['double-tree']['operations'] = array(
