@@ -320,22 +320,11 @@ input#edit-weight-down {
 /**
  * Taxonomy Manager Search
  */
-#taxonomy-manager-search .fieldset-wrapper {
+#edit-search .fieldset-wrapper {
   overflow: visible; /*fixes hidden autocomplete result in FF*/
 }
 
-#edit-search-button {
-  margin-top: 15px;
-  margin-left: 10px;
-  float: left;
-}
-
-#edit-find-field {
-  float: left;
-  line-height: 150%;
-}
-
-#edit-find-field .form-item {
+#edit-search-field .form-item {
   padding: 0;
   margin: 0;
 }

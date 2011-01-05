@@ -150,48 +150,6 @@ function taxonomy_manager_form($form, &$form_state, $voc, $tid = 0, $filter = NU
     '#terms_to_expand' => $tids_to_expand,
   );
   
-  $search_description = t("You can search directly for exisiting terms. 
-      If your input doesn't match an existing term, it will be used for filtering root level terms (useful for non-hierarchical vocabularies).");
-  
-  $form['search'] = array(  
-    '#type' => 'fieldset',
-    '#attributes' => array('id' => 'taxonomy-manager-search'), 
-    '#title' => t('Search'),
-    '#description' => $search_description, 
-    '#collapsible' => TRUE, 
-    '#collapsed' => TRUE,
-    '#tree' => TRUE, 
-  );
-  
-  $form['search']['field'] = array( 
-    '#type' => 'textfield', 
-    '#title' => t('Search String'), 
-    '#autocomplete_path' => 'taxonomy_manager/autocomplete/'. $voc->vid,
-    '#prefix' => '<div id="edit-find-field">', 
-    '#suffix' => '</div>', 
-  );
-  
-  $form['search']['button'] = array( 
-    '#type' => 'submit', 
-    '#attributes' => array('class' => array('taxonomy-manager-buttons search')),
-    '#value' => t('Search'),
-    '#suffix' => '<div class="clear"></div>',
-  );
-  $search_options = array(
-    'synonyms' => t('Include synonyms'),
-    'subtrees' => t('Search under selected terms'),
-  );
-  if (module_exists('i18ntaxonomy')) {
-    if (i18ntaxonomy_vocabulary($voc->vid) == I18N_TAXONOMY_TRANSLATE) {
-      $search_options['language'] = t('Search within selected language');
-    }
-  }
-  $form['search']['options'] = array(
-    '#type' => 'checkboxes',
-    '#title' => t('Search options'),
-    '#options' => $search_options,
-  );
-  
   $form['toolbar'] = array( 
     '#type' => 'fieldset', 
     '#title' => t('Toolbar'),
@@ -212,47 +170,6 @@ function taxonomy_manager_form($form, &$form_state, $voc, $tid = 0, $filter = NU
     '#value' => t('Down'),
     '#theme' => 'no_submit_button',
   );
-   
-  $form['toolbar']['delete_confirm'] = array( 
-    //'#type' => 'button', 
-    '#attributes' => array('class' => array('taxonomy-manager-buttons delete')),
-    '#value' => t('Delete'),
-    '#theme' => 'no_submit_button',
-  );
-
-  $form['toolbar']['add_show'] = array( 
-    //'#type' => 'button',
-    '#attributes' => array('class' => 'taxonomy-manager-buttons add'), 
-    '#value' => t('Add'), 
-    '#theme' => 'no_submit_button',
-  );
-  
-  $form['toolbar']['move_show'] = array( 
-    //'#type' => 'button', 
-    '#value' => t('Move'),
-    '#attributes' => array('class' => array('taxonomy-manager-buttons move')),
-     '#theme' => 'no_submit_button', 
-   );
-  
-  $form['toolbar']['merge_show'] = array( 
-    //'#type' => 'button', 
-    '#attributes' => array('class' => array('taxonomy-manager-buttons merge')),
-    '#value' => t('Merge'), 
-    '#theme' => 'no_submit_button', 
-  );
-  
-  $form['toolbar']['export_show'] = array( 
-    //'#type' => 'button', 
-    '#attributes' => array('class' => array('taxonomy-manager-buttons export')),
-    '#value' => t('CSV Export'), 
-    '#theme' => 'no_submit_button', 
-  );
-  $form['toolbar']['double_tree_show'] = array( 
-    //'#type' => 'button', 
-    '#attributes' => array('class' => array('taxonomy-manager-buttons double-tree')),
-    '#value' => t('Double Tree'), 
-    '#theme' => 'no_submit_button', 
-  );
   
   $form['toolbar']['wrapper'] = array( 
     '#type' => 'markup', 
@@ -260,24 +177,20 @@ function taxonomy_manager_form($form, &$form_state, $voc, $tid = 0, $filter = NU
     '#weight' => 20,
     '#prefix' => '</div>',
   );
-  $form['toolbar_forms_wrapper'] = array( 
-    '#type' => 'markup', 
-    '#markup' => '<div id="taxonomy-manager-toolbar-forms"></div>', 
-  );
-  
   
   taxonomy_manager_add_form($form, $voc);
+  
+  taxonomy_manager_confirm_delete($form, $voc);
   
   taxonomy_manager_merge_form($form, $voc);
   
   taxonomy_manager_move_form($form, $voc);
   
-  taxonomy_manager_confirm_delete($form, $voc);
-  
   taxonomy_manager_export_form($form, $voc);
   
   taxonomy_manager_double_tree_settings_form($form, $voc);
   
+  taxonomy_manager_search_form($form, $voc);
   
   // A term clicked in tree-view and submitted through load-tid helper, 
   // generate term data form.
@@ -441,6 +354,73 @@ function taxonomy_manager_double_tree_form($form, &$form_state, $voc1, $voc2, $t
   return $form;
 }
 
+/**
+ * form for searching terms
+ */
+function taxonomy_manager_search_form(&$form, $voc) {
+	$form['#attached']['js'][] = array(
+    'data' => array('hideForm' => array(array(
+      'show_button' => 'edit-search-show', 	 
+	    'hide_button' => 'edit-search-cancel', 	 
+	    'div' => 'edit-search'))), 
+    'type' => 'setting');
+  
+  $form['toolbar']['search_show'] = array( 
+    //'#type' => 'button',
+    '#attributes' => array('class' => array('taxonomy-manager-buttons', 'search')), 
+    '#value' => t('Search'), 
+    '#theme' => 'no_submit_button',
+  );
+  
+  $search_description = t("You can search directly for exisiting terms. 
+      If your input doesn't match an existing term, it will be used for filtering root level terms (useful for non-hierarchical vocabularies).");
+  
+  $form['search'] = array(  
+    '#type' => 'fieldset',
+    '#title' => t('Search'),
+    '#attributes' => array('style' => 'display:none;'),
+    '#description' => $search_description, 
+    '#collapsed' => TRUE,
+    '#tree' => TRUE, 
+  );
+  
+  $form['search']['field'] = array( 
+    '#type' => 'textfield', 
+    '#title' => t('Search String'), 
+    '#autocomplete_path' => 'taxonomy_manager/autocomplete/'. $voc->vid,
+    //'#prefix' => '<div id="edit-find-field">', 
+    //'#suffix' => '</div>', 
+  );
+  
+  $search_options = array(
+    'synonyms' => t('Include synonyms'),
+    'subtrees' => t('Search under selected terms'),
+  );
+  if (module_exists('i18ntaxonomy')) {
+    if (i18ntaxonomy_vocabulary($voc->vid) == I18N_TAXONOMY_TRANSLATE) {
+      $search_options['language'] = t('Search within selected language');
+    }
+  }
+  $form['search']['options'] = array(
+    '#type' => 'checkboxes',
+    '#title' => t('Search options'),
+    '#options' => $search_options,
+  );
+  
+  $form['search']['button'] = array( 
+    '#type' => 'submit', 
+    '#attributes' => array('class' => array('taxonomy-manager-buttons', 'search')),
+    '#value' => t('Search'),
+    //'#suffix' => '<div class="clear"></div>',
+  );
+  
+  $form['search']['cancel'] = array( 
+    //'#type' => 'button', 
+    '#value' => t('Cancel'),
+    '#theme' => 'no_submit_button',
+    '#attributes' => array('class' => array('taxonomy-manager-buttons', 'cancel')),  
+  );
+}
 
 /**
  * confirmation form for deleting selected terms
@@ -453,6 +433,13 @@ function taxonomy_manager_confirm_delete(&$form, $voc) {
       'div' => 'edit-delete'))), 
     'type' => 'setting');
 
+  $form['toolbar']['delete_confirm'] = array( 
+    //'#type' => 'button', 
+    '#attributes' => array('class' => array('taxonomy-manager-buttons delete')),
+    '#value' => t('Delete'),
+    '#theme' => 'no_submit_button',
+  );
+  
   $form['delete'] = array(
     '#type' => 'fieldset',
     '#attributes' => array('style' => 'display:none;'),
@@ -509,6 +496,13 @@ function taxonomy_manager_add_form(&$form, $voc, $hide_form = TRUE) {
   $description = "";
   $description = t("If you have selected one or more terms in the tree view, the new terms are automatically children of those.");
   
+  $form['toolbar']['add_show'] = array( 
+    //'#type' => 'button',
+    '#attributes' => array('class' => 'taxonomy-manager-buttons add'), 
+    '#value' => t('Add'), 
+    '#theme' => 'no_submit_button',
+  );
+  
   $form['add'] = array( 
     '#type' => 'fieldset', 
     '#tree' => TRUE,
@@ -517,7 +511,7 @@ function taxonomy_manager_add_form(&$form, $voc, $hide_form = TRUE) {
     '#description' => $description,
   );
   
-  for ($i=0; $i<6; $i++) {
+  for ($i=0; $i<3; $i++) {
     $form['add']['term'][$i] = array( 
       '#type' => 'textfield', 
     );
@@ -562,7 +556,14 @@ function taxonomy_manager_merge_form(&$form, $voc) {
     'type' => 'setting');
       
   $description = t("The selected terms get merged into one term. This resulting merged term can either be an exisiting term or a completely new term. The selected terms will automatically get synomyms of the merged term and will be deleted afterwards.");
-  
+
+  $form['toolbar']['merge_show'] = array( 
+    //'#type' => 'button', 
+    '#attributes' => array('class' => array('taxonomy-manager-buttons merge')),
+    '#value' => t('Merge'), 
+    '#theme' => 'no_submit_button', 
+  );
+
   $form['merge'] = array( 
     '#type' => 'fieldset',
     '#tree' => TRUE,
@@ -622,7 +623,13 @@ function taxonomy_manager_move_form(&$form, $voc) {
     
   $description = t("You can change the parent of one or more selected terms. 
       If you leave the autocomplete field empty, the term will be a root term.");
-  
+
+  $form['toolbar']['move_show'] = array( 
+    //'#type' => 'button', 
+    '#value' => t('Move'),
+    '#attributes' => array('class' => array('taxonomy-manager-buttons move')),
+     '#theme' => 'no_submit_button', 
+   );
   $form['move'] = array( 
     '#type' => 'fieldset',
     '#tree' => TRUE,
@@ -678,6 +685,12 @@ function taxonomy_manager_export_form(&$form, $voc) {
     'data' => array('exportCSV' => array('url' => url("admin/structure/taxonomy_manager/export"))), 
     'type' => 'setting');
   
+  $form['toolbar']['export_show'] = array( 
+    //'#type' => 'button', 
+    '#attributes' => array('class' => array('taxonomy-manager-buttons export')),
+    '#value' => t('CSV Export'), 
+    '#theme' => 'no_submit_button', 
+  );
   $form['export'] = array( 
     '#type' => 'fieldset',
     '#tree' => TRUE,
@@ -740,7 +753,13 @@ function taxonomy_manager_double_tree_settings_form(&$form, $voc) {
 	    'hide_button' => 'edit-double-tree-settings-cancel', 	 
 	    'div' => 'edit-double-tree-settings'))), 
     'type' => 'setting');
-    
+
+  $form['toolbar']['double_tree_show'] = array( 
+    //'#type' => 'button', 
+    '#attributes' => array('class' => array('taxonomy-manager-buttons double-tree')),
+    '#value' => t('Double Tree'), 
+    '#theme' => 'no_submit_button', 
+  );
   $form['double-tree-settings'] = array( 
     '#type' => 'fieldset',
     '#tree' => TRUE,
@@ -2349,7 +2368,9 @@ function taxonomy_manager_autocomplete_search_terms($typed_input, $vid, $include
     }*/
     $terms = taxonomy_get_term_by_name($typed_term);
     foreach ($terms as $term) {
-      $tids[] = $term->tid;
+      if ($term->vid == $vid) {
+        $tids[] = $term->tid;
+      }
     }
     
     if (count($parents)) {
