@@ -39,7 +39,9 @@ Drupal.TaxonomyManagerTree = function(id, vid) {
   this.form_token = $(this.form).children().children(' :input[name="form_token"]').val();
   this.language = this.getLanguage();
   this.treeId = id;
-  this.vocId = vid; 
+  this.vocId = vid;
+  this.childFormUrl = Drupal.settings.childForm['url'];
+  this.siblingsFormUrl = Drupal.settings.siblingsForm['url'];
 
   this.attachTreeview(this.ul);
   this.attachSiblingsForm(this.ul);
@@ -106,8 +108,7 @@ Drupal.TaxonomyManagerTree.prototype.loadChildForm = function(li, update, callba
       $(li).children("ul").remove(); 
     }
     var parentId = Drupal.getTermId(li);
-    var url = Drupal.settings.childForm['url'];
-    url += '/'+ this.treeId +'/'+ this.vocId +'/'+ parentId;
+    var url = tree.childFormUrl +'/'+ this.treeId +'/'+ this.vocId +'/'+ parentId;
     var param = new Object();
     param['form_build_id'] = this.form_build_id;
     param['form_id'] = this.form_id;
@@ -148,8 +149,7 @@ Drupal.TaxonomyManagerTree.prototype.loadChildForm = function(li, update, callba
  */
 Drupal.TaxonomyManagerTree.prototype.loadRootForm = function(tids) {
   var tree = this;
-  var url = Drupal.settings.childForm['url'];
-  url += '/'+ this.treeId +'/'+ this.vocId +'/0/';
+  var url = this.childFormUrl +'/'+ this.treeId +'/'+ this.vocId +'/0/';
   
   var param = new Object();
   param['form_build_id'] = this.form_build_id;
@@ -191,7 +191,7 @@ Drupal.TaxonomyManagerTree.prototype.loadRootForm = function(tids) {
  */
 Drupal.TaxonomyManagerTree.prototype.attachSiblingsForm = function(ul) {
   var tree = this;
-  var url = Drupal.settings.siblingsForm['url'];
+  var url = this.siblingsFormUrl;
 
   var list = "li.has-more-siblings div.term-has-more-siblings";
   if (ul) {
