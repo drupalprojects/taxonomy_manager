@@ -140,7 +140,7 @@ function taxonomy_manager_form($form, &$form_state, $voc, $tid = 0, $filter = NU
   else {
     $tids_to_expand = $tid;
   }
-  $tids_to_expand = array(2545, 2572);
+
   $form['taxonomy']['manager']['tree'] = array( 
     '#type' => 'taxonomy_manager_tree', 
     '#vid' => $voc->vid, 
