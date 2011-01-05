@@ -8,10 +8,13 @@
 
 Drupal.behaviors.TaxonomyManagerHideForm = {
   attach: function(context, settings) {
-    settings = settings.hideForm || [];
-    if (settings instanceof Array) {
-      for (var i=0; i<settings.length; i++) {
-        Drupal.attachHideForm(settings[i].div, settings[i].show_button, settings[i].hide_button); 
+    if (!$('#taxonomy-manager-toolbar').hasClass('buttons-processed')) {
+      $('#taxonomy-manager-toolbar').addClass('buttons-processed')
+      settings = settings.hideForm || [];
+      if (settings instanceof Array) {
+        for (var i=0; i<settings.length; i++) {
+          Drupal.attachHideForm(settings[i].div, settings[i].show_button, settings[i].hide_button);
+        }
       }
     }
   }

@@ -52,16 +52,17 @@ function taxonomy_manager_form($form, &$form_state, $voc, $tid = 0, $filter = NU
   }
 	   
   $module_path = drupal_get_path('module', 'taxonomy_manager') .'/';
-  drupal_add_css($module_path .'css/taxonomy_manager.css');
-  drupal_add_js($module_path .'js/hideForm.js');
-  drupal_add_js($module_path .'js/updateWeight.js');
-  drupal_add_js($module_path .'js/termData.js');
-
-  drupal_add_js(array('termData' => array('url' => url("admin/structure/taxonomy_manager/termdata/edit/". $voc->vid))), 'setting'); 
-  drupal_add_js(array('updateWeight' => array('up' => 'edit-weight-up', 'down' => 'edit-weight-down', 'url' => url('admin/structure/taxonomy_manager/weight/'), 'disable_mouseover' => variable_get('taxonomy_manager_disable_mouseover', 0))), 'setting');
-  drupal_add_js(array('TMAjaxThrobber' => array('add' => TRUE)), 'setting');
-  drupal_add_js(array('taxonomy_manager' => array('modulePath' => (url($module_path) == $module_path) ? $module_path : (base_path() . $module_path))), 'setting');
-
+  
+  $form['#attached']['css'][] = $module_path .'css/taxonomy_manager.css';
+  $form['#attached']['js'][] = $module_path .'js/hideForm.js';
+  $form['#attached']['js'][] = $module_path .'js/updateWeight.js';
+  $form['#attached']['js'][] = $module_path .'js/termData.js';
+  
+  $form['#attached']['js'][] = array('data' => array('termData' => array('url' => url("admin/structure/taxonomy_manager/termdata/edit/". $voc->vid))), 'type' => 'setting');
+  $form['#attached']['js'][] = array('data' => array('updateWeight' => array('up' => 'edit-weight-up', 'down' => 'edit-weight-down', 'url' => url('admin/structure/taxonomy_manager/weight/'), 'disable_mouseover' => variable_get('taxonomy_manager_disable_mouseover', 0))), 'type' => 'setting');
+  $form['#attached']['js'][] = array('data' => array('TMAjaxThrobber' => array('add' => TRUE)), 'type' => 'setting');
+  $form['#attached']['js'][] = array('data' => array('taxonomy_manager' => array('modulePath' => (url($module_path) == $module_path) ? $module_path : (base_path() . $module_path))), 'type' => 'setting');
+  
   drupal_set_title(t("Taxonomy Manager - %voc_name", array("%voc_name" => $voc->name)), PASS_THROUGH);
 
   $form['voc'] = array('#type' => 'value', "#value" => $voc);
@@ -262,17 +263,17 @@ function taxonomy_manager_form($form, &$form_state, $voc, $tid = 0, $filter = NU
   );
   
   
-  $form += taxonomy_manager_add_form($voc);
+  taxonomy_manager_add_form($form, $voc);
   
-  $form += taxonomy_manager_merge_form($voc);
+  taxonomy_manager_merge_form($form, $voc);
   
-  $form += taxonomy_manager_move_form($voc);
+  taxonomy_manager_move_form($form, $voc);
   
-  $form += taxonomy_manager_confirm_delete($voc);
+  taxonomy_manager_confirm_delete($form, $voc);
   
-  $form += taxonomy_manager_export_form($voc);
+  taxonomy_manager_export_form($form, $voc);
   
-  $form += taxonomy_manager_double_tree_settings_form($voc);
+  taxonomy_manager_double_tree_settings_form($form, $voc);
   
   
   // A term clicked in tree-view and submitted through load-tid helper, 
@@ -438,13 +439,14 @@ function taxonomy_manager_double_tree_form($form, &$form_state, $voc1, $voc2, $t
 /**
  * confirmation form for deleting selected terms
  */
-function taxonomy_manager_confirm_delete($voc) {
-  drupal_add_js(array('hideForm' => array(array(
-    'show_button' => 'edit-delete-confirm', 	 
-    'hide_button' => 'edit-delete-cancel', 	 
-    'div' => 'edit-delete'))), 'setting');
-	     
-  $form = array();
+function taxonomy_manager_confirm_delete(&$form, $voc) {
+  $form['#attached']['js'][] = array(
+    'data' => array('hideForm' => array(array(
+      'show_button' => 'edit-delete-confirm', 	 
+      'hide_button' => 'edit-delete-cancel', 	 
+      'div' => 'edit-delete'))), 
+    'type' => 'setting');
+
   $form['delete'] = array(
     '#type' => 'fieldset',
     '#attributes' => array('style' => 'display:none;'),
@@ -481,25 +483,23 @@ function taxonomy_manager_confirm_delete($voc) {
     '#value' => t('Cancel'), 
     '#theme' => 'no_submit_button',  
   );
-  
-  return $form;
 }
 
 /**
  * form for adding terms
  */
-function taxonomy_manager_add_form($voc, $hide_form = TRUE) {
+function taxonomy_manager_add_form(&$form, $voc, $hide_form = TRUE) {
   $attributes = array();
   if ($hide_form) {
-    drupal_add_js(array('hideForm' => array(array( 	 
-	    'show_button' => 'edit-add-show', 	 
-	    'hide_button' => 'edit-add-cancel', 	 
-	    'div' => 'edit-add'))), 'setting');
+	  $form['#attached']['js'][] = array(
+      'data' => array('hideForm' => array(array(
+        'show_button' => 'edit-add-show', 	 
+	      'hide_button' => 'edit-add-cancel', 	 
+	      'div' => 'edit-add'))), 
+      'type' => 'setting');
     $attributes = array('style' => 'display:none;');
   }
-  
-  $form = array();
-  
+    
   $description = "";
   $description = t("If you have selected one or more terms in the tree view, the new terms are automatically children of those.");
   
@@ -541,23 +541,20 @@ function taxonomy_manager_add_form($voc, $hide_form = TRUE) {
     '#theme' => 'no_submit_button',
     '#attributes' => array('class' => array('taxonomy-manager-buttons', 'cancel')),  
   );
-
-  return $form;
-  
 }
 
 
 /**
  * form for merging terms
  */
-function taxonomy_manager_merge_form($voc) {  
-  drupal_add_js(array('hideForm' => array(array( 	 
-	  'show_button' => 'edit-merge-show', 	 
-	  'hide_button' => 'edit-merge-cancel', 	 
-	  'div' => 'edit-merge'))), 'setting');
-
-  $form = array();
-  
+function taxonomy_manager_merge_form(&$form, $voc) {  
+	$form['#attached']['js'][] = array(
+    'data' => array('hideForm' => array(array(
+      'show_button' => 'edit-merge-show', 	 
+	    'hide_button' => 'edit-merge-cancel', 	 
+	    'div' => 'edit-merge'))), 
+    'type' => 'setting');
+      
   $description = t("The selected terms get merged into one term. This resulting merged term can either be an exisiting term or a completely new term. The selected terms will automatically get synomyms of the merged term and will be deleted afterwards.");
   
   $form['merge'] = array( 
@@ -604,21 +601,19 @@ function taxonomy_manager_merge_form($voc) {
     '#attributes' => array('class' =>  array('taxonomy-manager-buttons', 'cancel')), 
     '#theme' => 'no_submit_button', 
   );
-  
-  return $form;
 }
 
 /**
  * form for moving terms in hierarchies
  */
-function taxonomy_manager_move_form($voc) {
-  drupal_add_js(array('hideForm' => array(array( 	 
-	  'show_button' => 'edit-move-show', 	 
-	  'hide_button' => 'edit-move-cancel', 	 
-	  'div' => 'edit-move'))), 'setting');
-
-  $form = array();
-  
+function taxonomy_manager_move_form(&$form, $voc) {
+  $form['#attached']['js'][] = array(
+    'data' => array('hideForm' => array(array(
+      'show_button' => 'edit-move-show', 	 
+	    'hide_button' => 'edit-move-cancel', 	 
+	    'div' => 'edit-move'))), 
+    'type' => 'setting');
+    
   $description = t("You can change the parent of one or more selected terms. 
       If you leave the autocomplete field empty, the term will be a root term.");
   
@@ -660,25 +655,22 @@ function taxonomy_manager_move_form($voc) {
     '#attributes' => array('class' =>  array('taxonomy-manager-buttons', 'cancel')),
     '#theme' => 'no_submit_button',  
   );
-  
-  return $form;
 }
 
 /**
  * form for exporting terms
  */
-function taxonomy_manager_export_form($voc) {
-  drupal_add_js(array('hideForm' => array(array( 	 
-	  'show_button' => 'edit-export-show', 	 
-	  'hide_button' => 'edit-export-cancel', 	 
-	  'div' => 'edit-export'))), 'setting');
-
-  $module_path = drupal_get_path('module', 'taxonomy_manager') .'/';
-  drupal_add_js($module_path .'js/csv_export.js');
-  
-  drupal_add_js(array('exportCSV' => array('url' => url("admin/structure/taxonomy_manager/export"))), 'setting');
-  
-  $form = array();
+function taxonomy_manager_export_form(&$form, $voc) {
+  $form['#attached']['js'][] = array(
+    'data' => array('hideForm' => array(array(
+      'show_button' => 'edit-export-show', 	 
+	    'hide_button' => 'edit-export-cancel', 	 
+	    'div' => 'edit-export'))), 
+    'type' => 'setting');
+  $form['#attached']['js'][] = drupal_get_path('module', 'taxonomy_manager') . '/js/csv_export.js';
+  $form['#attached']['js'][] = array(
+    'data' => array('exportCSV' => array('url' => url("admin/structure/taxonomy_manager/export"))), 
+    'type' => 'setting');
   
   $form['export'] = array( 
     '#type' => 'fieldset',
@@ -687,7 +679,6 @@ function taxonomy_manager_export_form($voc) {
     '#title' => t('CSV Export'),
   );
 
-  
   $form['export']['delimiter'] = array(
     '#type' => 'textfield',
     '#title' => t('Delimiter for CSV File'),
@@ -734,17 +725,16 @@ function taxonomy_manager_export_form($voc) {
     '#attributes' => array('class' =>  array('taxonomy-manager-buttons', 'cancel')),
     '#theme' => 'no_submit_button',  
   );
-  
-  return $form;
 }
 
-function taxonomy_manager_double_tree_settings_form($voc) {
-  drupal_add_js(array('hideForm' => array(array( 	 
-	  'show_button' => 'edit-double-tree-show', 	 
-	  'hide_button' => 'edit-double-tree-settings-cancel', 	 
-	  'div' => 'edit-double-tree-settings'))), 'setting'); 	 
-	 
-  $form = array();
+function taxonomy_manager_double_tree_settings_form(&$form, $voc) { 
+	$form['#attached']['js'][] = array(
+    'data' => array('hideForm' => array(array(
+      'show_button' => 'edit-double-tree-show', 	 
+	    'hide_button' => 'edit-double-tree-settings-cancel', 	 
+	    'div' => 'edit-double-tree-settings'))), 
+    'type' => 'setting');
+    
   $form['double-tree-settings'] = array( 
     '#type' => 'fieldset',
     '#tree' => TRUE,
@@ -785,7 +775,6 @@ function taxonomy_manager_double_tree_settings_form($voc) {
     '#attributes' => array('class' =>  array('taxonomy-manager-buttons', 'cancel')),
     '#theme' => 'no_submit_button',  
   );
-  return $form;
 }
 
 function taxonomy_manager_term_data_form(&$form, &$form_state, $tid = 0, $vid1, $vid2 = 0) {
