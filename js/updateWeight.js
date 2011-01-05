@@ -131,7 +131,7 @@ Drupal.attachUpdateWeightTerms = function(parent, currentIndex) {
  */
 Drupal.getSelectedTerms = function() {
   var terms = new Array();
-  $('.treeview').find("input[type=checkbox][checked]").each(function() {
+  $('.treeview').find("input:checked").each(function() {
     var term = $(this).parents("li").eq(0);
     terms.push(term);
   });

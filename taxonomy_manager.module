@@ -376,7 +376,7 @@ function taxonomy_manager_tree_process_elements($element) {
     
     drupal_add_js(array('siblingsForm' => array('url' => url('admin/structure/taxonomy_manager/siblingsform'), 'modulePath' => $module_path)), 'setting');
     drupal_add_js(array('childForm' => array('url' => url('admin/structure/taxonomy_manager/childform'), 'modulePath' => $module_path)), 'setting');
-    drupal_add_js(array('taxonomytree' => array('id' => $id, 'vid' => $vid)), 'setting');
+    drupal_add_js(array('taxonomytree' => array(array('id' => $id, 'vid' => $vid))), 'setting');
   }
   
   if (empty($element['#operations'])) {

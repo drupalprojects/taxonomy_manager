@@ -8,29 +8,14 @@
 
 Drupal.behaviors.TaxonomyManagerTree = {
   attach: function(context, settings) {
-    var treeSettings = settings.taxonomytree || [];
-    if (treeSettings['id']) {
-      if (!(treeSettings['id'] instanceof Array)) {
-        if (!$('#'+ treeSettings['id'] +'.tm-processed').length) {
-           new Drupal.TaxonomyManagerTree(treeSettings['id'], treeSettings['vid']);
-         }
-      }
-      else {
-        var trees = new Array(treeSettings['id'].length);
-        for (var i = 0; i < treeSettings['id'].length; i++) {
-          if (!$('#'+ treeSettings['id'][i] +'.tm-processed').length) {
-            trees[i] = new Drupal.TaxonomyManagerTree(treeSettings['id'][i], treeSettings['vid'][i]); 
-          }
-        }
-        if (trees.length == 2) {
-          var doubleTreeSettings = settings.DoubleTree || [];
-          if (doubleTreeSettings['enabled']) {
-            new Drupal.DoubleTree(trees[0], trees[1]);
-          }
+    var settings = settings.taxonomytree || [];
+    if (settings instanceof Array) {
+      for (var i=0; i<settings.length; i++) {
+        if (!$('#'+ settings[i].id +'.tm-processed').length) {
+          new Drupal.TaxonomyManagerTree(settings[i].id, settings[i].vid); 
         }
       }
-    }
-  
+    }  
     //only add throbber for TM sites
     var throbberSettings = settings.TMAjaxThrobber || [];
     if (throbberSettings['add']) {
@@ -121,12 +106,7 @@ Drupal.TaxonomyManagerTree.prototype.loadChildForm = function(li, update, callba
       $(li).children("ul").remove(); 
     }
     var parentId = Drupal.getTermId(li);
-    if (!(Drupal.settings.childForm['url'] instanceof Array)) {
-      url = Drupal.settings.childForm['url'];
-    }
-    else {
-      url = Drupal.settings.childForm['url'][0];
-    }
+    var url = Drupal.settings.childForm['url'];
     url += '/'+ this.treeId +'/'+ this.vocId +'/'+ parentId;
     var param = new Object();
     param['form_build_id'] = this.form_build_id;
@@ -215,12 +195,8 @@ Drupal.TaxonomyManagerTree.prototype.loadRootForm = function(tid) {
  */
 Drupal.TaxonomyManagerTree.prototype.attachSiblingsForm = function(ul) {
   var tree = this;
-  if (!(Drupal.settings.siblingsForm['url'] instanceof Array)) {
-    url = Drupal.settings.siblingsForm['url'];
-  }
-  else {
-    url = Drupal.settings.siblingsForm['url'][0];
-  }
+  var url = Drupal.settings.siblingsForm['url'];
+
   var list = "li.has-more-siblings div.term-has-more-siblings";
   if (ul) {
     list = $(ul).find(list);
