@@ -8,11 +8,11 @@
 
 Drupal.behaviors.TaxonomyManagerTree = {
   attach: function(context, settings) {
-    var settings = settings.taxonomytree || [];
-    if (settings instanceof Array) {
-      for (var i=0; i<settings.length; i++) {
-        if (!$('#'+ settings[i].id +'.tm-processed').length) {
-          new Drupal.TaxonomyManagerTree(settings[i].id, settings[i].vid); 
+    var treeSettings = settings.taxonomytree || [];
+    if (treeSettings instanceof Array) {
+      for (var i=0; i<treeSettings.length; i++) {
+        if (!$('#'+ treeSettings[i].id +'.tm-processed').length) {
+          new Drupal.TaxonomyManagerTree(treeSettings[i].id, treeSettings[i].vid); 
         }
       }
     }  
