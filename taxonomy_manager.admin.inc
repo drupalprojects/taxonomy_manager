@@ -823,8 +823,7 @@ function taxonomy_manager_term_data_form(&$form, &$form_state, $tid = 0, $vid1, 
     unset($form['term_data']['relations']);
     unset($form['term_data']['actions']);
 
-    $parents = taxonomy_get_parents($term->tid);
-    $form['term_data']['parents'] = _taxonomy_manager_form_term_data_parents($term, $parents, t('Parents'), 'parent', TRUE, TRUE, TRUE); 
+    $form['term_data']['parents'] = _taxonomy_manager_form_term_data_parents($term); 
     $form['term_data']['parents']['#weight'] = '52';
     
     $form['term_data']['close'] = array(
@@ -864,96 +863,71 @@ function taxonomy_manager_term_data_form(&$form, &$form_state, $tid = 0, $vid1, 
  * helper function for generating tables with values and delete op and field for adding
  *
  * @param $term term object which is going to be displayed
- * @param $values array of values to show, e.g related terms, synonyms, parents, children
- * @param $header_type string to display as header
- * @param $attr attribute type to show, can be 'related', 'synonym', 'parent', 'child'
- * @param $autocomplete if true, adds autocomplete, else a textfield
- * @param $add if true, shows add operation
  * @return an form array
  */
-function _taxonomy_manager_form_term_data_parents($term, $values, $header_type, $attr, $autocomplete = TRUE, $add = TRUE, $ajax = FALSE) {
+function _taxonomy_manager_form_term_data_parents($term) {
   $module_path = drupal_get_path('module', 'taxonomy_manager') .'/';
-  $rows = array();
   
+  $form['#tree'] = TRUE;
   $form['#theme'] = 'taxonomy_manager_term_data_extra';
+  $form['headers'][] = array('#markup' => t('Parents'));
+  $form['headers'][] = array('#markup' => '');
   $form['data'] = array();
-  foreach ($values as $tid => $value) {
-    if (is_object($value)) {
-      $name = $value->name;
-      $id = $value->tid;
-      $vid = $value->vid;
-      $extra_info = taxonomy_manager_tree_term_extra_info($value);
-    }
-    else {
-      $name = $value;
-      $id = $value;
-    }
-    $form['data'][$id][] = array(
-      '#markup' => (isset($vid) && $vid > 0) ? l($name, 'admin/structure/taxonomy_manager/termdata/'. $id, array('attributes' => array('title' => $extra_info, 'class' => 'taxonomy-term-data-name-link'))) : check_plain($name),
+  
+  foreach (taxonomy_get_parents($term->tid) as $tid => $parent) {
+    $extra_info = taxonomy_manager_tree_term_extra_info($parent);
+    $form['data'][$tid][] = array(
+      '#markup' => l($parent->name, 'admin/structure/taxonomy_manager/termdata/'. $parent->tid, array('attributes' => array('title' => $extra_info, 'class' => 'taxonomy-term-data-name-link'))),
       '#row-class' => 'taxonomy-term-data-name',
-      '#row-id' => 'term-'. $id,
+      '#row-id' => 'term-'. $tid,
       '#tree' => TRUE, 
     );
-    $form['data'][$id][0]['tid'] = array(
+    $form['data'][$tid][0]['tid'] = array(
       '#type' => 'hidden',
-      '#value' => $id,
+      '#value' => $tid,
     );
-    $form['data'][$id]['remove'] = array(
+    $form['data'][$tid]['remove'] = array(
       '#type' => 'image_button',
       '#attributes' => array('title' => t('Remove')),
       '#submit' => array('taxonomy_manager_term_data_form_submit_parents_remove'),
       '#validate' => array('taxonomy_manager_term_data_form_validate_parents_remove'),
-      
       '#src' => $module_path ."images/list-remove.png",
       '#row-class' => 'taxonomy-term-data-operations',
     );
-    if ($ajax) {
-      $form['data'][$id]['remove']['#ajax'] = array(
-        'callback' => 'taxonomy_manager_term_data_form_ajax_callback',
-        'progress' => array('type' => ''),
-        'method' => 'replaceWith',
-        'event' => 'click',
-        'wrapper' => 'taxonomy-term-data-replace',
-      );
-    }
+    $form['data'][$tid]['remove']['#ajax'] = array(
+      'callback' => 'taxonomy_manager_term_data_form_ajax_callback',
+      'progress' => array('type' => ''),
+      'method' => 'replaceWith',
+      'event' => 'click',
+      'wrapper' => 'taxonomy-term-data-replace',
+    );
   }
-  $form['headers'][] = array('#markup' => $header_type);
-  $form['headers'][] = array('#markup' => '');
 
   $form['op'] = array();
-  if ($add) {
-    $form['op']['add'] = array( 
-      '#type' => 'textfield',
-      '#prefix' => '<div class="term-data-autocomplete">',
-      '#suffix' => '</div>',
-      '#size' => 35,
-    );
-    if ($autocomplete) {
-      $form['op']['add']['#autocomplete_path'] = 'taxonomy_manager/autocomplete/'. $term->vid;
-    }
-  
-    $form['op']['add_button'] = array( 
-      '#type' => 'image_button',
-      '#attributes' => array('title' => t('Add')),
-      '#submit' => array('taxonomy_manager_term_data_form_submit_parents_add'),
-      '#validate' => array('taxonomy_manager_term_data_form_validate_parents_add'),
-      '#src' => $module_path ."images/list-add.png",
-      '#row-class' => 'term-data-autocomplete-add',
-    );
-    if ($ajax) {
-      $form['op']['add_button']['#ajax'] = array(
-        'callback' => 'taxonomy_manager_term_data_form_ajax_callback',
-        'progress' => array('type' => ''),
-        'method' => 'replaceWith',
-        'event' => 'click',
-        'wrapper' => 'taxonomy-term-data-replace',
-      );
-    }
-  }
-  $form['#tree'] = TRUE;
+  $form['op']['add'] = array( 
+    '#type' => 'textfield',
+    '#prefix' => '<div class="term-data-autocomplete">',
+    '#autocomplete_path' => 'taxonomy_manager/autocomplete/'. $term->vid,
+    '#suffix' => '</div>',
+    '#size' => 35,
+  );
+  $form['op']['add_button'] = array( 
+    '#type' => 'image_button',
+    '#attributes' => array('title' => t('Add')),
+    '#submit' => array('taxonomy_manager_term_data_form_submit_parents_add'),
+    '#validate' => array('taxonomy_manager_term_data_form_validate_parents_add'),
+    '#src' => $module_path ."images/list-add.png",
+    '#row-class' => 'term-data-autocomplete-add',
+    '#ajax' => array(
+      'callback' => 'taxonomy_manager_term_data_form_ajax_callback',
+      'progress' => array('type' => ''),
+      'method' => 'replaceWith',
+      'event' => 'click',
+      'wrapper' => 'taxonomy-term-data-replace',
+    ),
+  );
   
   return $form;
-
 }
 
 /**
@@ -1561,10 +1535,8 @@ function taxonomy_manager_term_data_form_submit($form, &$form_state) {
 }
 
 
-/**
- * @see taxonomy_manager_term_data_form_validate_parents_add in taxonomy_manager.module
- */
-function _taxonomy_manager_term_data_form_validate_parents_add($form, &$form_state) {
+
+function taxonomy_manager_term_data_form_validate_parents_add($form, &$form_state) {
   $term_data = $form_state['values'];  
   $term = taxonomy_term_load($term_data['tid']);
   
@@ -1592,7 +1564,6 @@ function _taxonomy_manager_term_data_form_validate_parents_add($form, &$form_sta
       form_set_error('parents][op][add', t('Invalid parent. The resulting hierarchy would contain circles, which is not allowed. A term cannot be a parent of itself.'));
     }  
   }
-
 }
 
 function taxonomy_manager_term_data_form_submit_parents_add($form, &$form_state) {
@@ -1616,15 +1587,14 @@ function taxonomy_manager_term_data_form_submit_parents_add($form, &$form_state)
     ->execute();  
     
   taxonomy_term_save($term); //executes hooks and clears caches
+  taxonomy_manager_update_voc($term->vid, taxonomy_get_parents($term->tid)); // update hierarchy settings, if necessary
   drupal_set_message(t('Updated hierarchy'));
   $form_state['rebuild'] = TRUE;
   form_set_value(array('#parents' => array('tree-update')), array('update' => TRUE), $form_state); 
 }
 
-/**
- * @see taxonomy_manager_term_data_form_validate_parents_remove in taxonomy_manager.module
- */
-function _taxonomy_manager_term_data_form_validate_parents_remove($form, &$form_state) {
+
+function taxonomy_manager_term_data_form_validate_parents_remove($form, &$form_state) {
   $splits = explode('][', $form_state['triggering_element']['#name']);
   if (count($splits) == 3 && is_numeric($splits[1])) {
     form_set_value(array('#parents' => array('remove_parent_tid')), $splits[1], $form_state);

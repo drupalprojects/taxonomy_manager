@@ -148,33 +148,6 @@ function taxonomy_manager_help($path, $arg) {
   }
 }
 
-/**
- * Implements hook_form_FORM_ID_alter().
- */
-function taxonomy_manager_form_taxonomy_form_term_alter(&$form, &$form_state) {
-  include_once drupal_get_path('module', 'taxonomy_manager') . '/' . "taxonomy_manager.admin.inc";
-  
-  // We are going to override the hierarchy selector with a scalalbe widget.
-  // If not already done, set this variable.
-  if (!variable_get('taxonomy_override_selector', FALSE)) {
-    variable_set('taxonomy_override_selector', TRUE);
-  }
-
-  $term = (object) $form['#term'];
-  $parents = taxonomy_get_parents($term->tid);
-  $form['relations']['parents'] = _taxonomy_manager_form_term_data_parents($term, $parents, t('Parents'), 'parent', TRUE); 
-}
-
-function taxonomy_manager_term_data_form_validate_parents_remove($form, &$form_state) {
-  include_once drupal_get_path('module', 'taxonomy_manager') . '/' . "taxonomy_manager.admin.inc";
-  _taxonomy_manager_term_data_form_validate_parents_remove($form, $form_state);
-}
-
-function taxonomy_manager_term_data_form_validate_parents_add($form, &$form_state) {
-  include_once drupal_get_path('module', 'taxonomy_manager') . '/' . "taxonomy_manager.admin.inc";
-  _taxonomy_manager_term_data_form_validate_parents_add($form, $form_state);
-}
-
 
 /**
  * function gets called by the taxonomy_manager_tree form type ('taxonomy_manager_'. form_id .'_operations')
