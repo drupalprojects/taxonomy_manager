@@ -93,7 +93,7 @@ function taxonomy_manager_form($form, &$form_state, $voc, $tid = 0, $filter = NU
     $form['text'] = array( 
       '#markup' => $text,
     );
-    $form += taxonomy_manager_add_form($voc, FALSE);
+    taxonomy_manager_add_form($form, $voc, FALSE);
     return $form;
   }
   $form_state['cache'] = TRUE;
@@ -491,17 +491,16 @@ function taxonomy_manager_add_form(&$form, $voc, $hide_form = TRUE) {
 	      'div' => 'edit-add'))), 
       'type' => 'setting');
     $attributes = array('style' => 'display:none;');
+    $form['toolbar']['add_show'] = array( 
+      //'#type' => 'button',
+      '#attributes' => array('class' => 'taxonomy-manager-buttons add'), 
+      '#value' => t('Add'), 
+      '#theme' => 'no_submit_button',
+    );
   }
     
   $description = "";
   $description = t("If you have selected one or more terms in the tree view, the new terms are automatically children of those.");
-  
-  $form['toolbar']['add_show'] = array( 
-    //'#type' => 'button',
-    '#attributes' => array('class' => 'taxonomy-manager-buttons add'), 
-    '#value' => t('Add'), 
-    '#theme' => 'no_submit_button',
-  );
   
   $form['add'] = array( 
     '#type' => 'fieldset', 
