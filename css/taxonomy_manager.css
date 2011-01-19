@@ -317,6 +317,15 @@ input#edit-weight-down {
 }
 
 
+/** 
+ * fixing position of autocomplete in seven theme
+ */
+fieldset#edit-search,
+fieldset#edit-move {
+  position: static;
+}
+
+
 /**
  * Taxonomy Manager Search
  */
