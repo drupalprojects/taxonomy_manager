@@ -182,7 +182,9 @@ function taxonomy_manager_form($form, &$form_state, $voc, $tid = 0, $filter = NU
   
   taxonomy_manager_confirm_delete($form, $voc);
   
-  taxonomy_manager_merge_form($form, $voc);
+  // hide merge button until merge operation is implemented
+  // @todo implement merge
+  //taxonomy_manager_merge_form($form, $voc);
   
   taxonomy_manager_move_form($form, $voc);
   
@@ -393,7 +395,7 @@ function taxonomy_manager_search_form(&$form, $voc) {
   );
   
   $search_options = array(
-    'synonyms' => t('Include synonyms'),
+    //'synonyms' => t('Include synonyms'), // @todo implement synonyms feature
     'subtrees' => t('Search under selected terms'),
   );
   if (module_exists('i18ntaxonomy')) {
@@ -1037,9 +1039,10 @@ function taxonomy_manager_form_submit($form, &$form_state) {
   $selected_tids = array();
   $language = "";
   
-  if ($form_state['values']['search']['options']['synonyms']) {
+  // @todo
+  /*if ($form_state['values']['search']['options']['synonyms']) {
     $include_synonyms = TRUE;
-  }
+  }*/
   if ($form_state['values']['search']['options']['subtrees']) {
     $selected_tids = $form_state['values']['taxonomy']['manager']['tree']['selected_terms'];
   }
