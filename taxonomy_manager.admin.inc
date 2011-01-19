@@ -1508,7 +1508,7 @@ function taxonomy_manager_term_data_form_ajax_callback($form, $form_state) {
     if (isset($form_state['values']['tree-update']['update']) && $form_state['values']['tree-update']['update']) {
       $commands[] = ajax_command_insert('#taxonomy-manager .form-item-taxonomy-manager-tree', drupal_render($form['taxonomy']['manager']['tree']));
       if (isset($form['taxonomy2'])) {
-        $commands[] = ajax_command_insert('#taxonomy-manager .form-item-taxonomy2-manager-tree', drupal_render($tform['taxonomy2']['manager']['tree']));
+        $commands[] = ajax_command_insert('#taxonomy-manager .form-item-taxonomy2-manager-tree', drupal_render($form['taxonomy2']['manager']['tree']));
       }
     }
     else if (isset($form_state['values']['tree-update']['update-name'])) {
