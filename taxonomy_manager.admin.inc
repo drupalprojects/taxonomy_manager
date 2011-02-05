@@ -137,6 +137,9 @@ function taxonomy_manager_form($form, &$form_state, $voc, $tid = 0, $filter = NU
   if (isset($form_state['values']['double_tree_values']['left_tree_expand_terms']) && count($form_state['values']['double_tree_values']['left_tree_expand_terms'])) {
     $tids_to_expand = $form_state['values']['double_tree_values']['left_tree_expand_terms'];
   }
+  else if (isset($form_state['values']['searched_terms']) && count($form_state['values']['searched_terms'])) {
+    $tids_to_expand = $form_state['values']['searched_terms'];
+  }
   else {
     $tids_to_expand = $tid;
   }
@@ -1067,6 +1070,7 @@ function taxonomy_manager_form_submit($form, &$form_state) {
       $parent_text = count($parents) ? implode(' | ', $parents) ." › " : "";
       $matched_text_list[] = $parent_text ."". l($matched_term->name, $url_prefix .'/'. $matched_term->tid, array('attributes' => array('title' => taxonomy_manager_tree_term_extra_info($matched_term)))) ." (". $matched_term->tid . (!empty($matched_term->language) ? '-'. check_plain($matched_term->language) : '') . ")";
     }
+    form_set_value($form, array('searched_terms' => $terms), $form_state);
     drupal_set_message(t("Your search string matches !count terms:", array('!count' => count($terms))) ."". theme('item_list', array('items' => $matched_text_list)));
     $form_state['rebuild'] = TRUE;
   }
