@@ -151,6 +151,7 @@ function taxonomy_manager_form($form, &$form_state, $voc, $tid = 0, $filter = NU
     '#search_string' => ($tid) ? NULL : $filter,
     '#language' => isset($language) ? $language : '',
     '#terms_to_expand' => $tids_to_expand,
+    '#terms_to_highlight' => $tids_to_expand,
   );
   
   $form['toolbar'] = array( 
@@ -278,6 +279,7 @@ function taxonomy_manager_double_tree_form($form, &$form_state, $voc1, $voc2, $t
     '#search_string' => ($tid) ? NULL : $filter,
     '#language' => isset($language) ? $language : '',
     '#terms_to_expand' => $tids_to_expand, //@todo check if term coming through ajax
+    '#terms_to_highlight' => $tids_to_expand,
   );
   
   $form['double-tree']['operations'] = array(

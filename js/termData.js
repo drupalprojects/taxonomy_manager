@@ -57,10 +57,9 @@ Drupal.attachTermDataToSiblings = function(all, currentIndex) {
  * adds click events to term data form, which is already open, when page gets loaded
  */
 Drupal.attachTermDataForm = function() {
+  active_term = $('div.highlightActiveTerm').find('a');
   var tid = $('#taxonomy-term-data').find('input:hidden[name="tid"]').val();
   if (tid) {
-    var termLink = $('input[class="term-id"][value="'+ tid +'"]').parent().find("a.term-data-link");
-    Drupal.activeTermSwapHighlight(termLink);
     new Drupal.TermData(tid).form();
   }  
 }
@@ -135,10 +134,10 @@ Drupal.TermData.prototype.form = function() {
 */
 Drupal.activeTermSwapHighlight = function(link) {
   try {
-    $(active_term).parent().removeClass('highlightActiveTerm');
+    $(active_term).parents('div.term-line').removeClass('highlightActiveTerm');
   } catch(e) {}
   active_term = link;
-  $(active_term).parent().addClass('highlightActiveTerm');
+  $(active_term).parents('div.term-line:first').addClass('highlightActiveTerm');
 }
 
 })(jQuery);
