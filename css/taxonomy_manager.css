@@ -167,7 +167,7 @@
   text-decoration: none;
 }
 
-div.highlightActiveTerm {
+div.highlightActiveTerm div.form-item {
   background-color:#dddddd;
 }
 .highlightActiveTerm a {
