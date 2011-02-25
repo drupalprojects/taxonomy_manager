@@ -1,4 +1,3 @@
-// $Id$
 
 /**
  * @file loads next siblings, if only parts of long lists are initially loaded

@@ -1,4 +1,3 @@
-// $Id$
 
 /**
  *@file generates nested children terms, which are loaded through ahah
