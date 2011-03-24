@@ -323,6 +323,7 @@ function taxonomy_manager_element_info() {
     '#search_string' => '',
     '#terms_to_expand' => array(),
     '#terms_to_highlight' => array(),
+    '#language' => NULL,
   );
   
   return $type;
@@ -1149,7 +1150,7 @@ function theme_taxonomy_manager_tree_checkbox($variables) {
   $checkbox .= drupal_attributes($element['#attributes']) .' />';
   
   $title = $element['#title'];
-  if ($element['#link']) {
+  if (isset($element['#link'])) {
     $attr = array();
     $attr["class"][] = "term-data-link";
     $attr["class"][] = "term-data-link-id-". $element['#return_value'];
