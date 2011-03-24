@@ -1174,21 +1174,21 @@ function theme_taxonomy_manager_tree_checkbox($variables) {
  * themes a radio, where a label can optional contain a link
  */
 function theme_taxonomy_manager_tree_radio($variables) {
-  $element = $variablse['element'];
+  $element = $variables['element'];
   _form_set_class($element, array('form-radio'));
   $output = '<input ';
   $output .= 'type="radio" ';
-  $output .= 'name="'. $element['#parents'][0] ."[". $element['#parents'][1] ."]" .'" '; //TODO check this
+  $output .= 'name="'. $element['#parents'][0] .'" ';
   $output .= 'id="'. $element['#id'] .'" ' ;  
   $output .= 'value="'. $element['#return_value'] .'" ';
-  $checkbox .= $element['#value'] ? ' checked="checked" ' : ' ';
+  $checkbox = $element['#value'] ? ' checked="checked" ' : ' ';
 
   
   $output .= $element['#value'] ? ' checked="checked" ' : ' ';
   $output .= drupal_attributes($element['#attributes']) .' />';
   
   $title = $element['#title'];
-  if ($element['#link']) {
+  if (isset($element['#link'])) {
     $title = l($title, $element['#link'], array('attributes' => array("class" => "term-data-link term-data-link-id-". $element['#return_value'] ."")));
   }
   else {
