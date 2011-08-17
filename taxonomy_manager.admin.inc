@@ -2037,14 +2037,14 @@ function taxonomy_manager_delete_terms($tids, $options = array()) {
           $parents = taxonomy_get_parents($child->tid);
           if ($options['delete_orphans']) {
             if (count($parents) == 1) {
-              $orphans[] = $child->tid;
+              $orphans[$child->tid] = $child->tid;
             }
             else {
-              $remaining_child_terms[] = $child;
+              $remaining_child_terms[$child->tid] = $child;
             }
           }
           else {
-            $remaining_child_terms[] = $child;
+            $remaining_child_terms[$child->tid] = $child;
             db_delete('taxonomy_term_hierarchy')
               ->condition('tid', $child->tid)
               ->condition('parent', $tid)
@@ -2076,11 +2076,11 @@ function taxonomy_manager_delete_terms($tids, $options = array()) {
       field_attach_delete('taxonomy_term', $term);
       module_invoke_all('taxonomy_term_delete', $term);
 
-      $tids = $orphans;
+      // Reset cache after each deletion as it might affect parents/children information that is used later on.
+      taxonomy_terms_static_reset();
     }
+    $tids = $orphans;
   } 
-  cache_clear_all();
-  taxonomy_terms_static_reset();
   return array('deleted_terms' => $deleted_terms, 'remaining_child_terms' => $remaining_child_terms);
 }
 
