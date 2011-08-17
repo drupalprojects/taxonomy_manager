@@ -381,10 +381,10 @@ function taxonomy_manager_search_form(&$form, $voc) {
   $search_description = t("You can search directly for exisiting terms. 
       If your input doesn't match an existing term, it will be used for filtering root level terms (useful for non-hierarchical vocabularies).");
   
-  $form['search'] = array(  
+  $form['search'] = array(
     '#type' => 'fieldset',
     '#title' => t('Search'),
-    '#attributes' => array('style' => 'display:none;'),
+    '#attributes' => array('style' => 'display:none;', 'id' => 'edit-search'),
     '#description' => $search_description, 
     '#collapsed' => TRUE,
     '#tree' => TRUE, 
@@ -448,7 +448,7 @@ function taxonomy_manager_confirm_delete(&$form, $voc) {
   
   $form['delete'] = array(
     '#type' => 'fieldset',
-    '#attributes' => array('style' => 'display:none;'),
+    '#attributes' => array('style' => 'display:none;', 'id' => 'edit-delete'),
     '#tree' => TRUE,
     '#title' => t('Confirmation'),
   );
@@ -496,7 +496,7 @@ function taxonomy_manager_add_form(&$form, $voc, $hide_form = TRUE) {
 	      'hide_button' => 'edit-add-cancel', 	 
 	      'div' => 'edit-add'))), 
       'type' => 'setting');
-    $attributes = array('style' => 'display:none;');
+    $attributes = array('style' => 'display:none;', 'id' => 'edit-add');
     $form['toolbar']['add_show'] = array( 
       //'#type' => 'button',
       '#attributes' => array('class' => 'taxonomy-manager-buttons add'), 
@@ -572,7 +572,7 @@ function taxonomy_manager_merge_form(&$form, $voc) {
   $form['merge'] = array( 
     '#type' => 'fieldset',
     '#tree' => TRUE,
-    '#attributes' => array('style' => 'display:none;'),
+    '#attributes' => array('style' => 'display:none;', 'id' => 'edit-merge'),
     '#title' => t('Merging of terms'), 
     '#description' => $description,
   );
@@ -638,7 +638,7 @@ function taxonomy_manager_move_form(&$form, $voc) {
   $form['move'] = array( 
     '#type' => 'fieldset',
     '#tree' => TRUE,
-    '#attributes' => array('style' => 'display:none;'),
+    '#attributes' => array('style' => 'display:none;', 'id' => 'edit-move'),
     '#title' => t('Moving of terms'),
     '#description' => $description,
   );
@@ -699,7 +699,7 @@ function taxonomy_manager_export_form(&$form, $voc) {
   $form['export'] = array( 
     '#type' => 'fieldset',
     '#tree' => TRUE,
-    '#attributes' => array('style' => 'display:none;'),
+    '#attributes' => array('style' => 'display:none;', 'id' => 'edit-export'),
     '#title' => t('CSV Export'),
   );
 
@@ -768,7 +768,7 @@ function taxonomy_manager_double_tree_settings_form(&$form, $voc) {
   $form['double-tree-settings'] = array( 
     '#type' => 'fieldset',
     '#tree' => TRUE,
-    '#attributes' => array('style' => 'display:none;'),
+    '#attributes' => array('style' => 'display:none;', 'id' => 'edit-double-tree-settings'),
     '#title' => t('Double Tree Settings'),
     '#description' => t('Specify settings for second tree. Choose the same vocabulary if you want to move terms in the hierarchy or if you want to add new translations within a multilingual vocabulary. Choose a different vocabulary if you want to switch terms among these vocabularies.'),
   );
