@@ -16,7 +16,7 @@
  */
 function taxonomy_manager_menu() {
 
-  $items['admin/structure/taxonomy_manager'] = array(
+  $items['admin/structure/taxonomy_manager/voc'] = array(
     'title' => 'Taxonomy Manager',
     'description' => 'Administer vocabularies with the Taxonomy Manager',
     'page callback' => 'taxonomy_manager_voc_list',
@@ -56,10 +56,9 @@ function taxonomy_manager_menu() {
     'page callback' => 'drupal_get_form',
     'page arguments' => array('taxonomy_manager_form', 4),
     'access arguments' => array('administer taxonomy'), 
-    'type' => MENU_CALLBACK,
     'file' => 'taxonomy_manager.admin.inc', 
   );
-  
+
   $items['admin/structure/taxonomy_manager/double-tree/%taxonomy_vocabulary_machine_name/%taxonomy_vocabulary_machine_name'] = array(
     'title' => 'Taxonomy Manager',
     'page callback' => 'drupal_get_form',
