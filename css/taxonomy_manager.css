@@ -321,7 +321,8 @@ input#edit-weight-down {
  * fixing position of autocomplete in seven theme
  */
 fieldset#edit-search,
-fieldset#edit-move {
+fieldset#edit-move,
+fieldset#edit-term-merge {
   position: static;
 }
 
