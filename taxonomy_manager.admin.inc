@@ -212,7 +212,6 @@ function taxonomy_manager_double_tree_form($form, &$form_state, $voc1, $voc2, $t
   if (isset($form_state['confirm_delete'])) {
     return taxonomy_manager_term_confirm_delete($form, $form_state, $voc1->vid, $voc2->vid);
   }
-
   $module_path = drupal_get_path('module', 'taxonomy_manager') .'/';
   
   $form = taxonomy_manager_form($form, $form_state, $voc1, $tid, $filter);
