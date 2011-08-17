@@ -212,7 +212,7 @@ function taxonomy_manager_form($form, &$form_state, $voc, $tid = 0, $filter = NU
 function taxonomy_manager_double_tree_form($form, &$form_state, $voc1, $voc2, $tid = 0, $filter = NULL) {
   // Check for confirmation forms.
   if (isset($form_state['confirm_delete'])) {
-    return taxonomy_manager_term_confirm_delete($form_state, $voc1->vid, $voc2->vid);
+    return taxonomy_manager_term_confirm_delete($form, $form_state, $voc1->vid, $voc2->vid);
   }
 
   $module_path = drupal_get_path('module', 'taxonomy_manager') .'/';
@@ -1181,6 +1181,7 @@ function taxonomy_manager_term_confirm_delete($form, &$form_state, $vid, $vid2 =
   else {
     $url = 'admin/structure/taxonomy_manager/voc/'. $voc->machine_name;
   }
+
   $selected = $form_state['values']['taxonomy']['manager']['tree']['selected_terms'];
   $form['selected_terms'] = array('#prefix' => '<ul>', '#suffix' => '</ul>', '#tree' => TRUE);
   foreach ($selected as $tid) {
