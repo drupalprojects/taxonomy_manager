@@ -351,7 +351,7 @@ function taxonomy_manager_tree_process_elements($element) {
     
     drupal_add_js(array('siblingsForm' => array('url' => url('admin/structure/taxonomy_manager/siblingsform'), 'modulePath' => $module_path)), 'setting');
     drupal_add_js(array('childForm' => array('url' => url('admin/structure/taxonomy_manager/childform'), 'modulePath' => $module_path)), 'setting');
-    drupal_add_js(array('taxonomytree' => array(array('id' => $id, 'vid' => $vid))), 'setting');
+    drupal_add_js(array('taxonomytree' => array(array('id' => $id, 'vid' => $vid, 'parents' => $element['#parents']))), 'setting');
   }
   
   if (empty($element['#operations'])) {
@@ -897,7 +897,7 @@ function taxonomy_manager_tree_build_child_form($tree_id, $vid, $parent) {
     $child_form['#link_callback'] = $link_callback;
   }
   
-  _taxonomy_manager_tree_sub_forms_set_parents($tree_id, $parent, $child_form);
+  _taxonomy_manager_tree_sub_forms_set_parents($params['form_parents'], $parent, $child_form);
   
   $child_form = form_builder('taxonomy_manager_form', $child_form, $form_state);
   
@@ -943,7 +943,7 @@ function taxonomy_manager_tree_build_siblings_form($tree_id, $page, $prev_tid, $
     $siblings_form['#link_callback'] = $link_callback;
   }
   
-  _taxonomy_manager_tree_sub_forms_set_parents($tree_id, $parent, $siblings_form);
+  _taxonomy_manager_tree_sub_forms_set_parents($params['form_parents'], $parent, $siblings_form);
   
   $siblings_form = form_builder('taxonomy_manager_form', $siblings_form, $form_state);
   
@@ -964,8 +964,8 @@ function taxonomy_manager_tree_build_siblings_form($tree_id, $page, $prev_tid, $
  * @param $parent term id
  * @param $form
  */
-function _taxonomy_manager_tree_sub_forms_set_parents($tree_id, $parent, &$form) {
-  $tree_ids = explode('-', $tree_id);
+function _taxonomy_manager_tree_sub_forms_set_parents($form_parents, $parent, &$form) {
+  $tree_ids = $form_parents;
   foreach ($tree_ids as $key => $id) {
     $form['#parents'][] = $id;
   }
