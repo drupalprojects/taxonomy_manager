@@ -1459,12 +1459,6 @@ function taxonomy_manager_settings($form) {
     '#default_value' => variable_get('taxonomy_manager_disable_mouseover', 0),
     '#description' => t('Disabeling this feature speeds up the Taxonomy Manager'),
   );
-  $form['taxonomy_manager_disable_merge_redirect'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Disable redirect of the taxonomy term page to merged terms '),
-    '#default_value' => variable_get('taxonomy_manager_disable_merge_redirect', TRUE),
-    '#description' => t('When using the merging feature, the selected terms get merged into one term. All selected terms will be deleted afterwards. Normally the Taxonomy Manager redirects calls to taxonomy/term/$tid of the deleted terms (through merging) to the resulting merged term. This feature might conflict with other modules (e.g. Taxonomy Breadcrumb, Panels), which implement hook_menu_alter to change the taxonomy_manager_term_page callback. Disable this feature if it conflicts with other modules or if you do not need it. Changing this setting requires a (menu) cache flush to become active.'),
-  );
   $form['taxonomy_manager_pager_tree_page_size'] = array(
     '#type' => 'select',
     '#title' => t('Pager count'),
@@ -2092,123 +2086,7 @@ function taxonomy_manager_move($parents, $children, $options = array()) {
   taxonomy_terms_static_reset();
 }
 
-/**
- * merges terms into another term (main term), all merged term get added
- * to the main term as synonyms. 
- * term_node relations are updated automatically (node with one of merging terms gets main term assigned)
- * after all opterions are done (adding of hierarchies, relations is optional) merging
- * terms get deleted
- *
- * @param $main_term
- *   id of term where other terms get merged into
- * @param $merging_terms
- *   array of term ids, which get merged into main term and afterwards deleted
- * @param $options
- *   array with additional options, possible values:
- *   'collect_parents': if true, all parents of merging terms get added to main term (only possible with multi hierarchies)
- *   'collect_children': if true, all children of merging terms get added to main term
- *   'collect_relations': if true, all relations of merging terms are transfered to main term
- */
-function taxonomy_manager_merge($main_term, $merging_terms, $options = array(), $new_inserted = TRUE) {
-  /*$vid = db_result(db_query("SELECT vid FROM {term_data} WHERE tid = %d", $main_term));
-  $voc = taxonomy_vocabulary_load($vid);
-  $merging_terms_parents = array();
-  
-  foreach ($merging_terms as $merge_term) {
-    if ($merge_term != $main_term) {
-      
-      //hook, to inform other modules about the changes
-      module_invoke_all('taxonomy_manager_term', 'merge', $main_term, $merge_term);
-      
-      //update node-relations
-      $sql = db_query("SELECT * FROM {term_node} WHERE tid = %d", $merge_term);
-      while ($obj = db_fetch_object($sql)) {
-        db_query("DELETE FROM {term_node} WHERE tid = %d AND vid = %d", $obj->tid, $obj->vid);
-        if (!db_result(db_query("SELECT COUNT(*) FROM {term_node} WHERE tid = %d AND vid = %d", $main_term, $obj->vid))) {
-          $obj->tid = $main_term;
-          drupal_write_record('term_node', $obj);
-        }
-      }
-    
-      if ($options['collect_parents']) {
-        $parents = taxonomy_get_parents($merge_term);
-        foreach ($parents as $parent_tid => $parent_term) {
-           $merging_terms_parents[$parent_tid] = $parent_tid;
-          if (!db_result(db_query("SELECT COUNT(*) FROM {term_hierarchy} WHERE tid = %d AND parent = %d", $main_term, $parent_tid))) {
-             db_query("INSERT INTO {term_hierarchy} (tid, parent) VALUES (%d, %d)", $main_term, $parent_tid);
-          }
-        }
-      }
-    
-      if ($options['collect_children']) {
-        $children = taxonomy_get_children($merge_term);
-        foreach ($children as $child_tid => $child_term) {
-          if (!db_result(db_query("SELECT COUNT(*) FROM {term_hierarchy} WHERE tid = %d AND parent = %d", $child_tid, $main_term))) {
-            db_query("INSERT INTO {term_hierarchy} (tid, parent) VALUES (%d, %d)", $child_tid, $main_term);
-          }
-        }
-      }
-    
-      if ($options['collect_relations']) {
-        $relations = taxonomy_get_related($merge_term);
-        foreach ($relations as $related_tid => $relation) {
-          if ($relation->tid1 == $merge_term) {
-            if (!db_result(db_query("SELECT COUNT(*) FROM {term_relation} WHERE tid1 = %d AND tid2 = %d", $main_term, $related_tid))) {
-              db_query("INSERT INTO {term_relation} (tid1, tid2) VALUES (%d, %d)", $main_term, $related_tid);
-            }
-          }
-          else if ($relation->tid2 == $merge_term) {
-            if (!db_result(db_query("SELECT COUNT(*) FROM {term_relation} WHERE tid2 = %d AND tid1 = %d", $main_term, $related_tid))) {
-              db_query("INSERT INTO {term_relation} (tid2, tid1) VALUES (%d, %d)", $main_term, $related_tid);
-            }
-          }
-        }
-      }
-    
-      //save merged term (and synonomys of merged term) as synonym
-      $term = taxonomy_term_load($merge_term);
-      $merge_term_synonyms = taxonomy_get_synonyms($merge_term);
-      $merge_term_synonyms[] = $term->name;
-      foreach ($merge_term_synonyms as $syn) {
-        if (!db_result(db_query("SELECT COUNT(*) FROM {term_synonym} WHERE tid = %d AND name = '%s'", $main_term, $syn))) {
-          db_query("INSERT INTO {term_synonym} (tid, name) VALUES (%d, '%s')", $main_term, $syn);
-        }
-      }
-    
-      taxonomy_manager_delete_terms(array($merge_term));
-    }
-  }
-  taxonomy_manager_update_voc($vid, $merging_terms_parents);
-  if ($options['collect_parents'] && (db_result(db_query("SELECT COUNT(*) FROM {term_hierarchy} WHERE tid = %d", $main_term)) > 1)) {
-    db_query("DELETE FROM {term_hierarchy} WHERE parent = 0 AND tid = %d", $main_term);
-  }
-  taxonomy_manager_merge_history_update($main_term, $merging_terms);*/
-}
 
-/**
- * inserts merging information (main_tid - merged_tid ) into taxonomy_manager_merge
- * and updates cache, which is used to reconstructs taxonomy/term pages
- *
- * @param $main_tid term if of main term
- * @param $merged_tids array of merged term ids
- */
-function taxonomy_manager_merge_history_update($main_tid, $merged_tids) {
-  /*if (!is_array($merged_tids)) (array) $merged_tids;
-  
-  foreach ($merged_tids as $merged_tid) {
-    if ($merged_tid != $main_tid) {
-      //check if merged term has been a main term once before
-      $check_merged = db_result(db_query("SELECT COUNT(*) FROM {taxonomy_manager_merge} WHERE main_tid = %d", $merged_tid));
-  
-      if ($check_merged) {
-        db_query("UPDATE {taxonomy_manager_merge} SET main_tid = %d WHERE main_tid = %d", $main_tid, $merged_tid);
-      }
-      //insert into merging history
-      db_query("INSERT INTO {taxonomy_manager_merge} (main_tid, merged_tid) VALUES (%d, %d)", $main_tid, $merged_tid);
-    }
-  }
-  taxonomy_manager_merge_history_update_cache();*/
-}
 
 
 /**

@@ -88,14 +88,6 @@ function taxonomy_manager_menu() {
   return $items;
 }
 
-/**
- * Implementation of hook_menu_alter
- */
-function taxonomy_manager_menu_alter(&$callbacks) {
-  if (!variable_get('taxonomy_manager_disable_merge_redirect', TRUE)) {
-    $callbacks['taxonomy/term/%']['page callback'] = 'taxonomy_manager_term_page';
-  }
-}
 
 /**
  * Implementation of hook_theme
@@ -182,83 +174,6 @@ function taxonomy_manager_taxonomy2_manager_tree_operations($term) {
 }
 function taxonomy_manager_taxonomy2_manager_tree_link($term) {
   return taxonomy_manager_taxonomy_manager_tree_link($term); 
-}
-
-/**
- * sets / updates cache for merging history
- */
-function taxonomy_manager_merge_history_update_cache() {
-  $merged_terms = array();
-  
-  //TODO
-  /*$result = db_query("SELECT * FROM {taxonomy_manager_merge}");
-  while ($data = db_fetch_object($result)) {
-    $merged_terms[$data->merged_tid] = $data->main_tid; 
-  }*/
-  cache_set('taxonomy_manager_merge', $merged_terms, 'cache');
-}
-
-/**
- * helper function for getting out the main term of former merged term (which no 
- * long exists)
- *
- * @param $tid of which the main term has to be evaluated
- * @return term id of main term, if exists, else 0
- */
-function taxonomy_manager_merge_get_main_term($tid) {
-  $merged_terms = array();
-  $cache = cache_get('taxonomy_manager_merge', 'cache');
-  if (!$cache) {
-    taxonomy_manager_merge_history_update_cache();
-  }
-  $merged_terms = $cache->data;
-  return $merged_terms[$tid];
-}
-
-/**
- * menu callback 
- * 
- * replaces taxonomy_mangager_term_page, because we have to consider that the
- * url may contain former merged terms, which no longer exists
- * every given tid gets checked, if it has been merged. if yes, the tid gets replaced
- * with tid of main term and afterwards passed to default taxonomy_manager_term_page
- *
- * @param $str_tids
- * @param $depth
- * @param $op
- */
-function taxonomy_manager_term_page($str_tids = '', $depth = 0, $op = 'page') {
-  $tids = taxonomy_terms_parse_string($str_tids);
-  if ($tids['operator'] == 'and' || $tids['operator'] == 'or') {
-   $new_tids = array();
-   foreach ($tids['tids'] as $tid) {
-     //get cached main term, if not merged, returns 0
-     $main_term = taxonomy_manager_merge_get_main_term($tid);
-     $new_tids[] = ($main_term) ? $main_term : $tid;
-   }
-   if ($tids['operator'] == 'and') {
-     $operator = ',';
-   }
-   else if ($tids['operator'] == 'or') {
-     $operator = '+';
-   }
-   $new_tids_str = implode($operator, $new_tids);
-   if (!function_exists('taxonomy_term_page')) {
-     /** 
-      * including the taxonomy.pages.inc file shouldn't be necessary, because
-      * TaxMan is correctly using hook_menu_alter to change the callback.
-      * but in some combinations with other modules, which overwrite the menu
-      * entry in hook_menu, calling taxonomy_term_page is causing an error. 
-      * the following lines are going to prevent the fatal error
-      */
-     $taxonomy_module_path = drupal_get_path('module', 'taxonomy');
-     include_once($taxonomy_module_path .'/taxonomy.pages.inc');
-   }
-   return taxonomy_term_page($new_tids_str, $depth, $op);
-  }
-  else {
-    drupal_not_found();
-  }
 }
 
 
