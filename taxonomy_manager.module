@@ -236,7 +236,7 @@ function taxonomy_manager_element_info() {
     '#terms_to_expand' => array(),
     '#terms_to_highlight' => array(),
     '#language' => NULL,
-    '#pager' => TRUE,
+    '#pager' => FALSE,
   );
   
   return $type;
