@@ -35,7 +35,7 @@ Drupal.attachTermDataLinks = function(ul) {
   $(ul).find('a.term-data-link').click(function() {
     Drupal.activeTermSwapHighlight(this);
     var li = $(this).parents("li:first");
-    new Drupal.TermData(Drupal.getTermId(li), false).load();
+    Drupal.loadTermDataForm(Drupal.getTermId(li), false);
     return false;
   });
 }
@@ -47,7 +47,7 @@ Drupal.attachTermDataToSiblings = function(all, currentIndex) {
   var nextSiblings = $(all).slice(currentIndex);
   $(nextSiblings).find('a.term-data-link').click(function() {
     var li = $(this).parents("li:first");
-    new Drupal.TermData(Drupal.getTermId(li), false).load();
+    Drupal.loadTermDataForm(Drupal.getTermId(li), false);
     return false;
   });
 }
@@ -59,35 +59,31 @@ Drupal.attachTermDataForm = function() {
   active_term = $('div.highlightActiveTerm').find('a');
   var tid = $('#taxonomy-term-data').find('input:hidden[name="tid"]').val();
   if (tid) {
-    new Drupal.TermData(tid, false).form();
-  }  
+    new Drupal.TermData(tid).form();
+  }
+}
+
+/**
+ * loads term data form
+ */
+Drupal.loadTermDataForm = function(tid, refreshTree) {
+  // Triggers an AJAX button
+  $('#edit-load-tid').val(tid);
+  if (refreshTree) {
+    $('#edit-load-tid-refresh-tree').attr("checked", "checked");
+  }
+  else {
+    $('#edit-load-tid-refresh-tree').attr("checked", "");
+  }
+  $('#edit-load-tid-submit').click();
 }
 
 /**
  * TermData Object
  */
-Drupal.TermData = function(tid, refreshTree) {
-  this.tid = tid; 
+Drupal.TermData = function(tid) {
+  this.tid = tid;
   this.div = $('#taxonomy-term-data');
-  this.tidField = $('#edit-load-tid');
-  this.tidFieldRefreshTree = $('#edit-load-tid-refresh-tree');
-  this.tidFieldSubmit = $('#edit-load-tid-submit');
-  if (refreshTree) {
-    $(this.tidFieldRefreshTree).attr("checked", "checked");
-  }
-  else {
-    $(this.tidFieldRefreshTree).attr("checked", "");
-  }
-}
-
-
-/**
- * loads term data form and displays it on the right side
- */
-Drupal.TermData.prototype.load = function() {
-  // Triggers an AJAX button
-  $(this.tidField).val(this.tid);
-  $(this.tidFieldSubmit).click();
 }
 
 /**
@@ -102,7 +98,7 @@ Drupal.TermData.prototype.form = function() {
   
   $(this.div).find('a.taxonomy-term-data-name-link').click(function() {
     var tid = this.href.split("/").pop();
-    new Drupal.TermData(tid, true).load();
+    Drupal.loadTermDataForm(tid, true);
     return false;
   });
   
