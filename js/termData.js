@@ -35,7 +35,7 @@ Drupal.attachTermDataLinks = function(ul) {
   $(ul).find('a.term-data-link').click(function() {
     Drupal.activeTermSwapHighlight(this);
     var li = $(this).parents("li:first");
-    new Drupal.TermData(Drupal.getTermId(li)).load();
+    new Drupal.TermData(Drupal.getTermId(li), false).load();
     return false;
   });
 }
@@ -47,7 +47,7 @@ Drupal.attachTermDataToSiblings = function(all, currentIndex) {
   var nextSiblings = $(all).slice(currentIndex);
   $(nextSiblings).find('a.term-data-link').click(function() {
     var li = $(this).parents("li:first");
-    new Drupal.TermData(Drupal.getTermId(li)).load();
+    new Drupal.TermData(Drupal.getTermId(li), false).load();
     return false;
   });
 }
@@ -59,18 +59,25 @@ Drupal.attachTermDataForm = function() {
   active_term = $('div.highlightActiveTerm').find('a');
   var tid = $('#taxonomy-term-data').find('input:hidden[name="tid"]').val();
   if (tid) {
-    new Drupal.TermData(tid).form();
+    new Drupal.TermData(tid, false).form();
   }  
 }
 
 /**
  * TermData Object
  */
-Drupal.TermData = function(tid) {
+Drupal.TermData = function(tid, refreshTree) {
   this.tid = tid; 
   this.div = $('#taxonomy-term-data');
   this.tidField = $('#edit-load-tid');
+  this.tidFieldRefreshTree = $('#edit-load-tid-refresh-tree');
   this.tidFieldSubmit = $('#edit-load-tid-submit');
+  if (refreshTree) {
+    $(this.tidFieldRefreshTree).attr("checked", "checked");
+  }
+  else {
+    $(this.tidFieldRefreshTree).attr("checked", "");
+  }
 }
 
 
@@ -95,7 +102,7 @@ Drupal.TermData.prototype.form = function() {
   
   $(this.div).find('a.taxonomy-term-data-name-link').click(function() {
     var tid = this.href.split("/").pop();
-    new Drupal.TermData(tid).load();
+    new Drupal.TermData(tid, true).load();
     return false;
   });
   

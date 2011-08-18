@@ -45,9 +45,12 @@ function taxonomy_manager_form($form, &$form_state, $voc, $tid = 0, $filter = NU
   if (isset($form_state['confirm_delete'])) {
     return taxonomy_manager_term_confirm_delete($form, $form_state, $voc->vid);
   }
-  // Use tid from term data form, if not submitted through load-tid helper.
-  if (isset($form_state['values']['tid']) && !(isset($form_state['triggering_element']['#value']) && $form_state['triggering_element']['#value'] == "load term")) {
+  // By default use tid from term data form, except it is submitted from the load-tid helper and the tree needs to be refreshed.
+  if (isset($form_state['values']['tid']) && !(isset($form_state['triggering_element']['#value']) && $form_state['triggering_element']['#value'] == "load term" && $form_state['values']['load-tid-refresh-tree'])) {
     $tid = $form_state['values']['tid'];
+  }
+  else if (isset($form_state['triggering_element']['#value']) && $form_state['triggering_element']['#value'] == "load term" && $form_state['values']['load-tid-refresh-tree']) {
+    $tid = $form_state['values']['load-tid'];
   }
 	   
   $module_path = drupal_get_path('module', 'taxonomy_manager') .'/';
@@ -73,6 +76,9 @@ function taxonomy_manager_form($form, &$form_state, $voc, $tid = 0, $filter = NU
   $form['load-tid'] = array(
     '#type' => 'textfield',
     '#prefix' => '<div class="taxonomy-manager-term-load-helper">',
+  );
+  $form['load-tid-refresh-tree'] = array(
+    '#type' => 'checkbox',
   );
   $form['load-tid-submit'] = array(
     '#type' => 'submit',
@@ -1001,6 +1007,9 @@ function _taxonomy_manager_form_term_data_translations($term, $translations, $he
 function taxonomy_manager_load_tid_submit($form, &$form_state) {
   // Unset input, so that the term data form has fresh values.
   unset($form_state['input']);
+  if ($form_state['values']['load-tid-refresh-tree']) {
+    form_set_value(array('#parents' => array('tree-update')), array('update' => TRUE), $form_state);
+  }
   $form_state['rebuild'] = TRUE;
 }
 
@@ -1473,6 +1482,7 @@ function taxonomy_manager_term_data_form_ajax_callback($form, $form_state) {
   $commands = array();
   $commands[] = ajax_command_insert(NULL, drupal_render($form['term_data']));
   $commands[] = ajax_command_after('#term-data-close', theme('status_messages'));
+
   // Update tree if necessary.
   if (isset($form_state['values']['tree-update'])) {
     if (isset($form_state['values']['tree-update']['update']) && $form_state['values']['tree-update']['update']) {
