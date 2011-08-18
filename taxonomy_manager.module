@@ -907,14 +907,11 @@ function taxonomy_manager_tree_validate($form, &$form_state) {
   //this can be useful for more complex processing, where the parent of the selecte term in the tree view is need (releveant if multi parent)
   //used in double tree
   $direct_parents = array();
-  
-  if ($form['#multiple']) {
-    $selected = _taxonomy_manager_tree_get_selected_terms($form['#value'], $direct_parents);
+  $selected = _taxonomy_manager_tree_get_selected_terms($form['#value'], $direct_parents);
+  if (!$form['#multiple'] && count($selected) > 1) {
+    // There should only be one selected term here. Make sure this is the case.
+    $selected = array(key($selected) => key($selected));
   }
-  else if (is_numeric($form['#value'])) {
-    $selected[$form['#value']] = $form['#value'];
-  }
-
   $vid = $form['#vid'];
   foreach ($selected as $tid) {
     if (!_taxonomy_manager_tree_term_valid($tid, $vid)) {
@@ -1053,15 +1050,16 @@ function theme_taxonomy_manager_tree_elements($variables) {
  */
 function theme_taxonomy_manager_tree_checkbox($variables) {
   $element = $variables['element'];
+  $element['#attributes']['type'] = 'checkbox';
+  element_set_attributes($element, array('id', 'name', '#return_value' => 'value'));
+
+  // Unchecked checkbox has #value of integer 0.
+  if (!empty($element['#checked'])) {
+    $element['#attributes']['checked'] = 'checked';
+  }
   _form_set_class($element, array('form-checkbox'));
-  $checkbox = '<input ';
-  $checkbox .= 'type="checkbox" ';
-  $checkbox .= 'name="'. $element['#name'] .'" ';
-  $checkbox .= 'id="'. $element['#id'] .'" ' ;
-  $checkbox .= 'value="'. $element['#return_value'] .'" ';
-  $checkbox .= $element['#value'] ? ' checked="checked" ' : ' ';
-  $checkbox .= drupal_attributes($element['#attributes']) .' />';
-  
+  $output = '<input' . drupal_attributes($element['#attributes']) . ' />';
+
   $title = $element['#title'];
   if (isset($element['#link'])) {
     $attr = array();
@@ -1075,12 +1073,9 @@ function theme_taxonomy_manager_tree_checkbox($variables) {
   else {
     $title = check_plain($title);
   }
-  
-  if (!is_null($title)) {
-    $element['#children'] = '<label class="option">'. $checkbox .' '. $title .'</label>';
-  }
-  
+  $element['#children'] = '<label class="option">'. $output .' '. $title .'</label>';
   $element['#title_display'] = 'none';
+
   return theme('form_element', array('element' => $element));
 }
 
@@ -1089,17 +1084,14 @@ function theme_taxonomy_manager_tree_checkbox($variables) {
  */
 function theme_taxonomy_manager_tree_radio($variables) {
   $element = $variables['element'];
+  $element['#attributes']['type'] = 'radio';
+  element_set_attributes($element, array('id', 'name', '#return_value' => 'value'));
+  if (isset($element['#return_value']) && $element['#value'] !== FALSE && $element['#value'] == $element['#return_value']) {
+    $element['#attributes']['checked'] = 'checked';
+  }
   _form_set_class($element, array('form-radio'));
-  $output = '<input ';
-  $output .= 'type="radio" ';
-  $output .= 'name="'. $element['#parents'][0] .'" ';
-  $output .= 'id="'. $element['#id'] .'" ' ;  
-  $output .= 'value="'. $element['#return_value'] .'" ';
-  $checkbox = $element['#value'] ? ' checked="checked" ' : ' ';
-
   
-  $output .= $element['#value'] ? ' checked="checked" ' : ' ';
-  $output .= drupal_attributes($element['#attributes']) .' />';
+  $output = '<input' . drupal_attributes($element['#attributes']) . ' />';
   
   $title = $element['#title'];
   if (isset($element['#link'])) {
@@ -1108,12 +1100,8 @@ function theme_taxonomy_manager_tree_radio($variables) {
   else {
     $title = check_plain($title);
   }
-  
-  if (!is_null($title)) {
-    $element['#children'] = '<label class="option">'. $output .' '. $title .'</label>';
-  }
-
+  $element['#children'] = '<label class="option">'. $output .' '. $title .'</label>';
   $element['#title_display'] = 'none';
+
   return theme('form_element', array('element' => $element));
 }
-
