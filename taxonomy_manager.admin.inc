@@ -858,6 +858,17 @@ function taxonomy_manager_term_data_form(&$form, &$form_state, $tid = 0, $vid1, 
       ),
       '#weight' => 20,
     );
+
+    // UUID integration.
+    if (module_exists('uuid')) {
+      $uuids = entity_get_uuid_by_id('taxonomy_term', array($tid));
+      if (count($uuids)) {
+        $form['term_data']['uuid'] = array(
+          '#markup' => t('UUID: @uuid', array('@uuid' => reset($uuids))),
+          '#weight' => -10,
+        );
+      }
+    }
   }
   
   $form['term_data']['#prefix'] = '<div id="taxonomy-term-data-replace">';
