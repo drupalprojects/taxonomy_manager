@@ -441,12 +441,27 @@ td.taxonomy-term-data-operations {
   margin-bottom: 0px;
 }
 
+#taxonomy-term-data input.save {
+  margin: 10px 0;
+  padding: 0 50px;
+  padding-left: 40px;
+  padding-bottom: 3px;
+  padding-right: 15px;
+  padding-top: 0px;
+  height: 30px;
+}
+
+
 #taxonomy-term-data .filter-wrapper .fieldset-wrapper {
   padding-bottom: 0px;
 }
 
 #taxonomy-term-data .filter-guidelines {
   display:none; //hide descriptions, they use too much space
+}
+
+.term-data-form-file-field-info {
+  font-weight: bold;
 }
 
 .taxonomy-term-data-operations {

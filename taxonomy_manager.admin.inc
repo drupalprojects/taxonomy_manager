@@ -872,10 +872,35 @@ function taxonomy_manager_term_data_form(&$form, &$form_state, $tid = 0, $vid1, 
         );
       }
     }
+    _taxonomy_manager_term_data_form_filter_file_fields($form);
   }
 
   $form['term_data']['#prefix'] = '<div id="taxonomy-term-data-replace">';
   $form['term_data']['#suffix'] = '</div>';
+}
+
+/**
+ * Removes file fields from the term data form, as they do not work on the
+ * nested form structure and link to the original term edit form instead.
+ *
+ * See #1195940, hack necessary until #1329856/#1468686 get fixed.
+ */
+function _taxonomy_manager_term_data_form_filter_file_fields(&$form) {
+  foreach (element_children($form['term_data']) as $key) {
+    $field = &$form['term_data'][$key];
+    if (isset($field['#type']) && $field['#type'] == 'container' && isset($field['#language']) && isset($field[$field['#language']])) {
+      foreach (element_children($field[$field['#language']]) as $delta) {
+        $element = &$field[$field['#language']][$delta];
+        if ($element['#type'] == "managed_file") {
+          $form['term_data']['file_field_info'] = array(
+            '#markup' => '<div class="term-data-form-file-field-info">' . t('Edit file fields <a href="!url" target="_blank">here</a>.', array('!url' => url('taxonomy/term/' . $form['term_data']['#term']['tid'] . '/edit'))) .'</div>',
+          );
+          unset($form['term_data'][$key]);
+          break;
+        }
+      }
+    }
+  }
 }
 
 /**
