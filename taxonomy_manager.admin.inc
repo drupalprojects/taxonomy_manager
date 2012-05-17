@@ -209,7 +209,7 @@ function taxonomy_manager_form($form, &$form_state, $voc, $tid = 0, $filter = NU
     $tid = $form_state['values']['load-tid'];
   }
   taxonomy_manager_term_data_form($form, $form_state, $tid, $voc->vid);
-  
+
   return $form;
 }
 
@@ -824,6 +824,9 @@ function taxonomy_manager_term_data_form(&$form, &$form_state, $tid = 0, $vid1, 
     unset($form_state['term']);
     $form['term_data'] = taxonomy_form_term($form['term_data'], $form_state, $term);
     $form['term_data']['description']['#rows'] = 2;
+    // Disable wysiwyg editor as long as #356480 (lazy-loading) is not resolved.
+    $form['term_data']['description']['#wysiwyg'] = FALSE;
+
     $form['term_data']['weight'] = $form['term_data']['relations']['weight'];
     unset($form['term_data']['relations']);
     unset($form['term_data']['actions']);
@@ -870,7 +873,7 @@ function taxonomy_manager_term_data_form(&$form, &$form_state, $tid = 0, $vid1, 
       }
     }
   }
-  
+
   $form['term_data']['#prefix'] = '<div id="taxonomy-term-data-replace">';
   $form['term_data']['#suffix'] = '</div>';
 }
