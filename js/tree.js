@@ -421,12 +421,17 @@ Drupal.attachThrobber = function() {
   var div = $('#taxonomy-manager');
   var throbber = $('<img src="'+ Drupal.settings.taxonomy_manager['modulePath'] +'images/ajax-loader.gif" alt="" height="25">');
   throbber.appendTo("#taxonomy-manager-toolbar-throbber").hide();
-  throbber.ajaxStart(function(){
-      $(this).show();
-    })
-    .ajaxStop(function(){
-      $(this).hide();
-    });
+
+  throbber.ajaxStart(function() {
+    $(this).show();
+  });
+  throbber.ajaxStop(function() {
+    $(this).hide();
+  });
+  throbber.ajaxError(function() {
+    alert("An AJAX error occurred. Reload the page and check your logs.");
+    $(this).hide();
+  });
 }
 
 /**
