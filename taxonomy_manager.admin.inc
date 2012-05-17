@@ -93,6 +93,7 @@ function taxonomy_manager_form($form, &$form_state, $voc, $tid = 0, $filter = NU
     '#suffix' => '</div>',
   );
   
+  taxonomy_manager_form_voc_jumper($form);
   if (_taxonomy_manager_voc_is_empty($voc->vid)) {
     $text = t('No terms available');
     $form['text'] = array( 
@@ -361,6 +362,23 @@ function taxonomy_manager_double_tree_form($form, &$form_state, $voc1, $voc2, $t
   }
 
   return $form;
+}
+
+/**
+ * Adds a voc jumper menu, if ctools is enabled.
+ */
+function taxonomy_manager_form_voc_jumper(&$form) {
+  if (module_exists('ctools')) {
+    $options = array();
+    foreach (taxonomy_vocabulary_get_names() as $voc) {
+      $options[url('admin/structure/taxonomy_manager/voc/' . $voc->machine_name)] = $voc->name;
+    }
+    ctools_include('jump-menu');
+    $settings = array(
+      'choose' => t('-- Switch vocabulary --'),
+    );
+    $form = ctools_jump_menu($form, $form_state, $options, $settings);
+  }
 }
 
 /**

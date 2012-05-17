@@ -8,6 +8,17 @@
   line-height: 120%;
 }
 
+#taxonomy-manager-double-tree-form #edit-jump,
+#taxonomy-manager-form #edit-jump {
+  float: right;
+  margin-bottom: 2px;
+}
+
+#taxonomy-manager-toolbar,
+#edit-add {
+  clear: both;
+}
+
 #taxonomy-manager-double-tree-form fieldset,
 #taxonomy-manager-form fieldset {
   margin: 0.5em 0;
