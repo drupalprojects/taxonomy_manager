@@ -25,7 +25,8 @@ function taxonomy_manager_menu() {
   );
 
   $items['admin/structure/taxonomy_manager/voc/%taxonomy_vocabulary_machine_name'] = array(
-    'title' => 'Taxonomy Manager',
+    'title callback' => 'taxonomy_admin_vocabulary_title_callback',
+    'title arguments' => array(4),
     'page callback' => 'drupal_get_form',
     'page arguments' => array('taxonomy_manager_form', 4),
     'access arguments' => array('administer taxonomy'),
@@ -84,6 +85,22 @@ function taxonomy_manager_menu() {
     'file' => 'taxonomy_manager.admin.inc',
   );
   return $items;
+}
+
+/**
+ * Implements hook_admin_menu_map().
+ */
+function taxonomy_manager_admin_menu_map() {
+  if (!user_access('administer taxonomy')) {
+    return;
+  }
+  $map['admin/structure/taxonomy_manager/voc/%taxonomy_vocabulary_machine_name'] = array(
+    'parent' => 'admin/structure/taxonomy_manager/voc',
+    'arguments' => array(
+      array('%taxonomy_vocabulary_machine_name' => array_keys(taxonomy_vocabulary_get_names())),
+    ),
+  );
+  return $map;
 }
 
 
