@@ -909,7 +909,7 @@ function _taxonomy_manager_term_data_form_filter_file_fields(&$form) {
     if (isset($field['#type']) && $field['#type'] == 'container' && isset($field['#language']) && isset($field[$field['#language']])) {
       foreach (element_children($field[$field['#language']]) as $delta) {
         $element = &$field[$field['#language']][$delta];
-        if ($element['#type'] == "managed_file") {
+        if (isset($element['#type']) && $element['#type'] == "managed_file") {
           $form['term_data']['file_field_info'] = array(
             '#markup' => '<div class="term-data-form-file-field-info">' . t('Edit file fields <a href="!url" target="_blank">here</a>.', array('!url' => url('taxonomy/term/' . $form['term_data']['#term']['tid'] . '/edit'))) .'</div>',
           );
