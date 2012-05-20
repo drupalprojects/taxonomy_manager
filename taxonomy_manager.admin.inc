@@ -209,6 +209,11 @@ function taxonomy_manager_form($form, &$form_state, $voc, $tid = 0, $filter = NU
   if (isset($form_state['values']['load-tid'])) {
     $tid = $form_state['values']['load-tid'];
   }
+  // Something on the term data has been submitted, e.g. the 'add another item'
+  // button
+  elseif (isset($form_state['term']) && is_object($form_state['term'])) {
+    $tid = $form_state['term']->tid;
+  }
   taxonomy_manager_term_data_form($form, $form_state, $tid, $voc->vid);
 
   return $form;
