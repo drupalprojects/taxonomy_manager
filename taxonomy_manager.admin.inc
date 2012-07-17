@@ -1984,6 +1984,11 @@ function taxonomy_manager_copy($tids, $from_voc, $to_voc, $selected_parents) {
     unset($new_term->tid);
     $new_term->parent = count($selected_parents) ? $selected_parents : 0;
     $new_term->vid = $to_voc;
+
+    // UUID integration: unset uuid on copy.
+    if (isset($new_term->uuid)) {
+      unset($new_term->uuid);
+    }
     taxonomy_term_save($new_term);
     $new_tids[] = $new_term->tid;
   }
