@@ -2105,20 +2105,22 @@ function taxonomy_manager_delete_terms($tids, $options = array()) {
       }
 
       $term = taxonomy_term_load($tid);
-      $deleted_terms[] = $term;
+      if ($term) {
+        $deleted_terms[] = $term;
 
-      db_delete('taxonomy_term_data')
-        ->condition('tid', $tid)
-        ->execute();
-      db_delete('taxonomy_term_hierarchy')
-        ->condition('tid', $tid)
-        ->execute();
+        db_delete('taxonomy_term_data')
+          ->condition('tid', $tid)
+          ->execute();
+        db_delete('taxonomy_term_hierarchy')
+          ->condition('tid', $tid)
+          ->execute();
 
-      field_attach_delete('taxonomy_term', $term);
-      module_invoke_all('taxonomy_term_delete', $term);
+        field_attach_delete('taxonomy_term', $term);
+        module_invoke_all('taxonomy_term_delete', $term);
 
-      // Reset cache after each deletion as it might affect parents/children information that is used later on.
-      taxonomy_terms_static_reset();
+        // Reset cache after each deletion as it might affect parents/children information that is used later on.
+        taxonomy_terms_static_reset();
+      }
     }
     $tids = $orphans;
   }
