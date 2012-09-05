@@ -106,9 +106,10 @@ function taxonomy_manager_form($form, &$form_state, $voc, $tid = 0, $filter = NU
 
   $form['taxonomy']['#tree'] = TRUE;
 
+
   $form['taxonomy']['manager'] = array(
     '#type' => 'fieldset',
-    '#title' => check_plain($voc->name),
+    '#title' => check_plain($voc->name) . _taxonomy_manager_select_all_helpers_markup(),
     '#weight' => 10,
     '#tree' => TRUE,
   );
@@ -241,7 +242,7 @@ function taxonomy_manager_double_tree_form($form, &$form_state, $voc1, $voc2, $t
 
   $form['taxonomy2']['manager'] = array(
     '#type' => 'fieldset',
-    '#title' => check_plain($voc2->name),
+    '#title' => check_plain($voc2->name) . _taxonomy_manager_select_all_helpers_markup(),
     '#weight' => 10,
     '#tree' => TRUE,
   );
@@ -1061,6 +1062,16 @@ function _taxonomy_manager_form_term_data_translations($term, $translations, $he
 
   return $form;
 
+}
+
+/**
+ * Returns html markup for (un)select all checkboxes buttons.
+ */
+function _taxonomy_manager_select_all_helpers_markup() {
+  return '<span class="taxonomy-manager-select-helpers">' .
+            '<span class="select-all-children" title="' . t("Select all") . '">&nbsp;&nbsp;&nbsp;&nbsp;</span>' .
+           '<span class="unselect-all-children" title="' . t("Remove selection") . '">&nbsp;&nbsp;&nbsp;&nbsp;</span>' .
+         '</span>';
 }
 
 /**

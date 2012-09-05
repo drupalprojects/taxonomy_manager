@@ -14,7 +14,7 @@ Drupal.behaviors.TaxonomyManagerTree = {
           new Drupal.TaxonomyManagerTree(treeSettings[i].id, treeSettings[i].vid, treeSettings[i].parents);
         }
       }
-    }  
+    }
     //only add throbber for TM sites
     var throbberSettings = settings.TMAjaxThrobber || [];
     if (throbberSettings['add']) {
@@ -22,7 +22,8 @@ Drupal.behaviors.TaxonomyManagerTree = {
         $('#taxonomy-manager-toolbar-throbber').addClass('tm-processed');
         Drupal.attachThrobber();
         Drupal.attachResizeableTreeDiv();
-      } 
+        Drupal.attachGlobalSelectAll();
+      }
     }
   }
 }
@@ -31,7 +32,7 @@ Drupal.behaviors.TaxonomyManagerTree = {
 Drupal.TaxonomyManagerTree = function(id, vid, parents) {
   this.div = $("#"+ id);
   this.ul = $(this.div).children();
-  
+
   this.form = $(this.div).parents('form');
   this.form_build_id = $(this.form).children().children(':input[name="form_build_id"]').val();
   this.form_id = $(this.form).children().children(' :input[name="form_id"]').val();
@@ -48,7 +49,7 @@ Drupal.TaxonomyManagerTree = function(id, vid, parents) {
   this.attachSelectAllChildren(this.ul);
   this.attachLanguageSelector();
   this.attachMsgCloseLink();
-  
+
   //attach term data js, if enabled
   var term_data_settings = Drupal.settings.termData || [];
   if (term_data_settings['url']) {
@@ -89,10 +90,10 @@ Drupal.TaxonomyManagerTree.prototype.toggleTree = function(node) {
 Drupal.TaxonomyManagerTree.prototype.swapClasses = function(node, c1, c2) {
   if ($(node).hasClass(c1)) {
     $(node).removeClass(c1).addClass(c2);
-  } 
+  }
   else if ($(node).hasClass(c2)) {
     $(node).removeClass(c2).addClass(c1);
-  } 
+  }
 }
 
 
@@ -105,7 +106,7 @@ Drupal.TaxonomyManagerTree.prototype.loadChildForm = function(li, update, callba
   if ($(li).is(".has-children") || update == true) {
     $(li).removeClass("has-children");
     if (update) {
-      $(li).children("ul").remove(); 
+      $(li).children("ul").remove();
     }
     var parentId = Drupal.getTermId(li);
     var url = tree.childFormUrl +'/'+ this.treeId +'/'+ this.vocId +'/'+ parentId;
@@ -115,10 +116,10 @@ Drupal.TaxonomyManagerTree.prototype.loadChildForm = function(li, update, callba
     param['tree_id'] = this.treeId;
     param['form_parents'] = this.formParents;
     param['language'] = this.language;
-    
+
     $.ajax({
-      data: param, 
-      type: "GET", 
+      data: param,
+      type: "GET",
       url: url,
       dataType: 'json',
       success: function(response, status) {
@@ -127,7 +128,7 @@ Drupal.TaxonomyManagerTree.prototype.loadChildForm = function(li, update, callba
         tree.attachTreeview(ul);
         tree.attachSiblingsForm(ul);
         tree.attachSelectAllChildren(ul);
-      
+
         //only attach other features if enabled!
         var weight_settings = Drupal.settings.updateWeight || [];
         if (weight_settings['up']) {
@@ -142,7 +143,7 @@ Drupal.TaxonomyManagerTree.prototype.loadChildForm = function(li, update, callba
         }
       }
     });
-  } 
+  }
 }
 
 /**
@@ -151,7 +152,7 @@ Drupal.TaxonomyManagerTree.prototype.loadChildForm = function(li, update, callba
 Drupal.TaxonomyManagerTree.prototype.loadRootForm = function(tids) {
   var tree = this;
   var url = this.childFormUrl +'/'+ this.treeId +'/'+ this.vocId +'/0/';
-  
+
   var param = new Object();
   param['form_build_id'] = this.form_build_id;
   param['form_id'] = this.form_id;
@@ -159,14 +160,14 @@ Drupal.TaxonomyManagerTree.prototype.loadRootForm = function(tids) {
   param['form_parents'] = this.formParents;
   param['language'] = this.language;
   param['terms_to_expand'] = tids; // can either be a single term id or concatinated ids
-    
+
    $.ajax({
-      data: param, 
-      type: "GET", 
+      data: param,
+      type: "GET",
       url: url,
       dataType: 'json',
       success: function(response, status) {
-        $('#'+ tree.treeId).html(response.data); 
+        $('#'+ tree.treeId).html(response.data);
         var ul = $('#'+ tree.treeId).children("ul");
         tree.attachTreeview(ul);
         tree.attachSiblingsForm(ul);
@@ -199,7 +200,7 @@ Drupal.TaxonomyManagerTree.prototype.attachSiblingsForm = function(ul) {
   if (ul) {
     list = $(ul).find(list);
   }
-  
+
   $(list).bind('click', function() {
     $(this).unbind("click");
     var li = this.parentNode;
@@ -209,19 +210,19 @@ Drupal.TaxonomyManagerTree.prototype.attachSiblingsForm = function(ul) {
     var page = Drupal.getPage(li);
     var prev_id = Drupal.getTermId(li);
     var parentId = Drupal.getParentId(li);
-    
+
     url += '/'+ tree.treeId +'/'+ page +'/'+ prev_id +'/'+ parentId;
-    
+
     var param = new Object();
     param['form_build_id'] = tree.form_build_id;
     param['form_id'] = tree.form_id;
     param['tree_id'] = tree.treeId;
     param['form_parents'] = tree.formParents;
     param['language'] = tree.language;
-    
+
     $.ajax({
-      data: param, 
-      type: "GET", 
+      data: param,
+      type: "GET",
       url: url,
       dataType: 'json',
       success: function(response, status) {
@@ -229,7 +230,7 @@ Drupal.TaxonomyManagerTree.prototype.attachSiblingsForm = function(ul) {
         $(li).after(response.data);
         tree.attachTreeview($('li', li.parentNode), currentIndex);
         tree.attachSelectAllChildren($('li', li.parentNode), currentIndex);
-      
+
         //only attach other features if enabled!
         var weight_settings = Drupal.settings.updateWeight || [];
         if (weight_settings['up']) {
@@ -239,7 +240,7 @@ Drupal.TaxonomyManagerTree.prototype.attachSiblingsForm = function(ul) {
         if (term_data_settings['url']) {
           Drupal.attachTermDataToSiblings($('li', li.parentNode), currentIndex);
         }
-      
+
         $(li).removeClass("last").removeClass("has-more-siblings");
         $(li).children().children('.term-operations').hide();
         tree.swapClasses(li, "lastExpandable", "expandable");
@@ -253,7 +254,7 @@ Drupal.TaxonomyManagerTree.prototype.attachSiblingsForm = function(ul) {
 /**
  * helper function for getting out the current page
  */
-Drupal.getPage = function(li) { 
+Drupal.getPage = function(li) {
   return $(li).find("input:hidden[class=page]").attr("value");
 }
 
@@ -283,18 +284,18 @@ Drupal.getParentId = function(li) {
 /**
  * update classes for tree view, if list elements get swaped
  */
-Drupal.updateTree = function(upTerm, downTerm) {  
+Drupal.updateTree = function(upTerm, downTerm) {
   if ($(upTerm).is(".last")) {
     $(upTerm).removeClass("last");
-    Drupal.updateTreeDownTerm(downTerm); 
+    Drupal.updateTreeDownTerm(downTerm);
   }
   else if ($(upTerm).is(".lastExpandable")) {
     $(upTerm).removeClass("lastExpandable").addClass("expandable");
-    Drupal.updateTreeDownTerm(downTerm); 
+    Drupal.updateTreeDownTerm(downTerm);
   }
   else if ($(upTerm).is(".lastCollapsable")) {
     $(upTerm).removeClass("lastCollapsable").addClass("collapsable");
-    Drupal.updateTreeDownTerm(downTerm);  
+    Drupal.updateTreeDownTerm(downTerm);
   }
 }
 
@@ -332,7 +333,7 @@ Drupal.TaxonomyManagerTree.prototype.attachSelectAllChildren = function(parent, 
 Drupal.TaxonomyManagerTree.prototype.SelectAllChildrenToggle = function(span) {
   var tree = this;
   if ($(span).hasClass("select-all-children")) {
-    var li = $(span).parents("li:first");
+    var li = $(this).parents("li:first");
     if ($(li).hasClass("has-children")) {
       this.loadChildForm(li, true, function(li, tree1) {
         tree.swapClasses(li, "expandable", "collapsable");
@@ -370,7 +371,7 @@ Drupal.TaxonomyManagerTree.prototype.attachLanguageSelector = function() {
     tree.loadRootForm();
   });
   $(selector).addClass("selector-processed");
-  
+
 }
 Drupal.TaxonomyManagerTree.prototype.getLanguage = function() {
   var lang = $('#edit-taxonomy-manager-top-language').val();
@@ -440,25 +441,41 @@ Drupal.attachThrobber = function() {
 Drupal.attachResizeableTreeDiv = function() {
   $('img.div-grippie').each(function() {
     var staticOffset = null;
-    var div = $(this).parents("fieldset").parent(); 
-    $(this).mousedown(startDrag);  
-  
+    var div = $(this).parents("fieldset").parent();
+    $(this).mousedown(startDrag);
+
     function startDrag(e) {
       staticOffset = div.width() - e.pageX;
       div.css('opacity', 0.5);
       $(document).mousemove(performDrag).mouseup(endDrag);
       return false;
     }
- 
+
     function performDrag(e) {
       div.width(Math.max(200, staticOffset + e.pageX) + 'px');
       return false;
     }
- 
+
     function endDrag(e) {
       $(document).unbind("mousemove", performDrag).unbind("mouseup", endDrag);
       div.css('opacity', 1);
     }
+  });
+}
+
+/**
+ * Adds select all / remove selection functionality.
+ */
+Drupal.attachGlobalSelectAll = function() {
+  $('span.taxonomy-manager-select-helpers').once(function() {
+    var form = $(this).parents('.form-wrapper:first');
+    $(this).find('span.select-all-children').click(function() {
+      // Only select those that are visible to the end user.
+      $(form).parent().find(' :checkbox:visible').attr('checked', true);
+    });
+    $(this).find('span.unselect-all-children').click(function() {
+      $(form).parent().find(':checkbox').attr("checked", false);
+    });
   });
 }
 
