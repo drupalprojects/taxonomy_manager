@@ -2423,7 +2423,7 @@ function taxonomy_manager_autocomplete_load($vid, $string = '') {
       ->execute()
       ->fetchAllKeyed();
 
-    $prefix = count($array) ? '"'. implode('", "', $array) .'", ' : '';
+    $prefix = count($tags_typed) ? drupal_implode_tags($tags_typed) . ', ' : '';
 
     $matches = array();
     foreach ($tags_return as $tid => $name) {
@@ -2432,9 +2432,8 @@ function taxonomy_manager_autocomplete_load($vid, $string = '') {
       if (strpos($name, ',') !== FALSE || strpos($name, '"') !== FALSE) {
         $n = '"' . str_replace('"', '""', $name) . '"';
       }
-      else {
-        $matches[$prefix . $n] = check_plain($name);
-      }
+      // Add term name to list of matches.
+      $matches[$prefix . $n] = check_plain($name);
     }
   }
 
