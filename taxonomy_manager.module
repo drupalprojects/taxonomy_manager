@@ -675,17 +675,8 @@ function _taxonomy_manager_tree_term_set_class(&$class, $current_index, $tree, $
   $next = isset($tree[$next_index]) ? $tree[$next_index] : null;
 
   $children = FALSE;
-  if (!empty($next)) {
-    while ($next->depth > $term->depth) {
-      ++$current_index;
-      if (isset($tree[$current_index])) {
-        $children = TRUE;
-        $next = $tree[$current_index];
-      }
-      else {
-        break;
-      }
-    }
+  if (!empty($next) && $next->depth > $term->depth) {
+    $children = TRUE;
   }
 
   if ($children) {
