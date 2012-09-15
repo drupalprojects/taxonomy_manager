@@ -543,22 +543,19 @@ function taxonomy_manager_add_form(&$form, $voc, $hide_form = TRUE) {
     '#description' => $description,
   );
 
-  for ($i=0; $i<3; $i++) {
-    $form['add']['term'][$i] = array(
-      '#type' => 'textfield',
-    );
-  }
-  $form['add']['mass'] = array(
-    '#type' => 'fieldset',
-    '#tree' => TRUE,
-    '#title' => t('Mass term import (with textarea)'),
-    '#collapsible' => TRUE,
-    '#collapsed' => TRUE,
-  );
-  $form['add']['mass']['mass_add'] = array(
+  $form['add']['mass_add'] = array(
     '#type' => 'textarea',
     '#title' => t('Terms'),
-    '#description' => t('One term per line'),
+    '#description' => t("One term per line. Child terms can be prefixed with a
+        dash '-' (one dash per hierarchy level). Terms that should not become
+        child terms and start with a dash need to be wrapped in double quotes.
+        <br />Example:<br />
+        animals<br />
+        -canine<br />
+        --dog<br />
+        --wolf<br />
+        -feline<br />
+        --cat"),
     '#rows' => 10,
   );
   $form['add']['add'] = array(
@@ -1176,41 +1173,77 @@ function taxonomy_manager_double_tree_form_submit($form, &$form_state) {
  * Submit handler for adding terms
  */
 function taxonomy_manager_form_add_submit($form, &$form_state) {
-  $terms = array();
-  $selected_tids = isset($form_state['values']['taxonomy']['manager']['tree']['selected_terms']) ? $form_state['values']['taxonomy']['manager']['tree']['selected_terms'] : array();
-
-  foreach ($form_state['values']['add']['term'] as $value) {
-    if (!empty($value)) {
-      $terms[] = $value;
-    }
+  $parents = isset($form_state['values']['taxonomy']['manager']['tree']['selected_terms']) ? $form_state['values']['taxonomy']['manager']['tree']['selected_terms'] : array();
+  $lang = isset($form_state['values']['taxonomy']['manager']['top']['language']) ? $form_state['values']['taxonomy']['manager']['top']['language'] : "";
+  $new_terms = taxonomy_manager_mass_add_terms($form_state['values']['add']['mass_add'], $form_state['values']['voc']->vid, $parents, $lang);
+  $term_names = array();
+  foreach ($new_terms as $term) {
+    $term_names[] = $term->name;
   }
-  if ($form_state['values']['add']['mass']['mass_add']) {
-    foreach (explode ("\n", str_replace("\r", '', $form_state['values']['add']['mass']['mass_add'])) as $term) {
-      if ($term) {
-        $terms[] = $term;
-      }
-    }
-  }
-  $selected_tids = count($selected_tids) ? $selected_tids : 0;
-  foreach ($terms as $name) {
-    $term = new stdClass;
-    $term->name = $name;
-    $term->vid = $form_state['values']['voc']->vid;
-    $term->parent = $selected_tids;
-    taxonomy_term_save($term);
-    if (module_exists('i18ntaxonomy')) {
-      if (i18ntaxonomy_vocabulary($form_state['values']['voc']->vid) == I18N_TAXONOMY_TRANSLATE && $form_state['values']['taxonomy']['manager']['top']['language'] != "") {
-        _i18ntaxonomy_term_set_lang($term['tid'], $form_state['values']['taxonomy']['manager']['top']['language']);
-        $updated_lang = TRUE;
-      }
-    }
-  }
-  taxonomy_manager_update_voc($form_state['values']['voc']->vid, $selected_tids);
-
-  if (isset($updated_lang) && $updated_lang == TRUE) {
+  if (module_exists('i18ntaxonomy') && !empty($lang) && i18ntaxonomy_vocabulary($form_state['values']['voc']->vid) == I18N_TAXONOMY_TRANSLATE) {
     drupal_set_message(t("Saving terms to language @lang", array('@lang' => locale_language_name($form_state['values']['taxonomy']['manager']['top']['language']))));
   }
-  drupal_set_message(t("Terms added: %terms", array('%terms' => implode(', ', $terms))));
+  drupal_set_message(t("Terms added: %terms", array('%terms' => implode(', ', $term_names))));
+}
+
+/**
+ * Helper function for mass adding of terms.
+ *
+ * @param $input
+ *   The textual input with terms. Each line contains a single term. Child term
+ *   can be prefixed with a dash '-' (one dash for each level). Term names
+ *   starting with a dash and should not become a child term need to be wrapped
+ *   in quotes.
+ * @param $vid
+ *   The vocabulary id.
+ * @param int $parents
+ *   An array of parent term ids for the new inserted terms. Can be 0.
+ * @param $lang
+ *   The i18n language, if i18n exists.
+ *
+ * @return An array of the newly inserted term objects
+ */
+function taxonomy_manager_mass_add_terms($input, $vid, $parents, $lang = "") {
+  $new_terms = array();
+  $terms = explode("\n", str_replace("\r", '', $input));
+  $parents = count($parents) ? $parents : 0;
+
+  // Stores the current lineage of newly inserted terms.
+  $last_parents = array();
+  foreach ($terms as $name) {
+    if (empty($name)) {
+      continue;
+    }
+    $matches = array();
+    // Child term prefixed with one or more dashes
+    if (preg_match('/^(-){1,}/', $name, $matches)) {
+      $depth = strlen($matches[0]);
+      $name = substr($name, $depth);
+      $current_parents = isset($last_parents[$depth-1]) ? $last_parents[$depth-1]->tid : 0;
+    }
+    // Parent term containing dashes at the beginning and is therefore wrapped
+    // in double quotes
+    else if (preg_match('/^\"(-){1,}.*\"/', $name, $matches)) {
+      $name = substr($name, 1, -1);
+      $depth = 0;
+      $current_parents = $parents;
+    }
+    else {
+      $depth = 0;
+      $current_parents = $parents;
+    }
+    $term = new stdClass;
+    $term->name = $name;
+    $term->vid = $vid;
+    $term->parent = $current_parents;
+    taxonomy_term_save($term);
+    if (module_exists('i18ntaxonomy') && !empty($lang) && i18ntaxonomy_vocabulary($vid) == I18N_TAXONOMY_TRANSLATE) {
+      _i18ntaxonomy_term_set_lang($term->tid, $lang);
+    }
+    $new_terms[] = $term;
+    $last_parents[$depth] = $term;
+  }
+  return $new_terms;
 }
 
 
