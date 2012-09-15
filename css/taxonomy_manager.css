@@ -388,13 +388,13 @@ fieldset#edit-term-merge {
   position: absolute;
   left: 280px;
   top: 100px;
-  width: 400px;
+  width: 500px;
   z-index: 100;
   background: #FFFFFF;
 }
 
 .term-data-overlay fieldset {
-  border-width: 2px;
+  border-width: 5px;
 }
 
 .term-data-overlay legend span{
@@ -566,3 +566,4 @@ td.taxonomy-term-data-operations {
 #taxonomy-manager .clear-block:after {
   display: inline;
 }
+
