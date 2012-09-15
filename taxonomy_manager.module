@@ -460,8 +460,8 @@ function _taxonomy_manager_tree_get_first_path($tid, &$tree, &$terms_to_expand) 
   while ($i < 100) { //prevent infinite loop if inconsistent hierarchy
     $parents = taxonomy_get_parents($next_tid);
     if (count($parents)) {
-      //takes first parent
-      $parent = array_pop($parents);
+      // Takes first parent.
+      $parent = array_shift($parents);
       $path[] = $parent;
       $next_tid = $parent->tid;
       if (taxonomy_manager_term_is_root($next_tid)) {
