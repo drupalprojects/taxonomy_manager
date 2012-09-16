@@ -1610,7 +1610,7 @@ function taxonomy_manager_settings($form) {
     '#type' => 'select',
     '#title' => t('Pager count'),
     '#options' => array(25 => 25, 50 => 50, 75 => 75, 100 => 100, 150 => 150, 200 => 200, 250 => 250, 300 => 300, 400 => 400, 500 => 500, 1000 => 1000, 2500 => 2500, 5000 => 5000, 10000 => 10000),
-    '#default_value' => variable_get('taxonomy_manager_pager_tree_page_size', 100),
+    '#default_value' => variable_get('taxonomy_manager_pager_tree_page_size', TAXONOMY_MANAGER_PAGER_TREE_PAGE_SIZE_DEFAULT),
     '#description' => t('Select how many terms should be listed on one page. Huge page counts can slow down the Taxonomy Manager'),
   );
   return system_settings_form($form);

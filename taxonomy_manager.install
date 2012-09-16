@@ -8,6 +8,13 @@
  */
 
 /**
+ * Implements hook_uninstall().
+ */
+function taxonomy_manager_uninstall() {
+  variable_del('taxonomy_manager_pager_tree_page_size');
+}
+
+/**
  * Implements hook_update_N().
  * Resets 'taxonomy_override_selector' variable.
  */

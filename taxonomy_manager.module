@@ -10,6 +10,9 @@
  *
  */
 
+// Default value for the tree pager. Value can be overridden with the variable
+// taxonomy_manager_pager_tree_page_size.
+define('TAXONOMY_MANAGER_PAGER_TREE_PAGE_SIZE_DEFAULT', 100);
 
 /**
  * Implementation of hook_menu
@@ -351,8 +354,8 @@ function _taxonomy_manager_tree_get_item($vid, $parent = 0, $pager = FALSE, $sib
   }
   if ($pager) {
     if ($parent || $siblings_page) {
-      $start = ($siblings_page-1) * variable_get('taxonomy_manager_pager_tree_page_size', 50);
-      $result = db_query_range("SELECT t.* FROM {taxonomy_term_data} t INNER JOIN {taxonomy_term_hierarchy} h ON t.tid = h.tid WHERE vid = :vid AND h.parent = :parent ORDER BY t.weight, t.name", $start, variable_get('taxonomy_manager_pager_tree_page_size', 50), array(':vid' => $vid, ':parent' => $parent));
+      $start = ($siblings_page-1) * variable_get('taxonomy_manager_pager_tree_page_size', TAXONOMY_MANAGER_PAGER_TREE_PAGE_SIZE_DEFAULT);
+      $result = db_query_range("SELECT t.* FROM {taxonomy_term_data} t INNER JOIN {taxonomy_term_hierarchy} h ON t.tid = h.tid WHERE vid = :vid AND h.parent = :parent ORDER BY t.weight, t.name", $start, variable_get('taxonomy_manager_pager_tree_page_size', 100), array(':vid' => $vid, ':parent' => $parent));
     }
     else {
       $query = db_select('taxonomy_term_data', 't')->extend('PagerDefault');
@@ -361,7 +364,7 @@ function _taxonomy_manager_tree_get_item($vid, $parent = 0, $pager = FALSE, $sib
       $query->condition('t.vid', $vid)
         ->orderBy('t.weight', 'ASC')
         ->orderBy('t.name', 'ASC')
-        ->limit(variable_get('taxonomy_manager_pager_tree_page_size', 50));
+        ->limit(variable_get('taxonomy_manager_pager_tree_page_size', TAXONOMY_MANAGER_PAGER_TREE_PAGE_SIZE_DEFAULT));
 
       if ($search_string) {
         $query->condition('name', '%' . db_like($search_string) . '%', 'LIKE');
@@ -397,7 +400,7 @@ function _taxonomy_manager_tree_get_translated_item($vid, $parent = 0, $pager = 
   }
   if ($pager) {
     if ($parent || $siblings_page) {
-      $start = ($siblings_page-1) * variable_get('taxonomy_manager_pager_tree_page_size', 50);
+      $start = ($siblings_page-1) * variable_get('taxonomy_manager_pager_tree_page_size', TAXONOMY_MANAGER_PAGER_TREE_PAGE_SIZE_DEFAULT);
        $result = db_query_range("SELECT t.* FROM {taxonomy_term_data} t INNER JOIN {taxonomy_term_hierarchy} h ON t.tid = h.tid WHERE vid = :vid AND h.parent = :parent AND t.language = :language ORDER BY t.weight, t.name", $start, variable_get('taxonomy_manager_pager_tree_page_size', 50), array(':vid' => $vid, ':parent' => $parent, ':language' => $language_code));
     }
     else {
@@ -408,7 +411,7 @@ function _taxonomy_manager_tree_get_translated_item($vid, $parent = 0, $pager = 
         ->condition('t.language', $language_code)
         ->orderBy('t.weight', 'ASC')
         ->orderBy('t.name', 'ASC')
-        ->limit(variable_get('taxonomy_manager_pager_tree_page_size', 50));
+        ->limit(variable_get('taxonomy_manager_pager_tree_page_size', TAXONOMY_MANAGER_PAGER_TREE_PAGE_SIZE_DEFAULT));
 
       if ($search_string) {
         $query->condition('name', '%' . db_like($search_string) . '%', 'LIKE');
@@ -621,7 +624,7 @@ function taxonomy_manager_tree_build_form(&$index, $tree, &$form, $root_form, $p
     }
 
     if ($page) {
-      if ($index == (variable_get('taxonomy_manager_pager_tree_page_size', 50) - 1) && !isset($tree[$index+1])) {
+      if ($index == (variable_get('taxonomy_manager_pager_tree_page_size', TAXONOMY_MANAGER_PAGER_TREE_PAGE_SIZE_DEFAULT) - 1) && !isset($tree[$index+1])) {
         $form[$term->tid]['page'] = array(
           '#type' => 'hidden',
           '#value' => $page,
@@ -760,11 +763,11 @@ function _taxonomy_manager_tree_get_next_siblings_count($vid, $page, $parent = 0
   $query->condition('h.parent', $parent);
   $count = $query->countQuery()->execute()->fetchField();
 
-  $current_count = variable_get('taxonomy_manager_pager_tree_page_size', 50) * $page;
+  $current_count = variable_get('taxonomy_manager_pager_tree_page_size', TAXONOMY_MANAGER_PAGER_TREE_PAGE_SIZE_DEFAULT) * $page;
   $diff = $count - $current_count;
 
-  if ($diff > variable_get('taxonomy_manager_pager_tree_page_size', 50)) {
-    $diff = variable_get('taxonomy_manager_pager_tree_page_size', 50);
+  if ($diff > variable_get('taxonomy_manager_pager_tree_page_size', TAXONOMY_MANAGER_PAGER_TREE_PAGE_SIZE_DEFAULT)) {
+    $diff = variable_get('taxonomy_manager_pager_tree_page_size', TAXONOMY_MANAGER_PAGER_TREE_PAGE_SIZE_DEFAULT);
   }
 
   return $diff;
