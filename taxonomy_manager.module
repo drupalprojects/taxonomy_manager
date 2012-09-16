@@ -346,7 +346,7 @@ function taxonomy_manager_tree_process_elements($element) {
  */
 function _taxonomy_manager_tree_get_item($vid, $parent = 0, $pager = FALSE, $siblings_page = 0, $search_string = NULL, $language_code = NULL) {
   $tree = array();
-  if (module_exists('i18ntaxonomy') && $language_code != "") {
+  if (module_exists('i18n_taxonomy') && $language_code != "") {
     return _taxonomy_manager_tree_get_translated_item($vid, $parent, $pager, $siblings_page, $search_string, $language_code);
   }
   if ($pager) {
@@ -422,7 +422,7 @@ function _taxonomy_manager_tree_get_translated_item($vid, $parent = 0, $pager = 
     }
   }
   else {
-    $tree = i18ntaxonomy_get_tree($vid, $language_code, $parent);
+    $tree = i18n_taxonomy_get_tree($vid, $language_code, $parent);
   }
   return $tree;
 }
@@ -972,8 +972,11 @@ function _taxonomy_manager_tree_get_selected_terms($form_values, &$direct_parent
  * returns language of a term (multilingual voc), if i18ntaxonomy enabled
  */
 function _taxonomy_manager_term_get_lang($tid) {
-  if (module_exists('i18ntaxonomy')) {
-    return db_query("SELECT language FROM {taxonomy_term_data} WHERE tid = :tid", array(':tid' => $tid))->fetchField();
+  if (module_exists('i18n_taxonomy')) {
+    $term = taxonomy_term_load($tid);
+    if ($term && isset($term->language)) {
+      return $term->language;
+    }
   }
   return "";
 }

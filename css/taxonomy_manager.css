@@ -213,21 +213,20 @@ span.taxonomy-manager-select-helpers span.unselect-all-children:hover {
   background-image: url(../images/unselect-all-children.png);
 }
 
-#edit-taxonomy2-manager-top-language-wrapper,
-#edit-taxonomy-manager-top-language-wrapper {
-  padding: 0;
+div.form-item-taxonomy-manager-top-language,
+div.form-item-taxonomy2-manager-top-language {
   padding-right: 0.5em;
-  margin: 0;
   text-align: right;
   display: inline;
 }
-#edit-taxonomy2-manager-top-language-wrapper label,
-#edit-taxonomy-manager-top-language-wrapper label {
+div.form-item-taxonomy-manager-top-language label,
+div.form-item-taxonomy2-manager-top-language label {
   display: inline;
 }
 
 .taxonomy-manager-tree-top {
   text-align: right;
+  padding-top: 0.5em;
 }
 
 #taxonomy-manager-double-tree-operations {
@@ -472,7 +471,7 @@ td.taxonomy-term-data-operations {
 }
 
 #taxonomy-manager .messages {
-  margin-top: 0px;
+  margin-top: 5px;
   margin-bottom: 5px;
 }
 

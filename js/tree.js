@@ -174,10 +174,6 @@ Drupal.TaxonomyManagerTree.prototype.loadRootForm = function(tids) {
         tree.attachSelectAllChildren(ul);
         Drupal.attachUpdateWeightTerms(ul);
         Drupal.attachTermDataLinks(ul);
-        if (tid) {
-          var termLink = $("#"+ tree.treeId).find(":input[value="+ tid +"]").parent().find("a.term-data-link");
-          Drupal.activeTermSwapHighlight(termLink);
-        }
 
         var lang = $('#edit-'+ tree.treeId +'-language').val();
         if (lang != "" && lang != tree.langauge) {
@@ -401,6 +397,9 @@ Drupal.TaxonomyManagerTree.prototype.getLi = function(termId) {
 }
 
 Drupal.TaxonomyManagerTree.prototype.attachMsgCloseLink = function() {
+  if (this.form_id == undefined) {
+    return;
+  }
   $('#'+ this.form_id.replace(/_/g, '-')).find('div.messages').once(function() {
     $('<span>&nbsp;</span><a href="">'+ Drupal.t('Close') +'</a>').appendTo(this).click(function() {
       $(this).parent().fadeOut('fast', function() {

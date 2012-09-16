@@ -120,21 +120,20 @@ function taxonomy_manager_form($form, &$form_state, $voc, $tid = 0, $filter = NU
     '#suffix' => '</div>',
   );
 
-  if (module_exists('i18ntaxonomy')) {
-    if (i18ntaxonomy_vocabulary($voc->vid) == I18N_TAXONOMY_TRANSLATE) {
+  if (module_exists('i18n_taxonomy')) {
+    if (i18n_taxonomy_vocabulary_mode($voc->vid, I18N_MODE_TRANSLATE)) {
       if ($tid) {
         $language = _taxonomy_manager_term_get_lang($tid);
       }
       else {
-        $lang = language_default();
-        $language = $lang->language;
+        $language = language_default()->language;
       }
       $form['taxonomy']['manager']['top']['language'] = array(
         '#type' => 'select',
         '#title' => t('Language'),
         '#default_value' => $language,
         '#options' => array('' => t('All'), 'no language' => t('no language')) + locale_language_list('name'),
-        '#attributes' => array('class' => 'language-selector'),
+        '#attributes' => array('class' => array('language-selector')),
       );
     }
   }
@@ -253,14 +252,13 @@ function taxonomy_manager_double_tree_form($form, &$form_state, $voc1, $voc2, $t
     '#suffix' => '</div>',
   );
 
-  if (module_exists('i18ntaxonomy')) {
-    if (i18ntaxonomy_vocabulary($voc2->vid) == I18N_TAXONOMY_TRANSLATE) {
+  if (module_exists('i18n_taxonomy')) {
+    if (i18n_taxonomy_vocabulary_mode($voc2->vid, I18N_MODE_TRANSLATE)) {
       if ($tid) {
         $language = _taxonomy_manager_term_get_lang($tid);
       }
       else {
-        $lang = language_default();
-        $language = $lang->language;
+        $language = language_default()->language;
       }
       $form['taxonomy2']['manager']['top']['language'] = array(
         '#type' => 'select',
@@ -345,26 +343,24 @@ function taxonomy_manager_double_tree_form($form, &$form_state, $voc1, $voc2, $t
     $form['double-tree']['operations']['copy_left'] = $form['double-tree']['operations']['move_left'];
 
     $form['double-tree']['operations']['copy_right']['#attributes']['title'] = t('Copy selected term names to the right voc.');
-    $form['double-tree']['operations']['copy_right']['#src'] = $module_path ."images/copy-right.png";
+    $form['double-tree']['operations']['copy_right']['#src'] = $module_path . "images/copy-right.png";
     $form['double-tree']['operations']['copy_right']['#submit'] = array('taxonomy_manager_double_tree_copy_submit');
     $form['double-tree']['operations']['copy_right']['#validate'] = array('taxonomy_manager_double_tree_copy_validate');
     $form['double-tree']['operations']['copy_right']['#weight'] = 22;
 
     $form['double-tree']['operations']['copy_left']['#attributes']['title'] = t('Copy selected term names to the left voc.');
-    $form['double-tree']['operations']['copy_left']['#src'] = $module_path ."images/copy-left.png";
+    $form['double-tree']['operations']['copy_left']['#src'] = $module_path . "images/copy-left.png";
     $form['double-tree']['operations']['copy_left']['#submit'] = array('taxonomy_manager_double_tree_copy_submit');
     $form['double-tree']['operations']['copy_left']['#validate'] = array('taxonomy_manager_double_tree_copy_validate');
     $form['double-tree']['operations']['copy_left']['#weight'] = 23;
 
   }
-  else if (isset($language)) {
-    $form['double-tree']['operations']['add_translation'] = array(
-      '#type' => 'image_button',
-      '#attributes' => array('title' => t('Add Translation')),
-      '#src' => $module_path ."images/connect.png",
-      '#prefix' => '<div class="taxonomy-manager-double-tree-operations-buttons">',
-      '#suffix' => '</div>',
-    );
+  else if (module_exists('i18n_taxonomy') && i18n_taxonomy_vocabulary_mode($voc2->vid, I18N_MODE_TRANSLATE)) {
+    $form['double-tree']['operations']['add_translation'] = $form['double-tree']['operations']['move_right'];
+    $form['double-tree']['operations']['add_translation']['#attributes']['title'] = t('Add Translation.');
+    $form['double-tree']['operations']['add_translation']['#src'] = $module_path . "images/connect.png";
+    $form['double-tree']['operations']['add_translation']['#submit'] = array('taxonomy_manager_double_tree_add_translation_submit');
+    $form['double-tree']['operations']['add_translation']['#validate'] = array('taxonomy_manager_double_tree_add_translation_validate');
   }
 
   return $form;
@@ -429,8 +425,8 @@ function taxonomy_manager_search_form(&$form, $voc) {
     //'synonyms' => t('Include synonyms'), // @todo implement synonyms feature
     'subtrees' => t('Search under selected terms'),
   );
-  if (module_exists('i18ntaxonomy')) {
-    if (i18ntaxonomy_vocabulary($voc->vid) == I18N_TAXONOMY_TRANSLATE) {
+  if (module_exists('i18n_taxonomy')) {
+    if (i18n_taxonomy_vocabulary_mode($voc->vid, I18N_MODE_TRANSLATE)) {
       $search_options['language'] = t('Search within selected language');
     }
   }
@@ -882,7 +878,21 @@ function taxonomy_manager_term_data_form(&$form, &$form_state, $tid = 0, $vid1, 
       ),
       '#weight' => 20,
     );
+    // i18n integration
+    if (module_exists('i18n_taxonomy')) {
+      if (i18n_taxonomy_vocabulary_mode($term->vid, I18N_MODE_TRANSLATE)) {
+        $form['term_data']['translations'] = _taxonomy_manager_form_term_data_translations($term);
+        $form['term_data']['translations']['#weight'] = '50';
 
+        $form['term_data']['language'] = array(
+          '#type' => 'select',
+          '#title' => t('Language'),
+          '#description' => t('This term belongs to a multilingual vocabulary. You can set a language for it.'),
+          '#default_value' => $term->language,
+          '#options' => locale_language_list('name'),
+        );
+      }
+    }
     // UUID integration.
     if (module_exists('uuid')) {
       $uuids = entity_get_uuid_by_id('taxonomy_term', array($tid));
@@ -996,69 +1006,92 @@ function _taxonomy_manager_form_term_data_parents($term) {
 }
 
 /**
- * helper function for generating a table listing the translations
+ * Helper function for generating a table listing the translations
  */
-function _taxonomy_manager_form_term_data_translations($term, $translations, $header_type, $attr, $autocomplete = TRUE, $add = TRUE) {
-  $module_path = drupal_get_path('module', 'taxonomy_manager') .'/';
-  $rows = array();
+function _taxonomy_manager_form_term_data_translations($term) {
+  $module_path = drupal_get_path('module', 'taxonomy_manager') . '/';
+  $languages = locale_language_list('name');
 
+  $form['#tree'] = TRUE;
   $form['#theme'] = 'taxonomy_manager_term_data_extra';
-  $form['data'] = array();
+  $form['headers'][] = array('#markup' => t('Translations'));
+  $form['headers'][] = array('#markup' => t('Language'));
+  $form['headers'][] = array('#markup' => '');
 
-  foreach ($translations as $tid => $value) {
-    if (is_object($value)) {
-      $name = $value->name;
-      $id = $value->tid;
-      $vid = $value->vid;
-      $lang = $value->language;
-      $trid = $value->trid;
-      $extra_info = taxonomy_manager_tree_term_extra_info($value);
+  if (!empty($term->i18n_tsid)) {
+    $translation_set = i18n_taxonomy_translation_set_load($term->i18n_tsid);
+    $translations = $translation_set->get_translations();
+    // If the number of translations equals 1, there's only a source translation.
+    if (count($translations) > 1) {
+      foreach ($translations as $langcode => $translation) {
+        if ($translation->tid !== $term->tid) {
+          $form['data'][$translation->tid][] = array(
+            '#markup' => l($translation->name, 'admin/structure/taxonomy_manager/termdata/'. $translation->tid, array('attributes' => array('class' => 'taxonomy-term-data-name-link'))),
+            '#row-class' => 'taxonomy-term-data-name',
+            '#row-id' => 'term-' . $translation->tid,
+            '#tree' => TRUE,
+          );
+          $form['data'][$translation->tid][] = array(
+            '#markup' => check_plain($languages[$translation->language]),
+            '#row-class' => 'taxonomy-term-data-language',
+            '#row-id' => 'term-' . $translation->language,
+            '#tree' => TRUE,
+          );
+          $form['data'][$translation->tid][0]['tid'] = array(
+            '#type' => 'hidden',
+            '#value' => $translation->tid,
+          );
+          $form['data'][$translation->tid]['remove'] = array(
+            '#type' => 'image_button',
+            '#attributes' => array('title' => t('Remove')),
+            '#submit' => array('taxonomy_manager_term_data_form_submit_translation_remove'),
+            '#validate' => array('taxonomy_manager_term_data_form_validate_translation_remove'),
+            '#src' => $module_path . "images/list-remove.png",
+            '#row-class' => 'taxonomy-term-data-operations',
+          );
+          $form['data'][$translation->tid]['remove']['#ajax'] = array(
+            'callback' => 'taxonomy_manager_term_data_form_ajax_callback',
+            'progress' => array('type' => ''),
+            'method' => 'replaceWith',
+            'event' => 'click',
+            'wrapper' => 'taxonomy-term-data-replace',
+          );
+        }
+      }
     }
-    $form['data'][$id][] = array(
-      '#value' => (isset($vid) && $vid > 0) ? l($name, 'admin/structure/taxonomy_manager/termdata/'. $id, array('attributes' => array('title' => $extra_info))) : check_plain($name),
-      '#row-class' => 'taxonomy-term-data-name',
-      '#row-id' => 'term-'. $id,
-    );
-    $form['data'][$id][] = array(
-      '#value' => check_plain(locale_language_name($lang)),
-      '#row-class' => 'taxonomy-term-data-lang',
-      '#row-id' => 'term-lang-'. $id,
-    );
-    $form['data'][$id][] = array(
-      '#value' => '<span class="'. $attr .'" title="'. t('Remove') .'">&nbsp;</span>',
-      '#row-class' => 'taxonomy-term-data-operations',
-    );
   }
-  $form['headers'][] = array('#value' => $header_type);
-  $form['headers'][] = array('#value' => t('Language'));
-  $form['headers'][] = array('#value' => '');
 
   $form['op'] = array();
-  if ($add) {
-    $form['op']['add'] = array(
-      '#type' => 'textfield',
-      '#prefix' => '<div class="term-data-autocomplete">',
-      '#suffix' => '</div>',
-      '#size' => 35,
-    );
-    $form['op']['lang'] = array(
-      '#type' => 'select',
-      '#options' => array('' => '') + locale_language_list('name'),
-      '#default value' => '',
-    );
-    if ($autocomplete) {
-      $form['op']['add']['#autocomplete_path'] = 'taxonomy_manager/autocomplete/'. $term->vid;
-    }
-
-    $form['op']['add_button'] = array(
-      '#value' => '<span class="'. $attr .'" title="'. t('Add') .'">&nbsp;</span>',
-      '#prefix' => '<div class="term-data-autocomplete-add">',
-      '#suffix' => '</div>',
-    );
-  }
+  $form['op']['add'] = array(
+    '#type' => 'textfield',
+    '#prefix' => '<div class="term-data-autocomplete">',
+    '#autocomplete_path' => 'taxonomy_manager/autocomplete/'. $term->vid,
+    '#suffix' => '</div>',
+    '#size' => 35,
+  );
+  // Translations have a different language than the original term.
+  unset($languages[$term->language]);
+  $form['op']['language'] = array(
+    '#type' => 'select',
+    '#options' => $languages,
+  );
+  $form['op']['add_button'] = array(
+    '#type' => 'image_button',
+    '#attributes' => array('title' => t('Add')),
+    '#submit' => array('taxonomy_manager_term_data_form_submit_translation_add'),
+    '#validate' => array('taxonomy_manager_term_data_form_validate_translation_add'),
+    '#src' => $module_path ."images/list-add.png",
+    '#row-class' => 'term-data-autocomplete-add',
+    '#ajax' => array(
+      'callback' => 'taxonomy_manager_term_data_form_ajax_callback',
+      'progress' => array('type' => ''),
+      'method' => 'replaceWith',
+      'event' => 'click',
+      'wrapper' => 'taxonomy-term-data-replace',
+    ),
+  );
 
   return $form;
-
 }
 
 /**
@@ -1180,7 +1213,7 @@ function taxonomy_manager_form_add_submit($form, &$form_state) {
   foreach ($new_terms as $term) {
     $term_names[] = $term->name;
   }
-  if (module_exists('i18ntaxonomy') && !empty($lang) && i18ntaxonomy_vocabulary($form_state['values']['voc']->vid) == I18N_TAXONOMY_TRANSLATE) {
+  if (module_exists('i18n_taxonomy') && !empty($lang) && i18n_taxonomy_vocabulary_mode($form_state['values']['voc']->vid, I18N_MODE_TRANSLATE)) {
     drupal_set_message(t("Saving terms to language @lang", array('@lang' => locale_language_name($form_state['values']['taxonomy']['manager']['top']['language']))));
   }
   drupal_set_message(t("Terms added: %terms", array('%terms' => implode(', ', $term_names))));
@@ -1236,10 +1269,10 @@ function taxonomy_manager_mass_add_terms($input, $vid, $parents, $lang = "") {
     $term->name = $name;
     $term->vid = $vid;
     $term->parent = $current_parents;
-    taxonomy_term_save($term);
-    if (module_exists('i18ntaxonomy') && !empty($lang) && i18ntaxonomy_vocabulary($vid) == I18N_TAXONOMY_TRANSLATE) {
-      _i18ntaxonomy_term_set_lang($term->tid, $lang);
+    if (module_exists('i18n_taxonomy') && !empty($lang) && i18n_taxonomy_vocabulary_mode($vid, I18N_MODE_TRANSLATE)) {
+      $term->language = $lang;
     }
+    taxonomy_term_save($term);
     $new_terms[] = $term;
     $last_parents[$depth] = $term;
   }
@@ -1414,11 +1447,11 @@ function taxonomy_manager_check_circular_hierarchy($tids, $new_parents_tids) {
  * returns TRUE if operation allowed, else FALSE (different languages)
  */
 function taxonomy_manager_check_language($vid, $selected_tids, $parents) {
-  if (module_exists('i18ntaxonomy')) {
+  if (module_exists('i18_ntaxonomy')) {
     if (count($parents) && count($selected_tids)) {
       $term = array_pop($parents);
-      $lang = _taxonomy_manager_term_get_lang($term['tid']);
-      if (i18ntaxonomy_vocabulary($vid) == I18N_TAXONOMY_TRANSLATE) {
+      $lang = $term->language;
+      if (i18n_taxonomy_vocabulary_mode($voc->vid, I18N_MODE_TRANSLATE)) {
         foreach ($parents as $parent) {
           if (_taxonomy_manager_term_get_lang($parent['tid']) != $lang) {
             return FALSE;
@@ -1616,6 +1649,9 @@ function taxonomy_manager_term_data_form_submit($form, &$form_state) {
   else if ($term->name != $old_term->name) {
     form_set_value(array('#parents' => array('tree-update')), array('update-name' => array('name' => $term->name, 'tid' => $term->tid)), $form_state);
   }
+  else if (isset($term->language) && $term->language != $old_term->language) {
+    form_set_value(array('#parents' => array('tree-update')), array('update' => TRUE), $form_state);
+  }
 
   taxonomy_term_save($term);
   drupal_set_message("Updated term data");
@@ -1717,6 +1753,83 @@ function taxonomy_manager_term_data_form_submit_parents_remove($form, &$form_sta
   drupal_set_message(t("Removed parent"));
   $form_state['rebuild'] = TRUE;
   form_set_value(array('#parents' => array('tree-update')), array('update' => TRUE), $form_state);
+}
+
+/**
+ * Validation handler for adding a single translation on the term data form.
+ */
+function taxonomy_manager_term_data_form_validate_translation_add($form, &$form_state) {
+  $term_data = $form_state['values'];
+  $term1 = taxonomy_term_load($term_data['tid']);
+  $input = $term_data['translations']['op']['add'];
+  $language = $term_data['translations']['op']['language'];
+
+  $typed_terms = taxonomy_manager_autocomplete_tags_get_tids($term_data['translations']['op']['add'], $term1->vid, FALSE, $language);
+  if (empty($input) || count($typed_terms) > 1) {
+    form_set_error('translations][op][add', t("Please input one term with an appropriate language."));
+  }
+  else if ($term1->language == $language) {
+    form_set_error('translations][op', t("Added term is of the same language."));
+    return;
+  }
+  else if (!is_null(i18n_taxonomy_term_get_translation($term1, $language))) {
+    form_set_error('translations][op][language', t('A translation for this language already exists.'));
+    return;
+  }
+  else if (count($typed_terms) == 1) {
+    $entry = array_shift($typed_terms);
+    $term2 = taxonomy_term_load($entry['tid']);
+    if (!is_null(i18n_taxonomy_term_get_translation($term2, $term1->language))) {
+      form_set_error('translations][op][add', t('A translation for this term already exists.'));
+    }
+  }
+}
+
+/**
+ * Submit handler for adding a single translation on the term data form.
+ */
+function taxonomy_manager_term_data_form_submit_translation_add($form, &$form_state) {
+  $term_data = $form_state['values'];
+  $term1 = taxonomy_term_load($term_data['tid']);
+  $voc = taxonomy_vocabulary_load($term1->vid);
+
+  $typed_terms = taxonomy_manager_autocomplete_tags_get_tids($term_data['translations']['op']['add'], $term1->vid, TRUE, $term_data['translations']['op']['language']);
+  $entry = array_shift($typed_terms);
+  $term2 = taxonomy_term_load($entry['tid']);
+
+  taxonomy_manager_add_translation($term1, $term2, $voc);
+  drupal_set_message(t('The translation has been added'));
+  $form_state['rebuild'] = TRUE;
+  form_set_value(array('#parents' => array()), array('update' => TRUE), $form_state);
+}
+
+/**
+ * Validation handler for removing a single translation on the term data form.
+ */
+function taxonomy_manager_term_data_form_validate_translation_remove($form, &$form_state) {
+  $splits = explode('][', $form_state['triggering_element']['#name']);
+  if (count($splits) == 3 && is_numeric($splits[1])) {
+    form_set_value(array('#parents' => array('remove_translation_tid')), $splits[1], $form_state);
+  }
+  else {
+    form_set_error('translations', t('Invalid term selection.'));
+  }
+}
+
+/**
+ * Submit handler for removing a single translation on the term data form.
+ */
+function taxonomy_manager_term_data_form_submit_translation_remove($form, &$form_state) {
+  $term = taxonomy_term_load($form_state['values']['tid']);
+  $term_to_remove = taxonomy_term_load($form_state['values']['remove_translation_tid']);
+
+  $translation_set = i18n_translation_set_load($term->i18n_tsid);
+  $translation_set->remove_language($term_to_remove->language)
+    ->update_delete();
+
+  drupal_set_message(t("Removed term from translation."));
+  $form_state['rebuild'] = TRUE;
+  form_set_value(array('#parents' => array()), array('update' => TRUE), $form_state);
 }
 
 function taxonomy_manager_double_tree_ajax_callback($form, $form_state) {
@@ -1942,79 +2055,74 @@ function taxonomy_manager_double_tree_switch_submit($form, &$form_state) {
   $form_state['rebuild'] = TRUE;
 }
 
-
-/*function taxonomy_manager_doube_tree_edit_translate($params, &$msg, &$is_error_msg) {
-  $msg = "Operation not yet implemented";
-  $is_error_msg = TRUE;
-  //TODO
-  /*$term1 = taxonomy_term_load(array_pop($params['selected_terms']));
-  $term2 = taxonomy_term_load(array_pop($params['selected_parents']));
-  $vid = $term1->vid;
-
-  if (module_exists('i18ntaxonomy')) {
-    if (i18ntaxonomy_vocabulary($vid) == I18N_TAXONOMY_TRANSLATE) {
-      if ($term1->language == $term2->language) {
-        $msg = t("Selected terms are of the same language.");
-        $is_error_msg = TRUE;
-      }
-      else {
-        $translations = i18ntaxonomy_term_get_translations(array('tid' => $term1->tid), FALSE);
-        foreach ($translations as $translation) {
-          if ($translation->language == $term2->language) {
-            $msg = t('Translation for this language already exists.');
-            $is_error_msg = TRUE;
-            break;
-          }
-        }
-        $translations = i18ntaxonomy_term_get_translations(array('tid' => $term2->tid), FALSE);
-        foreach ($translations as $translation) {
-          if ($translation->language == $term1->language) {
-            $msg = t('Translation for this language already exists.');
-            $is_error_msg = TRUE;
-            break;
-          }
-        }
-      }
-    }
-    else {
-      $msg = t("This is not a multilingual vocabulary.");
-      $is_error_msg = TRUE;
-    }
-  }
-  else {
-    $msg = t("Module i18ntaxonomy not enabled.");
-    $is_error_msg = TRUE;
+/**
+ * Validation handler for adding a translation.
+ */
+function taxonomy_manager_double_tree_add_translation_validate($form, &$form_state) {
+  if (!module_exists('i18n_taxonomy')) {
+    form_set_error('', t("i18n taxonomy module is not enabled."));
+    return;
   }
 
-  if (!$is_error_msg) {
-    taxonomy_manager_add_translation($term1->tid, $term2->tid);
-    $msg = t("Translation for %term2 - %term1 added.", array('%term2' => $term2->name, '%term1' => $term1->name));
+  if (!count($form_state['values']['taxonomy']['manager']['tree']['selected_terms']) || !count($form_state['values']['taxonomy2']['manager']['tree']['selected_terms'])) {
+    form_set_error('', t("No terms selected."));
+    return;
   }
-}*/
 
+  $term1 = taxonomy_term_load(array_shift($form_state['values']['taxonomy']['manager']['tree']['selected_terms']));
+  $term2 = taxonomy_term_load(array_shift($form_state['values']['taxonomy2']['manager']['tree']['selected_terms']));
+  $voc = $form_state['values']['voc'];
 
+  if (!i18n_taxonomy_vocabulary_mode($voc->vid, I18N_MODE_TRANSLATE)) {
+    form_set_error('', t('This is not a multilingual vocabulary.'));
+    return;
+  }
+  else if ($term1->language == $term2->language) {
+    form_set_error('', t("Selected terms are of the same language."));
+    return;
+  }
+  else if (!is_null(i18n_taxonomy_term_get_translation($term1, $term2->language)) ||
+    !is_null(i18n_taxonomy_term_get_translation($term2, $term1->language))) {
+    form_set_error('', t('A translation for this term or language already exists.'));
+    return;
+  }
+  // Set the values for the submit handler.
+  $values = array(
+    'term1' => $term1,
+    'term2' => $term2,
+    'voc' => $voc,
+  );
+  form_set_value(array('#parents' => array('double_tree_values')), $values, $form_state);
+}
 
 /**
- * adds translation between two terms
+ * Submit handler for adding a translation.
  */
-function taxonomy_manager_add_translation($tid1, $tid2) {
-  //TODO
-  /*$trid1 = db_result(db_query("SELECT trid FROM {term_data} WHERE tid = %d", $tid1));
-  $trid2 = db_result(db_query("SELECT trid FROM {term_data} WHERE tid = %d", $tid2));
-  if ($trid1 == 0 && $trid2 == 0) {
-    $trid = ((int)db_result(db_query('SELECT max(trid) FROM {term_data}'))) + 1;
-    db_query('UPDATE {term_data} SET trid = %d WHERE tid = %d OR tid = %d', $trid, $tid1, $tid2);
+function taxonomy_manager_double_tree_add_translation_submit($form, &$form_state) {
+  $term1 = $form_state['values']['double_tree_values']['term1'];
+  $term2 = $form_state['values']['double_tree_values']['term2'];
+  $voc = $form_state['values']['double_tree_values']['voc'];
+
+  taxonomy_manager_add_translation($term1, $term2, $voc);
+  drupal_set_message(t("Translation for %term2 - %term1 added.", array('%term2' => $term2->name, '%term1' => $term1->name)));
+}
+
+/**
+ * Helper function for adding a translation between two terms.
+ */
+function taxonomy_manager_add_translation($term1, $term2, $voc) {
+  if (!module_exists('i18n_taxonomy')) {
+    return;
   }
-  else if ($trid1 != 0 && $trid2 == 0) {
-    db_query('UPDATE {term_data} SET trid = %d WHERE tid = %d', $trid1, $tid2);
-  }
-  else if ($trid2 != 0 && $trid1 == 0) {
-    db_query('UPDATE {term_data} SET trid = %d WHERE tid = %d', $trid2, $tid1);
+  if (!empty($term1->i18n_tsid)) {
+    $translation_set = i18n_taxonomy_translation_set_load($term1->i18n_tsid);
   }
   else {
-    $trid = max($trid1, $trid2);
-    db_query('UPDATE {term_data} SET trid = %d WHERE trid = %d OR trid = %d', $trid, $trid1, $trid2);
-  }*/
+    // No translation set yet, build a new one with the source term.
+    $translation_set = i18n_translation_set_create('taxonomy_term', $voc->machine_name)
+      ->add_item($term1);
+  }
+  $translation_set->add_item($term2)->save();
 }
 
 /**
@@ -2256,10 +2364,11 @@ function taxonomy_manager_autocomplete_tags_get_tids($typed_input, $vid, $insert
           $edit->name = $typed_term;
           $edit->vid = $vid;
 
-          $status = taxonomy_term_save($edit);
-          if (module_exists('i18ntaxonomy') && $lang != "") {
-            _i18ntaxonomy_term_set_lang($edit->tid, $lang);
+          if (module_exists('i18n_taxonomy') && $lang != "" && i18n_taxonomy_vocabulary_mode($vid, I18N_MODE_TRANSLATE)) {
+            $edit->language = $lang;
           }
+          $status = taxonomy_term_save($edit);
+
           $typed_term_tid = $edit->tid;
           $tids[$typed_term_tid]['tid'] = $typed_term_tid;
           $tids[$typed_term_tid]['new'] = TRUE;
