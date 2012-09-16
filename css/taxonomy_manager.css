@@ -556,6 +556,10 @@ td.taxonomy-term-data-operations {
   clear: both;
 }
 
+span.taxonomy-manager-message-close {
+  float:right;
+}
+
 /**
  overwrites some css settings from the admin module, which break the layout of the taxonomy manager
 */

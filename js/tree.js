@@ -25,6 +25,8 @@ Drupal.behaviors.TaxonomyManagerTree = {
         Drupal.attachGlobalSelectAll();
       }
     }
+    Drupal.attachMsgCloseLink(context);
+
   }
 }
 
@@ -48,7 +50,6 @@ Drupal.TaxonomyManagerTree = function(id, vid, parents) {
   this.attachSiblingsForm(this.ul);
   this.attachSelectAllChildren(this.ul);
   this.attachLanguageSelector();
-  this.attachMsgCloseLink();
 
   //attach term data js, if enabled
   var term_data_settings = Drupal.settings.termData || [];
@@ -396,19 +397,16 @@ Drupal.TaxonomyManagerTree.prototype.getLi = function(termId) {
   return $(this.div).find("input:hidden[class=term-id][value="+ termId +"]").parent().parent();
 }
 
-Drupal.TaxonomyManagerTree.prototype.attachMsgCloseLink = function() {
-  if (this.form_id == undefined) {
-    return;
-  }
-  $('#'+ this.form_id.replace(/_/g, '-')).find('div.messages').once(function() {
-    $('<span>&nbsp;</span><a href="">'+ Drupal.t('Close') +'</a>').appendTo(this).click(function() {
+Drupal.attachMsgCloseLink = function(context) {
+  $(context).find('div.messages').once(function() {
+    $('<span class="taxonomy-manager-message-close"><a href="" title="'+ Drupal.t('Close') +'">x</a></span>').appendTo(this).click(function() {
       $(this).parent().fadeOut('fast', function() {
         $(this).remove();
       });
       return false;
     });
     // Remove the message after some time...
-    $(this).parent().delay(5000).fadeOut('slow', function() {
+    $(this).parent().delay(7500).fadeOut('slow', function() {
       $(this).remove();
     });
   });
