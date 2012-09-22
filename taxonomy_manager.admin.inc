@@ -380,6 +380,9 @@ function taxonomy_manager_form_voc_jumper(&$form) {
       'choose' => t('-- Switch vocabulary --'),
     );
     $form = ctools_jump_menu($form, $form_state, $options, $settings);
+
+    // Attach the JS in case we rebuild the form.
+    $form['#attached']['js'][] = drupal_get_path('module', 'ctools') . '/js/jump-menu.js';
   }
 }
 
