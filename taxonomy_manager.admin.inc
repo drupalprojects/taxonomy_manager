@@ -1561,7 +1561,7 @@ function taxonomy_manager_form_term_merge_submit($form, $form_state) {
   }
   $term_names = implode($term_names_array, ', ');
   if (module_exists('term_merge')) {
-    term_merge($selected_tids, $dest_term, $form_state['values']['term_merge']['options']['keep_merged']);
+    term_merge($selected_tids, $dest_term->tid, $form_state['values']['term_merge']['options']['keep_merged']);
     drupal_set_message(t("Terms %term_names merged into %dest_term", array('%term_names' => $term_names, '%dest_term' => $dest_term->name)));
   }
   else {
