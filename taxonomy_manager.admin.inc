@@ -2543,12 +2543,18 @@ function taxonomy_manager_update_voc($vid, $parents = array()) {
 /**
  * Retrieve a pipe delimited string of autocomplete suggestions (+synonyms)
  */
-function taxonomy_manager_autocomplete_load($vid, $string = '') {
-  // The user enters a comma-separated list of tags. We only autocomplete the last tag.
-  $array = drupal_explode_tags($string);
+function taxonomy_manager_autocomplete_load($vid, $tags_typed = '') {
+  // If the request has a '/' in the search text, then the menu system will have
+  // split it into multiple arguments, recover the intended $tags_typed.
+  $args = func_get_args();
+  // Shift off the $field_name argument.
+  array_shift($args);
+  $tags_typed = implode('/', $args);
 
-  // Fetch last tag
-  $last_string = drupal_strtolower(trim(array_pop($array)));
+  // The user enters a comma-separated list of tags. We only autocomplete the last tag.
+  $tags_typed = drupal_explode_tags($tags_typed);
+  $last_string = drupal_strtolower(array_pop($tags_typed));
+
   $matches = array();
   if ($last_string != '') {
     $query = db_select('taxonomy_term_data', 't');
@@ -2557,7 +2563,7 @@ function taxonomy_manager_autocomplete_load($vid, $string = '') {
 
     // Do not select already entered terms.
     if (!empty($tags_typed)) {
-      $query->condition('t.name', $array, 'NOT IN');
+      $query->condition('t.name', $tags_typed, 'NOT IN');
     }
     // Select rows that match by term name.
     $tags_return = $query
