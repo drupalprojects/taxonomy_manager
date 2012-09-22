@@ -405,8 +405,8 @@ Drupal.attachMsgCloseLink = function(context) {
       });
       return false;
     });
-    // Remove the message after some time...
-    $(this).parent().delay(7500).fadeOut('slow', function() {
+    // Remove the message after 10sec.
+    $(this).parent().delay(10000).fadeOut('slow', function() {
       $(this).remove();
     });
   });
