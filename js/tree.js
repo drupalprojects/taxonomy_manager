@@ -341,8 +341,8 @@ Drupal.TaxonomyManagerTree.prototype.SelectAllChildrenToggle = function(span) {
       });
     }
     else {
-      $(span).removeClass("select-all-children").addClass("unselect-all-children");
-      $(span).attr("title", Drupal.t("Unselect all children"));
+      $(span).removeClass("select-all-children").addClass("deselect-all-children");
+      $(span).attr("title", Drupal.t("Deselect all children"));
       $(span).parents("li:first").find('ul:first').each(function() {
         var first_element = $(this).find('.term-line:first');
         $(first_element).parent().siblings("li").find('div.term-line:first :checkbox').attr('checked', true);
@@ -351,7 +351,7 @@ Drupal.TaxonomyManagerTree.prototype.SelectAllChildrenToggle = function(span) {
     }
   }
   else {
-    $(span).removeClass("unselect-all-children").addClass("select-all-children");
+    $(span).removeClass("deselect-all-children").addClass("select-all-children");
     $(span).parents(".term-line").siblings("ul").find(':checkbox').attr("checked", false);
     $(span).attr("title", Drupal.t("Select all children"));
   }
@@ -470,7 +470,7 @@ Drupal.attachGlobalSelectAll = function() {
       // Only select those that are visible to the end user.
       $(form).parent().find(' :checkbox:visible').attr('checked', true);
     });
-    $(this).find('span.unselect-all-children').click(function() {
+    $(this).find('span.deselect-all-children').click(function() {
       $(form).parent().find(':checkbox').attr("checked", false);
     });
   });

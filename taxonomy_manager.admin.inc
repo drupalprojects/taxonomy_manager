@@ -1103,7 +1103,7 @@ function _taxonomy_manager_form_term_data_translations($term) {
 function _taxonomy_manager_select_all_helpers_markup() {
   return '<span class="taxonomy-manager-select-helpers">' .
             '<span class="select-all-children" title="' . t("Select all") . '">&nbsp;&nbsp;&nbsp;&nbsp;</span>' .
-           '<span class="unselect-all-children" title="' . t("Remove selection") . '">&nbsp;&nbsp;&nbsp;&nbsp;</span>' .
+           '<span class="deselect-all-children" title="' . t("Remove selection") . '">&nbsp;&nbsp;&nbsp;&nbsp;</span>' .
          '</span>';
 }
 
