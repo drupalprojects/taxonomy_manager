@@ -330,9 +330,9 @@ Drupal.TaxonomyManagerTree.prototype.attachSelectAllChildren = function(parent, 
 Drupal.TaxonomyManagerTree.prototype.SelectAllChildrenToggle = function(span) {
   var tree = this;
   if ($(span).hasClass("select-all-children")) {
-    var li = $(this).parents("li:first");
+    var li = $(span).parents("li:first");
     if ($(li).hasClass("has-children")) {
-      this.loadChildForm(li, true, function(li, tree1) {
+      this.loadChildForm(li, true, function(li, tree) {
         tree.swapClasses(li, "expandable", "collapsable");
         tree.swapClasses(li, "lastExpandable", "lastCollapsable");
         var this_span = $(li).find('span.select-all-children:first');
