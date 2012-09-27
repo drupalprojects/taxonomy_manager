@@ -163,7 +163,6 @@ function taxonomy_manager_form($form, &$form_state, $voc, $tid = 0, $filter = NU
   $form['toolbar'] = array(
     '#type' => 'fieldset',
     '#title' => t('Toolbar'),
-    '#attributes' => array('id' => 'taxonomy-manager-toolbar'),
   );
 
   $form['toolbar']['weight_up'] = array(
