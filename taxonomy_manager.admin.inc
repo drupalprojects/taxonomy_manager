@@ -195,7 +195,7 @@ function taxonomy_manager_form($form, &$form_state, $voc, $tid = 0, $filter = NU
 
   taxonomy_manager_move_form($form, $voc);
 
-  taxonomy_manager_export_form($form, $voc);
+  taxonomy_manager_export_form($form, $form_state, $voc);
 
   taxonomy_manager_double_tree_settings_form($form, $voc);
 
@@ -697,69 +697,101 @@ function taxonomy_manager_move_form(&$form, $voc) {
 /**
  * form for exporting terms
  */
-function taxonomy_manager_export_form(&$form, $voc) {
+function taxonomy_manager_export_form(&$form, &$form_state, $voc) {
   $form['#attached']['js'][] = array(
     'data' => array('hideForm' => array(array(
       'show_button' => 'edit-export-show',
       'hide_button' => 'edit-export-cancel',
       'div' => 'edit-export'))),
-    'type' => 'setting');
-  $form['#attached']['js'][] = drupal_get_path('module', 'taxonomy_manager') . '/js/csv_export.js';
-  $form['#attached']['js'][] = array(
-    'data' => array('exportCSV' => array('url' => url("admin/structure/taxonomy_manager/export"))),
-    'type' => 'setting');
+    'type' => 'setting',
+  );
 
   $form['toolbar']['export_show'] = array(
     //'#type' => 'button',
     '#attributes' => array('class' => array('taxonomy-manager-buttons export')),
-    '#value' => t('CSV Export'),
+    '#value' => t('Export'),
     '#theme' => 'no_submit_button',
   );
   $form['export'] = array(
     '#type' => 'fieldset',
     '#tree' => TRUE,
     '#attributes' => array('style' => 'display:none;', 'id' => 'edit-export'),
-    '#title' => t('CSV Export'),
+    '#title' => t('Export'),
   );
 
-  $form['export']['delimiter'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Delimiter for CSV File'),
-    '#required' => FALSE,
-    '#default_value' => ";",
+  $scope_options = array(
+    'whole_voc' => t('Whole Vocabulary'),
+    'children' => t('Child terms of a selected term'),
+    'root_terms' => t('Root level terms only'),
   );
-
-  $options['whole_voc'] = t('Whole Vocabulary');
-  $options['children'] = t('Child terms of a selected term');
-  $options['root_terms'] = t('Root level terms only');
-
-  $form['export']['options'] = array(
+  $form['export']['scope'] = array(
     '#type' => 'radios',
     '#title' => t('Terms to export'),
-    '#options' => $options,
+    '#options' => $scope_options,
     '#default_value' => 'whole_voc',
     '#prefix' => '<div id="taxonomy_manager_export_options">',
     '#suffix' => '</div>',
   );
-
   $form['export']['depth'] = array(
     '#type' => 'textfield',
     '#title' => t('Depth of tree'),
     '#description' => t('The number of levels of the tree to export. Leave empty to return all levels.'),
+    '#size' => 10,
   );
 
-  $form['export']['csv'] = array(
-    '#type' => 'textarea',
-    '#title' => t('Exported CSV'),
-    '#description' => t('The generated code will appear here (per AJAX). You can copy and paste the code into a .csv file. The csv has following columns: voc id | term id | term name | description | parent id 1 | ... | parent id n'),
-    '#rows' => 8,
+  $format_options = array(
+    'term_tree' => t('Term names with hierarchy'),
+    'csv' => t('CSV'),
   );
+  $help_items[] = t('Term names with hierarchy: Only term names are exported. Child terms are prefixed with dashes. Uses the same format as for mass-import (Add button).');
+  $help_items[] = t('CSV: The comma-separated-values export has following columns: voc id | term id | term name | description | parent id 1 | ... | parent id n');
+  $form['export']['format'] = array(
+    '#type' => 'radios',
+    '#title' => t('Format'),
+    '#options' => $format_options,
+    '#default_value' => 'term_tree',
+    '#description' => theme('item_list', array('items' => $help_items, 'title' => t('Description of formats'))),
+  );
+
+  // CSV options
+  $form['export']['csv']['delimiter'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Delimiter for CSV'),
+    '#required' => FALSE,
+    '#default_value' => ";",
+    '#size' => 10,
+    '#states' => array(
+      'visible' => array(
+        ':input[name="export[format]"]' => array('value' => 'csv'),
+      ),
+    ),
+  );
+
+  $wrapper_id = 'taxonomy-manager-export-textarea';
+  if (isset($form_state['values']['export']['data'])) {
+    $form['export']['data'] = array(
+      '#type' => 'textarea',
+      '#title' => t('Exported data'),
+      '#value' =>  $form_state['values']['export']['data'],
+      '#rows' => 8,
+      '#prefix' => '<div id="' . $wrapper_id .'">',
+      '#suffix' => '</div>',
+    );
+  }
 
   $form['export']['submit'] = array(
+    '#prefix' => '<div id="' . $wrapper_id .'"></div>',
     '#type' => 'submit',
     '#attributes' => array('class' => array('taxonomy-manager-buttons', 'export')),
     '#value' => t('Export now'),
-    '#theme' => 'no_submit_button',
+    '#submit' => array('taxonomy_manager_export_form_submit'),
+    '#ajax' => array(
+      'callback' => 'taxonomy_manager_export_ajax_callback',
+      'method' => 'replaceWith',
+      'event' => 'click',
+      'wrapper' => $wrapper_id,
+      'progress' => array('type' => ''),
+    ),
   );
 
   $form['export']['cancel'] = array(
@@ -2474,22 +2506,42 @@ function taxonomy_manager_update_weights() {
 }
 
 /**
- * AJAX Callback that returns the CSV Output
+ * Submit handler for the export form.
  */
-function taxonomy_manager_export() {
-  $edit = $_POST;
-  $depth = empty($edit['depth']) ? NULL : $edit['depth'];
-  $output = taxonomy_manager_export_csv($edit['delimiter'], $edit['vid'], $edit['tid'], $depth, array($edit['option'] => TRUE));
-  print $output;
-  exit();
+function taxonomy_manager_export_form_submit($form, &$form_state) {
+  $voc = $form_state['values']['voc'];
+
+  $selected_tids = $selected_tids = $form_state['values']['taxonomy']['manager']['tree']['selected_terms'];
+  $selected_tid = count($selected_tids) ? array_pop($selected_tids) : 0;
+
+  $options = $form_state['values']['export'];
+  $options['depth'] = !empty($options['depth']) ? $options['depth'] : NULL;
+
+  $tree = taxonomy_manager_export_get_tree($voc->vid, $selected_tid, $options['depth'], $options['scope']);
+  $data = '';
+  if ($options['format'] == 'csv') {
+    $data = taxonomy_manager_export_csv($tree, $options['csv']['delimiter']);
+  }
+  elseif ($options['format'] == 'term_tree') {
+    $data = taxonomy_manager_export_term_tree($tree);
+  }
+
+  $form_state['values']['export']['data'] = $data;
+  $form_state['rebuild'] = TRUE;
+}
+
+/**
+ * Ajax handler for the export form.
+ */
+function taxonomy_manager_export_ajax_callback($form, $form_state) {
+  return $form['export']['data'];
 }
 
 /**
  * Generates the CVS Ouput
  */
-function taxonomy_manager_export_csv($delimiter = ";", $vid, $selected_tid = 0, $depth = -1, $options = array()) {
+function taxonomy_manager_export_csv($tree, $delimiter = ";") {
   $output = "";
-  $tree = taxonomy_manager_export_get_tree($vid, $selected_tid, $depth, $options);
   foreach ($tree as $term) {
     $array = array();
     $array[] = '"' . $term->vid . '"';
@@ -2501,22 +2553,42 @@ function taxonomy_manager_export_csv($delimiter = ";", $vid, $selected_tid = 0, 
     }
     $output .= implode($delimiter, $array) . "\n";
   }
-  drupal_json_output(array('csv' => $output));
+  return $output;
 }
 
 /**
- * Helper for cvs export to get taxonomy tree
+ * Generates term tree export that prefixes child term with dashes.
+ *
+ * The same format can be used for importing terms (see Add button).
  */
-function taxonomy_manager_export_get_tree($vid, $selected_tid, $depth, $options) {
+function taxonomy_manager_export_term_tree($tree) {
+  $output = "";
+  foreach ($tree as $term) {
+    // If a term already starts with dashes, we have to escape the name.
+    if (substr($term->name, 0, 1) == '-') {
+      $name = '"' . $term->name . '"';
+    }
+    else {
+      $name = $term->name;
+    }
+    $output .= str_repeat('-', $term->depth) . $name . "\n";
+  }
+  return $output;
+}
+
+/**
+ * Helper for loading the tree to export.
+ */
+function taxonomy_manager_export_get_tree($vid, $selected_tid, $depth, $scope) {
   $tree = array();
 
-  if (isset($options['whole_voc'])) {
+  if ($scope == 'whole_voc') {
     $tree = taxonomy_get_tree($vid, 0, $depth);
   }
-  elseif (isset($options['children']) && $selected_tid) {
+  elseif ($scope == 'children' && $selected_tid) {
     $tree = taxonomy_get_tree($vid, $selected_tid, $depth);
   }
-  elseif (isset($options['root_terms'])) {
+  elseif ($scope == 'root_terms') {
     $tree = taxonomy_get_tree($vid, 0, 1);
   }
   return $tree;
