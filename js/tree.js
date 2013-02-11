@@ -20,7 +20,7 @@ Drupal.behaviors.TaxonomyManagerTree = function(context) {
         id = settings['id'][i];
         vid = settings['vid'][i];
         if (!$('#'+ id + '.tm-processed').size()) {
-          trees[i] = new Drupal.TaxonomyManagerTree(id, vid); 
+          trees[i] = new Drupal.TaxonomyManagerTree(id, vid);
         }
       }
       if (trees.length == 2) {
@@ -31,7 +31,7 @@ Drupal.behaviors.TaxonomyManagerTree = function(context) {
       }
     }
   }
-  
+
   //only add throbber for TM sites
   var throbberSettings = Drupal.settings.TMAjaxThrobber || [];
   if (throbberSettings['add']) {
@@ -39,7 +39,7 @@ Drupal.behaviors.TaxonomyManagerTree = function(context) {
       $('#taxonomy-manager-toolbar').addClass('tm-processed');
       Drupal.attachThrobber();
       Drupal.attachResizeableTreeDiv();
-    } 
+    }
   }
 }
 
@@ -47,25 +47,25 @@ Drupal.behaviors.TaxonomyManagerTree = function(context) {
 Drupal.TaxonomyManagerTree = function(id, vid) {
   this.div = $("#"+ id);
   this.ul = $(this.div).children();
-  
+
   this.form = $(this.div).parents('form');
   this.form_build_id = $(this.form).children().children(':input[name="form_build_id"]').val();
   this.form_id = $(this.form).children().children(' :input[name="form_id"]').val();
   this.language = this.getLanguage();
   this.treeId = id;
-  this.vocId = vid; 
+  this.vocId = vid;
 
   this.attachTreeview(this.ul);
   this.attachSiblingsForm(this.ul);
   this.attachSelectAllChildren(this.ul);
   this.attachLanguageSelector();
-  
+
   //attach term data js, if enabled
   var term_data_settings = Drupal.settings.termData || [];
   if (term_data_settings['url']) {
     Drupal.attachTermData(this.ul, this);
   }
-  
+
   $(this.div).addClass("tm-processed");
 }
 
@@ -101,10 +101,10 @@ Drupal.TaxonomyManagerTree.prototype.toggleTree = function(node) {
 Drupal.TaxonomyManagerTree.prototype.swapClasses = function(node, c1, c2) {
   if ($(node).hasClass(c1)) {
     $(node).removeClass(c1).addClass(c2);
-  } 
+  }
   else if ($(node).hasClass(c2)) {
     $(node).removeClass(c2).addClass(c1);
-  } 
+  }
 }
 
 
@@ -117,7 +117,7 @@ Drupal.TaxonomyManagerTree.prototype.loadChildForm = function(li, update, callba
   if ($(li).is(".has-children") || update == true) {
     $(li).removeClass("has-children");
     if (update) {
-      $(li).children("ul").remove(); 
+      $(li).children("ul").remove();
     }
     var parentId = Drupal.getTermId(li);
     if (!(Drupal.settings.childForm['url'] instanceof Array)) {
@@ -132,14 +132,14 @@ Drupal.TaxonomyManagerTree.prototype.loadChildForm = function(li, update, callba
     param['form_id'] = this.form_id;
     param['tree_id'] = this.treeId;
     param['language'] = this.language;
-    
+
     $.get(url, param, function(data) {
       $(li).append(data);
       var ul = $(li).children("ul");
       tree.attachTreeview(ul);
       tree.attachSiblingsForm(ul);
       tree.attachSelectAllChildren(ul);
-      
+
       //only attach other features if enabled!
       var weight_settings = Drupal.settings.updateWeight || [];
       if (weight_settings['up']) {
@@ -149,11 +149,11 @@ Drupal.TaxonomyManagerTree.prototype.loadChildForm = function(li, update, callba
       if (term_data_settings['url']) {
         Drupal.attachTermDataLinks(ul, tree);
       }
-      
+
       if (typeof(callback) == "function") {
         callback(li, tree);
       }
-    });     
+    });
   }
 }
 
@@ -169,15 +169,15 @@ Drupal.TaxonomyManagerTree.prototype.loadRootForm = function(tid) {
   }
   var tree = this;
   url += '/'+ this.treeId +'/'+ this.vocId +'/0/'+ tid;
-  
+
   var param = new Object();
     param['form_build_id'] = this.form_build_id;
     param['form_id'] = this.form_id;
     param['tree_id'] = this.treeId;
     param['language'] = this.language;
-    
+
   $.get(url, param, function(data) {
-    $('#'+ tree.treeId).html(data); 
+    $('#'+ tree.treeId).html(data);
     var ul = $('#'+ tree.treeId).children("ul");
     tree.attachTreeview(ul);
     tree.attachSiblingsForm(ul);
@@ -213,7 +213,7 @@ Drupal.TaxonomyManagerTree.prototype.attachSiblingsForm = function(ul) {
   if (ul) {
     list = $(ul).find(list);
   }
-  
+
   $(list).bind('click', function() {
     $(this).unbind("click");
     var li = this.parentNode.parentNode;
@@ -223,21 +223,21 @@ Drupal.TaxonomyManagerTree.prototype.attachSiblingsForm = function(ul) {
     var page = Drupal.getPage(li);
     var prev_id = Drupal.getTermId(li);
     var parentId = Drupal.getParentId(li);
-    
+
     url += '/'+ tree.treeId +'/'+ page +'/'+ prev_id +'/'+ parentId;
-    
+
     var param = new Object();
     param['form_build_id'] = tree.form_build_id;
     param['form_id'] = tree.form_id;
     param['tree_id'] = tree.treeId;
     param['language'] = tree.language;
-    
+
     $.get(url, param, function(data) {
       $(list).remove();
       $(li).after(data);
       tree.attachTreeview($('li', li.parentNode), currentIndex);
       tree.attachSelectAllChildren($('li', li.parentNode), currentIndex);
-      
+
       //only attach other features if enabled!
       var weight_settings = Drupal.settings.updateWeight || [];
       if (weight_settings['up']) {
@@ -247,7 +247,7 @@ Drupal.TaxonomyManagerTree.prototype.attachSiblingsForm = function(ul) {
       if (term_data_settings['url']) {
         Drupal.attachTermDataToSiblings($('li', li.parentNode), currentIndex, tree);
       }
-      
+
       $(li).removeClass("last").removeClass("has-more-siblings");
       $(li).children().children('.term-operations').hide();
       tree.swapClasses(li, "lastExpandable", "expandable");
@@ -260,7 +260,7 @@ Drupal.TaxonomyManagerTree.prototype.attachSiblingsForm = function(ul) {
 /**
  * helper function for getting out the current page
  */
-Drupal.getPage = function(li) { 
+Drupal.getPage = function(li) {
   return $(li).find("input:hidden[class=page]").attr("value");
 }
 
@@ -290,18 +290,18 @@ Drupal.getParentId = function(li) {
 /**
  * update classes for tree view, if list elements get swaped
  */
-Drupal.updateTree = function(upTerm, downTerm) {  
+Drupal.updateTree = function(upTerm, downTerm) {
   if ($(upTerm).is(".last")) {
     $(upTerm).removeClass("last");
-    Drupal.updateTreeDownTerm(downTerm); 
+    Drupal.updateTreeDownTerm(downTerm);
   }
   else if ($(upTerm).is(".lastExpandable")) {
     $(upTerm).removeClass("lastExpandable").addClass("expandable");
-    Drupal.updateTreeDownTerm(downTerm); 
+    Drupal.updateTreeDownTerm(downTerm);
   }
   else if ($(upTerm).is(".lastCollapsable")) {
     $(upTerm).removeClass("lastCollapsable").addClass("collapsable");
-    Drupal.updateTreeDownTerm(downTerm);  
+    Drupal.updateTreeDownTerm(downTerm);
   }
 }
 
@@ -377,7 +377,7 @@ Drupal.TaxonomyManagerTree.prototype.attachLanguageSelector = function() {
     tree.loadRootForm();
   });
   $(selector).addClass("selector-processed");
-  
+
 }
 Drupal.TaxonomyManagerTree.prototype.getLanguage = function() {
   var lang = $('#edit-taxonomy-manager-top-language').val();
@@ -429,21 +429,21 @@ Drupal.attachThrobber = function() {
 Drupal.attachResizeableTreeDiv = function() {
   $('img.div-grippie').each(function() {
     var staticOffset = null;
-    var div = $(this).parents("fieldset").parent(); 
-    $(this).mousedown(startDrag);  
-  
+    var div = $(this).parents("fieldset").parent();
+    $(this).mousedown(startDrag);
+
     function startDrag(e) {
       staticOffset = div.width() - e.pageX;
       div.css('opacity', 0.5);
       $(document).mousemove(performDrag).mouseup(endDrag);
       return false;
     }
- 
+
     function performDrag(e) {
       div.width(Math.max(200, staticOffset + e.pageX) + 'px');
       return false;
     }
- 
+
     function endDrag(e) {
       $(document).unbind("mousemove", performDrag).unbind("mouseup", endDrag);
       div.css('opacity', 1);

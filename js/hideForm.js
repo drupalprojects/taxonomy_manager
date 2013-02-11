@@ -2,7 +2,7 @@
 /**
  * @file shows / hides form elements
  */
- 
+
 Drupal.behaviors.TaxonomyManagerHideForm = function(context) {
   var settings = Drupal.settings.hideForm || [];
   if (settings['div']) {
@@ -13,7 +13,7 @@ Drupal.behaviors.TaxonomyManagerHideForm = function(context) {
       }
       else {
         for (var i=0; i<settings['div'].length; i++) {
-          Drupal.attachHideForm(settings['div'][i], settings['show_button'][i], settings['hide_button'][i]); 
+          Drupal.attachHideForm(settings['div'][i], settings['show_button'][i], settings['hide_button'][i]);
         }
       }
     }
@@ -28,23 +28,23 @@ Drupal.attachHideForm = function(div, show_button, hide_button) {
   div = $("#"+ div);
   show_button = $("#"+ show_button);
   hide_button = $("#"+ hide_button);
-  
+
   //don't hide if there is an error in the form
   $(div).find("input").each(function() {
     if($.className.has(this, "error")) {
       hide = false;
     }
   });
-  
-  if (!hide) { 
+
+  if (!hide) {
     $(div).show();
   }
-  
+
   $(show_button).click(function() {
     $(div).toggle();
     return false;
   });
-  
+
   $(hide_button).click(function() {
     $(div).hide();
     return false;
