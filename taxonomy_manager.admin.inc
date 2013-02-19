@@ -1666,7 +1666,7 @@ function taxonomy_manager_term_data_form_ajax_callback($form, $form_state) {
     }
     elseif (isset($form_state['values']['tree-update']['update-name'])) {
       $selector = 'a.term-data-link-id-' . $form_state['values']['tree-update']['update-name']['tid'];
-      $commands[] = ajax_command_html($selector, '<span>' . $form_state['values']['tree-update']['update-name']['name'] . '</span>');
+      $commands[] = ajax_command_html($selector, '<span>' . check_plain($form_state['values']['tree-update']['update-name']['name']) . '</span>');
     }
   }
 
