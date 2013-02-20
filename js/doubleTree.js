@@ -11,6 +11,8 @@ Drupal.DoubleTree = function(tree1, tree2) {
   this.updateWholeTree = false;
   this.url = Drupal.settings.DoubleTree['url'];
   this.param = new Object();
+  this.param['form_id'] = $(':input[name="form_id"]').val();
+  this.param['form_token'] = $(':input[name="form_token"]').val();
 
   this.attachOperations();
 }
@@ -23,7 +25,6 @@ Drupal.DoubleTree.prototype.attachOperations = function() {
   $('#taxonomy-manager-double-tree-operations :input').click(function() {
     doubleTree.selected_terms = new Array();
     doubleTree.selected_parents = new Array();
-    doubleTree.param = new Object();
 
     var button_value = $(this).val();
     doubleTree.param['op'] = 'move';

@@ -1555,12 +1555,33 @@ function taxonomy_manager_settings() {
 }
 
 /**
+ * Validates a custom AJAX callback by ensuring that the request contains a
+ * valid form token, which prevents CSRF.
+ *
+ * @param $submitted_data
+ *   An array containing the submitted data, usually $_POST. Needs to contain
+ *   form_token and form_id.
+ *
+ * @return
+ *   TRUE if a valid token is provided, else FALSE.
+ */
+function taxonomy_manager_valid_ajax_callback($submitted_data) {
+  if (isset($submitted_data['form_token']) && isset($submitted_data['form_id']) && drupal_valid_token($submitted_data['form_token'], $submitted_data['form_id'])) {
+    return TRUE;
+  }
+  return FALSE;
+}
+
+/**
  * callback handler for updating term data
  *
  * @param $vid
  */
 function taxonomy_manager_term_data_edit() {
   $param = $_POST;
+  if (!taxonomy_manager_valid_ajax_callback($param)) {
+    return;
+  }
 
   $msg = t("Changes successfully saved");
   $is_error_msg = FALSE;
@@ -1778,6 +1799,9 @@ function taxonomy_manager_term_data_edit() {
  */
 function taxonomy_manager_double_tree_edit() {
   $params = $_POST;
+  if (!taxonomy_manager_valid_ajax_callback($params)) {
+    return;
+  }
   $op = $params['op'];
 
   $msg = "";
@@ -2345,9 +2369,9 @@ function taxonomy_manager_autocomplete_search_terms($typed_input, $vid, $include
  *
  */
 function taxonomy_manager_update_weights() {
-  $weights = $_POST;
-  if (is_array($weights)) {
-    foreach ($weights as $tid => $weight) {
+  $submitted_data = $_POST;
+  if (taxonomy_manager_valid_ajax_callback($submitted_data) && is_array($submitted_data['weights'])) {
+    foreach ($submitted_data['weights'] as $tid => $weight) {
       if (is_numeric($tid) && is_numeric($weight)) {
         db_query("UPDATE {term_data} SET weight = %d WHERE tid = %d", $weight, $tid);
       }

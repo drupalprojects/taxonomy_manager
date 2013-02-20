@@ -100,6 +100,9 @@ Drupal.TermData = function(tid, href, li, tree) {
   this.tree = tree
   this.form_build_id = tree.form_build_id;
   this.form_id = tree.form_id;
+  this.param = new Object();
+  this.param['form_id'] = tree.form_id;
+  this.param['form_token'] = tree.form_token;
   this.vid = tree.vocId;
   this.div = $('#taxonomy-term-data');
 }
@@ -111,11 +114,8 @@ Drupal.TermData = function(tid, href, li, tree) {
 Drupal.TermData.prototype.load = function() {
   var url = this.href;
   var termdata = this;
-  var param = new Object();
-  param['form_build_id'] = this.form_build_id;
-  param['form_id'] = this.form_id;
 
-  $.get(url, param, function(data) {
+  $.get(url, this.param, function(data) {
     termdata.insertForm(data);
   });
 }
@@ -133,7 +133,6 @@ Drupal.TermData.prototype.insertForm = function(data) {
  */
 Drupal.TermData.prototype.form = function() {
   var termdata = this;
-  this.param = new Object();
 
   try {
     Drupal.behaviors.textarea(this.div);

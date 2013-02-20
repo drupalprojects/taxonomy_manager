@@ -49,8 +49,9 @@ Drupal.TaxonomyManagerTree = function(id, vid) {
   this.ul = $(this.div).children();
 
   this.form = $(this.div).parents('form');
-  this.form_build_id = $(this.form).children().children(':input[name="form_build_id"]').val();
-  this.form_id = $(this.form).children().children(' :input[name="form_id"]').val();
+  this.form_build_id = $(this.form).find(':input[name="form_build_id"]').val();
+  this.form_id = $(this.form).find(' :input[name="form_id"]').val();
+  this.form_token = $(this.form).find(' :input[name="form_token"]').val();
   this.language = this.getLanguage();
   this.treeId = id;
   this.vocId = vid;

@@ -4,12 +4,14 @@
  */
 
 //object to store weights (tid => weight)
-var weights = new Object();
+var termWeightsData = new Object();
 
 Drupal.behaviors.TaxonomyManagerWeights = function(context) {
   var settings = Drupal.settings.updateWeight || [];
   if (!$('#taxonomy-manager-toolbar' + '.tm-weights-processed').size()) {
     $('#taxonomy-manager-toolbar').addClass('tm-weights-processed');
+    termWeightsData['form_token'] = $('input[name=form_token]').val();
+    termWeightsData['form_id'] = $('input[name=form_id]').val();
     Drupal.attachUpdateWeightToolbar(settings['up'], settings['down']);
     Drupal.attachUpdateWeightTerms();
   }
@@ -32,7 +34,7 @@ Drupal.attachUpdateWeightToolbar = function(upButton, downButton) {
       Drupal.orderTerms(upTerm, downTerm);
     }
     if (selected.length > 0) {
-      $.post(url, weights);
+      $.post(url, termWeightsData);
     }
   });
 
@@ -46,7 +48,7 @@ Drupal.attachUpdateWeightToolbar = function(upButton, downButton) {
       Drupal.orderTerms(upTerm, downTerm);
     }
     if (selected.length > 0) {
-      $.post(url, weights);
+      $.post(url, termWeightsData);
     }
   });
 }
@@ -88,7 +90,7 @@ Drupal.attachUpdateWeightTerms = function(parent, currentIndex) {
       var downTerm = $(upTerm).prev();
 
       Drupal.orderTerms(upTerm, downTerm);
-      $.post(url, weights);
+      $.post(url, termWeightsData);
 
       $(downTerm).find(termLineClass).unbind('mouseover');
       setTimeout(function() {
@@ -106,7 +108,7 @@ Drupal.attachUpdateWeightTerms = function(parent, currentIndex) {
       var upTerm = $(downTerm).next();
 
       Drupal.orderTerms(upTerm, downTerm);
-      $.post(url, weights);
+      $.post(url, termWeightsData);
 
       $(upTerm).find(termLineClass).unbind('mouseover');
       setTimeout(function() {
@@ -176,12 +178,12 @@ Drupal.swapWeights = function(upTerm, downTerm) {
 
   //same weight, decrease upTerm
   if (upWeight == downWeight) {
-    weights[upTid] = --upWeight;
+    termWeightsData['weights['+ upTid +']'] = --upWeight;
   }
   //different weights, swap
   else {
-    weights[upTid] = downWeight;
-    weights[downTid] = upWeight;
+    termWeightsData['weights['+ upTid +']'] = downWeight;
+    termWeightsData['weights['+ downTid +']'] = upWeight;
   }
 
   //update prev siblings if necessary
@@ -190,7 +192,7 @@ Drupal.swapWeights = function(upTerm, downTerm) {
       $(upTerm).prevAll().each(function() {
         var id = Drupal.getTermId(this);
         var weight = Drupal.getWeight(this);
-        weights[id] = --weight;
+        termWeightsData['weights['+ id +']'] = --weight;
       });
     }
   } catch(e) {
@@ -203,7 +205,7 @@ Drupal.swapWeights = function(upTerm, downTerm) {
       $(downTerm).nextAll().each(function() {
         var id = Drupal.getTermId(this);
         var weight = Drupal.getWeight(this);
-        weights[id] = ++weight;
+        termWeightsData['weights['+ id +']'] = ++weight;
       });
     }
   } catch(e) {
@@ -219,8 +221,8 @@ Drupal.getWeight = function(li) {
   var id = Drupal.getTermId(li);
   var weight;
 
-  if (weights[id] != null) {
-    weight = weights[id];
+  if (termWeightsData['weights['+ id +']'] != null) {
+    weight = termWeightsData['weights['+ id +']'];
   }
   else {
     weight = $(li).find("input:hidden[class=weight-form]").attr("value");
