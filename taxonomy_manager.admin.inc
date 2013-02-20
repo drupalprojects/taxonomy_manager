@@ -2491,14 +2491,15 @@ function taxonomy_manager_autocomplete_search_terms($typed_input, $vid, $include
  *
  */
 function taxonomy_manager_update_weights() {
-  $weights = $_POST;
-  if (is_array($weights)) {
-    foreach ($weights as $tid => $weight) {
-      if (is_numeric($tid) && is_numeric($weight)) {
-        $term = taxonomy_term_load($tid);
-        $term->weight = $weight;
-        taxonomy_term_save($term);
-        //db_query("UPDATE {term_data} SET weight = %d WHERE tid = %d", $weight, $tid);
+  $submitted_data = $_POST;
+  if (isset($submitted_data['form_token']) && isset($submitted_data['form_id']) && !empty($submitted_data['weights']) && is_array($submitted_data['weights'])) {
+    if (drupal_valid_token($submitted_data['form_token'], $submitted_data['form_id'])) {
+      foreach ($submitted_data['weights'] as $tid => $weight) {
+        if (is_numeric($tid) && is_numeric($weight)) {
+          $term = taxonomy_term_load($tid);
+          $term->weight = $weight;
+          taxonomy_term_save($term);
+        }
       }
     }
   }
