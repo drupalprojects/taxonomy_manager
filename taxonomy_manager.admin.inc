@@ -2332,43 +2332,49 @@ function taxonomy_manager_delete_terms($tids, $options = array()) {
 
 
 /**
- * moves terms in hierarchies to other parents
+ * Moves terms in hierarchies to other parents
  *
  * @param $parents
- *   array of parent term ids to where children can be moved
- *   array should only contain more parents if multi hiearchy enabled
- *   if array contains 0, terms get placed to first (root) level
+ *   Array of parent term ids to where children can be moved.
+ *   Array should only contain more parents if multi hierarchy is enabled.
+ *   If array contains 0, terms get moved to root level
  * @param $children
- *   array of term ids to move
+ *   Array of term ids to move
  * @param $options
- *   array of additional options for moving
- *   'keep_old_parents': if true, exisiting parents doesn't get deleted (only possible with multi hierarchies)
+ *   Array of additional options for moving
+ *   'keep_old_parents': if true, existing parents does not get deleted (only
+ *      possible with multi hierarchies).
  */
 function taxonomy_manager_move($parents, $children, $options = array()) {
-  if (!is_array($parents)) array($parents);
+  if (!is_array($parents)) {
+    $parents = array($parents);
+  }
+  // Key parent terms array by tid, so that it is always unique.
+  $keyed_array = array();
+  foreach ($parents as $parent) {
+    $keyed_array[$parent] = $parent;
+  }
+  $parents = $keyed_array;
 
   foreach ($children as $child) {
-    if (!isset($options['keep_old_parents']) || !$options['keep_old_parents']) {
-      db_delete('taxonomy_term_hierarchy')
+    $term = taxonomy_term_load($child);
+    $term_parents = $parents;
+
+    if (isset($options['keep_old_parents']) && $options['keep_old_parents']) {
+      // Add existing parents to $term_parents array
+      $results = db_select('taxonomy_term_hierarchy', 'h')
         ->condition('tid', $child)
+        ->fields('h')
         ->execute();
+      foreach ($results as $p) {
+        $term_parents[$p->parent] = $p->parent;
+      }
     }
-    foreach ($parents as $parent) {
-      db_delete('taxonomy_term_hierarchy')
-        ->condition('tid', $child)
-        ->condition('parent', $parent)
-        ->execute(); //prevent duplicated sql errors
-      db_insert('taxonomy_term_hierarchy')
-        ->fields(array('tid', 'parent'))
-        ->values(array('tid' => $child, 'parent' => $parent))
-        ->execute();
-    }
+    $term->parent = $term_parents;
+    taxonomy_term_save($term);
   }
   taxonomy_terms_static_reset();
 }
-
-
-
 
 /**
  * helper function for getting out of term ids from autocomplete fields
