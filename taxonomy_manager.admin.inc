@@ -774,13 +774,13 @@ function taxonomy_manager_export_form(&$form, &$form_state, $voc) {
       '#title' => t('Exported data'),
       '#value' =>  $form_state['values']['export']['data'],
       '#rows' => 8,
-      '#prefix' => '<div id="' . $wrapper_id .'">',
+      '#prefix' => '<div id="' . $wrapper_id . '">',
       '#suffix' => '</div>',
     );
   }
 
   $form['export']['submit'] = array(
-    '#prefix' => '<div id="' . $wrapper_id .'"></div>',
+    '#prefix' => '<div id="' . $wrapper_id . '"></div>',
     '#type' => 'submit',
     '#attributes' => array('class' => array('taxonomy-manager-buttons', 'export')),
     '#value' => t('Export now'),
