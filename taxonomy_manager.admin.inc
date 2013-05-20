@@ -1737,6 +1737,9 @@ function taxonomy_manager_term_data_form_validate_parents_add($form, &$form_stat
   }
 }
 
+/**
+ * Submit handler for adding parents for a term.
+ */
 function taxonomy_manager_term_data_form_submit_parents_add($form, &$form_state) {
   $term_data = $form_state['values'];
   $term = taxonomy_term_load($term_data['tid']);
@@ -1745,12 +1748,14 @@ function taxonomy_manager_term_data_form_submit_parents_add($form, &$form_state)
 
   $typed_terms = taxonomy_manager_autocomplete_tags_get_tids($parent_names, $term->vid, TRUE); //insert terms
 
-  foreach ($typed_terms as $parent_info) {
-    db_insert('taxonomy_term_hierarchy')
-      ->fields(array('tid', 'parent'))
-      ->values(array('tid' => $term->tid, 'parent' => $parent_info['tid']))
-      ->execute();
+  if (!isset($term->parent)) {
+    $term->parent = array();
   }
+
+  foreach ($typed_terms as $parent_info) {
+    $term->parent[] = $parent_info['tid'];
+  }
+
   //remove root level entry
   db_delete('taxonomy_term_hierarchy')
     ->condition('tid', $term->tid)
@@ -1775,26 +1780,25 @@ function taxonomy_manager_term_data_form_validate_parents_remove($form, &$form_s
   }
 }
 
+/**
+ * Submit handler for removing a parent of a term.
+ */
 function taxonomy_manager_term_data_form_submit_parents_remove($form, &$form_state) {
   $term = taxonomy_term_load($form_state['values']['tid']);
 
   $parent = $form_state['values']['remove_parent_tid'];
   $parents = taxonomy_get_parents($term->tid);
-  if (count($parents) == 1) {
-    //ensure that a term has a least parent 0
-    db_delete('taxonomy_term_hierarchy')
-      ->condition('tid', $term->tid)
-      ->condition('parent', 0)
-      ->execute();
-    db_insert('taxonomy_term_hierarchy')
-      ->fields(array('tid', 'parent'))
-      ->values(array('tid' => $term->tid, 'parent' => 0))
-      ->execute();
+
+  if (!isset($term->parent)) {
+    $term->parent = array();
   }
-  db_delete('taxonomy_term_hierarchy')
-    ->condition('tid', $term->tid)
-    ->condition('parent', $parent)
-    ->execute();
+
+  // Ensure that a term has a least parent 0.
+  if (count($parents) == 1) {
+    $term->parent[] = 0;
+  }
+
+  $term->parent = array_diff($term->parent, array($parent));
 
   taxonomy_term_save($term); //executes hooks and clears caches
   drupal_set_message(t("Removed parent"));
