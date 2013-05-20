@@ -1242,13 +1242,17 @@ function taxonomy_manager_double_tree_form_submit($form, &$form_state) {
 function taxonomy_manager_form_add_submit($form, &$form_state) {
   $parents = isset($form_state['values']['taxonomy']['manager']['tree']['selected_terms']) ? $form_state['values']['taxonomy']['manager']['tree']['selected_terms'] : array();
   $lang = isset($form_state['values']['taxonomy']['manager']['top']['language']) ? $form_state['values']['taxonomy']['manager']['top']['language'] : "";
-  $new_terms = taxonomy_manager_mass_add_terms($form_state['values']['add']['mass_add'], $form_state['values']['voc']->vid, $parents, $lang);
+  $term_names_too_long = array();
+  $new_terms = taxonomy_manager_mass_add_terms($form_state['values']['add']['mass_add'], $form_state['values']['voc']->vid, $parents, $lang, $term_names_too_long);
   $term_names = array();
   foreach ($new_terms as $term) {
     $term_names[] = $term->name;
   }
   if (module_exists('i18n_taxonomy') && !empty($lang) && i18n_taxonomy_vocabulary_mode($form_state['values']['voc']->vid, I18N_MODE_TRANSLATE)) {
     drupal_set_message(t("Saving terms to language @lang", array('@lang' => locale_language_name($form_state['values']['taxonomy']['manager']['top']['language']))));
+  }
+  if (count($term_names_too_long)) {
+    drupal_set_message(t("Following term names were too long and truncated to 255 characters: %names.", array('%names' => implode(', ', $term_names_too_long))), 'warning');
   }
   drupal_set_message(t("Terms added: %terms", array('%terms' => implode(', ', $term_names))));
 }
@@ -1267,10 +1271,13 @@ function taxonomy_manager_form_add_submit($form, &$form_state) {
  *   An array of parent term ids for the new inserted terms. Can be 0.
  * @param $lang
  *   The i18n language, if i18n exists.
+ * @param $term_names_too_long
+ *   Return value that is used to indicate that some term names were too long
+ *   and truncated to 255 characters.
  *
  * @return An array of the newly inserted term objects
  */
-function taxonomy_manager_mass_add_terms($input, $vid, $parents, $lang = "") {
+function taxonomy_manager_mass_add_terms($input, $vid, $parents, $lang = "", &$term_names_too_long = array()) {
   $new_terms = array();
   $terms = explode("\n", str_replace("\r", '', $input));
   $parents = count($parents) ? $parents : 0;
@@ -1299,6 +1306,12 @@ function taxonomy_manager_mass_add_terms($input, $vid, $parents, $lang = "") {
       $depth = 0;
       $current_parents = $parents;
     }
+    // Truncate long string names that will cause database exceptions.
+    if (strlen($name) > 255) {
+      $term_names_too_long[] = $name;
+      $name = substr($name, 0, 255);
+    }
+
     $term = new stdClass;
     $term->name = $name;
     $term->vid = $vid;
@@ -2393,7 +2406,10 @@ function taxonomy_manager_autocomplete_tags_get_tids($typed_input, $vid, $insert
         }
 
         if (!$typed_term_tid && $insert_new) {
-          $edit = array('vid' => $vid, 'name' => $typed_term);
+          // Truncate long string names that will cause database exceptions.
+          if (strlen($typed_term) > 255) {
+            $typed_term = substr($typed_term, 0, 255);
+          }
           $edit = new stdClass;
           $edit->name = $typed_term;
           $edit->vid = $vid;
