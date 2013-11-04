@@ -937,6 +937,10 @@ function taxonomy_manager_term_data_form(&$form, &$form_state, $tid = 0, $vid1, 
         );
       }
     }
+
+    // Entity translation and title field integration.
+    taxonomy_manager_term_data_form_entity_translation($form, $term);
+
     _taxonomy_manager_term_data_form_filter_file_fields($form);
   }
 
@@ -1126,6 +1130,67 @@ function _taxonomy_manager_form_term_data_translations($term) {
   );
 
   return $form;
+}
+
+/**
+ * Entity translation and title field integration for terms.
+ */
+function taxonomy_manager_term_data_form_entity_translation(&$form, $term) {
+  if (module_exists('title') &&
+    module_exists('entity_translation') &&
+    entity_translation_enabled('taxonomy_term', $term) &&
+    title_field_replacement_enabled('taxonomy_term', $term->vocabulary_machine_name, 'name') &&
+    !empty($term->name_field)) {
+
+    $languages = language_list();
+    $source_language = $term->translations->original;
+
+    // Disable the original name_field forms.
+    $form['term_data']['name_field']['#access'] = FALSE;
+    // Create an own temporary form.
+    $name_field_form = array(
+      '#tree' => TRUE,
+      '#weight' => -100,
+    );
+    foreach ($languages as $language) {
+      $translation = isset($term->translations->data[$language->language]) ? $term->translations->data[$language->language] : FALSE;
+
+      // Determine the access for each translation.
+      if ($translation) {
+        $access = entity_translation_access('taxonomy_term', $translation);
+      }
+      else {
+        $access = (user_access('translate any entity') || user_access('translate taxonomy_term entities'));
+      }
+      if (entity_translation_workflow_enabled() && $source_language == $language->language) {
+        $access = user_access('edit original values');
+      }
+
+      $default_value = isset($term->name_field[$language->language][0]['value']) ? $term->name_field[$language->language][0]['value'] : '';
+      $name_field_form['name'][$language->language] = array(
+        '#type' => 'textfield',
+        '#default_value' => !empty($default_value) ? $default_value : '',
+        '#title' => t('Name (@language)', array('@language' => $language->name)),
+        '#required' => !empty($translation) ? TRUE : FALSE,
+        '#access' => $access,
+      );
+
+      if ($source_language == $language->language) {
+        $name_field_form['name'][$language->language]['#title'] .= ' - ' . t('Source language');
+        $name_field_form['name'][$language->language]['#weight'] = -1;
+      }
+      if (module_exists('pathauto')) {
+        // Option to generate path aliases.
+        $name_field_form['pathauto'] = array(
+          '#type' => 'checkbox',
+          '#title' => t('Update path aliases for translations.'),
+          '#default_value' => TRUE,
+          '#weight' => 10,
+        );
+      }
+    }
+    $form['term_data']['name_field_form'] = $name_field_form;
+  }
 }
 
 /**
@@ -1690,6 +1755,10 @@ function taxonomy_manager_term_data_form_ajax_callback($form, $form_state) {
 function taxonomy_manager_term_data_form_submit($form, &$form_state) {
   $old_term = taxonomy_term_load($form_state['values']['tid']);
   $term = taxonomy_form_term_submit_build_taxonomy_term($form, $form_state);
+
+  // Submit handler for entity translations.
+  taxonomy_manager_term_data_form_entity_translation_submit($form_state, $term);
+
   if ($term->weight != $old_term->weight) {
     form_set_value(array('#parents' => array('tree-update')), array('update' => TRUE), $form_state);
   }
@@ -1705,7 +1774,69 @@ function taxonomy_manager_term_data_form_submit($form, &$form_state) {
   $form_state['rebuild'] = TRUE;
 }
 
+/**
+ * Helper function that submit entity translations from the the title field.
+ */
+function taxonomy_manager_term_data_form_entity_translation_submit(&$form_state, &$term) {
+  if (module_exists('entity_translation') && module_exists('title') &&
+    title_field_replacement_enabled('taxonomy_term', $term->vocabulary_machine_name, 'name') &&
+    !empty($form_state['values']['name_field_form'])) {
 
+    unset($term->name_field_form);
+    unset($term->name_field);
+
+    $handler = entity_translation_get_handler('taxonomy_term', $term);
+    $source_language = $term->translations->original;
+
+    foreach ($form_state['values']['name_field_form']['name'] as $language => $value) {
+      if (!empty($value)) {
+        $term->name_field[$language][0] = array(
+          'value' => $value,
+          'format' => NULL,
+        );
+
+        // Create a new translation if it does not exsist yet.
+        if (!isset($term->translations->data[$language])) {
+          $translation = array('source' => $source_language, 'language' => $language, 'status' => 1);
+          $handler->setTranslation($translation);
+        }
+
+        // Pathauto handling - update aliases for each language, except the
+        // source language - this happens automatically.
+        if ($source_language != $language && $form_state['values']['name_field_form']['pathauto']) {
+          require_once drupal_get_path('module', 'pathauto') . '/pathauto.inc';
+
+          $source_url = 'taxonomy/term/' . $term->tid;
+          $pathauto_options = array(
+            'alias' => '',
+            'pid' => NULL,
+            'source' => $source_url,
+            'language' => $language,
+            'pathauto' => 1,
+          );
+          $existing_alias =_pathauto_existing_alias_data($source_url, $language);
+          $op = 'insert';
+          if ($existing_alias) {
+            $op = 'update';
+            $pathauto_options['original'] = $existing_alias;
+            $pathauto_options['pid'] = $existing_alias['pid'];
+            $pathauto_options['alias'] = $existing_alias['alias'];
+          }
+
+          $term->path = array(
+            'pathauto' => $pathauto_options,
+          );
+          $options = array(
+            'language' => $language,
+          );
+          pathauto_taxonomy_term_update_alias($term, $op, $options);
+        }
+      }
+    }
+    // Reset the name property to the title field value from the original value.
+    $term->name = $term->name_original = $form_state['values']['name_field_form']['name'][$source_language];
+  }
+}
 
 function taxonomy_manager_term_data_form_validate_parents_add($form, &$form_state) {
   $term_data = $form_state['values'];
