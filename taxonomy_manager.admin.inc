@@ -1794,6 +1794,7 @@ function taxonomy_manager_term_data_form_entity_translation_submit(&$form_state,
           'value' => $value,
           'format' => NULL,
         );
+        $term->name = $value;
 
         // Create a new translation if it does not exsist yet.
         if (!isset($term->translations->data[$language])) {
