@@ -1,0 +1,24 @@
+hideForm.js:
+  js:
+    js/hideForm.js: {}
+  dependencies:
+      - core/jquery
+termData.js:
+  js:
+    js/termData.js: {}
+  dependencies:
+      - core/jquery
+tree.js:
+  js:
+    js/tree.js: {}
+  dependencies:
+      - core/jquery
+updateWeight.js:
+  js:
+    js/updateWeight.js: {}
+  dependencies:
+      - core/jquery
+taxonomy_manager.css:
+  css:
+    theme:
+      css/taxonomy_manager.css: {}

@@ -1,0 +1,23 @@
+taxonomy_manager.admin:
+  path: '/admin/structure/taxonomy_manager/voc'
+  defaults:
+    _controller: '\Drupal\taxonomy_manager\Controller\TaxonomyManagerController::taxonomy_manager_voc_list'
+    _title: 'Taxonomy Manager'
+  requirements:
+    _permission: 'administer taxonomy'
+
+taxonomy_manager.admin_vocabulary:
+  path: '/admin/structure/taxonomy_manager/voc/{taxonomy_vocabulary}'
+  defaults:
+    _form: '\Drupal\taxonomy_manager\Form\TaxonomyManagerForm'
+    _title_callback: '\Drupal\taxonomy_manager\Form\TaxonomyManagerForm::getTitle'
+  requirements:
+    _permission: 'administer taxonomy'
+
+taxonomy_manager.settings:
+  path: '/admin/config/user-interface/taxonomy-manager-settings'
+  defaults:
+    _title: 'Advanced settings for the Taxonomy Manager'
+    _form: '\Drupal\taxonomy_manager\Form\TaxonomyManagerAdmin'
+  requirements:
+    _permission: 'administer taxonomy'
