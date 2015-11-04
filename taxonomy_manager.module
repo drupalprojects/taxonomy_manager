@@ -112,6 +112,9 @@ function taxonomy_manager_admin_menu_map() {
  */
 function taxonomy_manager_theme() {
   return array(
+    'taxonomy_manager_tree_item_list' => array(
+      'variables' => array('items' => array(), 'wrapper_attributes' => array(), 'attributes' => array(), 'empty' => NULL),
+    ),
     'taxonomy_manager_form' => array(
       'render element' => 'form',
     ),
@@ -141,6 +144,30 @@ function taxonomy_manager_theme() {
     ),
   );
 }
+
+/**
+ * Prepares variables for item list templates.
+ *
+ * Default template: item-list.html.twig.
+ *
+ * @param array $variables
+ *   An associative array containing:
+ *   - items: An array of items to be displayed in the list. Each item can be
+ *     either a string or a render array. If #type, #theme, or #markup
+ *     properties are not specified for child render arrays, they will be
+ *     inherited from the parent list, allowing callers to specify larger
+ *     nested lists without having to explicitly specify and repeat the
+ *     render properties for all nested child lists.
+ *   - title: A title to be prepended to the list.
+ *   - list_type: The type of list to return (e.g. "ul", "ol").
+ *
+ * @see https://www.drupal.org/node/1842756
+ */
+function template_preprocess_taxonomy_manager_tree_item_list(&$variables) {
+  return template_preprocess_item_list($variables);
+}
+
+
 
 /**
  * Implements hook_help().

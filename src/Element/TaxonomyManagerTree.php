@@ -6,51 +6,14 @@
 
 namespace Drupal\taxonomy_manager\Element;
 
-use Drupal\Core\Render\Element;
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Render\Element\FormElement;
 
 /**
- * Port for D7 taxonomy_manager_element_info()
+ * Taxonomy Manager Tree Form Element
  *
- * @TaxonomyManagerTree("taxonomy_manager_tree")
+ * @FormElement("taxonomy_manager_tree")
  */
-
-/******************************************
- * TAXONOMY TREE FORM ELEMENT DEFINITION
- *
- * how to use:
- * $form['name'] = array(
- *   '#type' => 'taxonomy_manager_tree',
- *   '#vid' => $vid,
- * );
- *
- * additional parameter:
- *   #pager: TRUE / FALSE,
- *     whether to use pagers (drupal pager, load of nested children, load of siblings)
- *     or to load the whole tree on page generation
- *   #parent: only children on this parent will be loaded
- *   #terms_to_expand: loads and opens the first path of given term ids
- *   #siblings_page: current page for loading pf next siblings, internal use
- *   #default_value: an array of term ids, which get selected by default
- *   #render_whole_tree: set this option to TRUE, if you have defined a parent for the tree and you want
- *      the the tree is fully rendered
- *   #add_term_info: if TRUE, hidden form values with the term id and weight are going to be added
- *   #expand_all: if TRUE, all elements are going to be expanded by default
- *   #multiple: if TRUE the tree will contain checkboxes, otherwise radio buttons
- *   #tree_is_required: use #tree_is_required instead of #required if you are using the tree within an other
- *                      element and don't want that both are internally required, because it might cause that
- *                      error messages are shown twice (see content_taxonomy_tree)
- *   #language lang code if i18n is enabled and multilingual vocabulary
- *
- * defining term operations:
- *   to add values (operations,..) to each term, add a function, which return a form array
- *   'taxonomy_manager_'. $tree_form_id .'_operations'
- *
- * how to retrieve selected values:
- *   selected terms ids are available in validate / submit function in
- *   $form_values['name']['selected_terms'];
- *
- ******************************************/
-
 class TaxonomyManagerTree extends FormElement {
 
   public function getInfo() {
@@ -59,28 +22,86 @@ class TaxonomyManagerTree extends FormElement {
     return array(
       '#input' => TRUE,
       '#process' => array(
-        array($class, 'taxonomy_manager_tree_process_elements')
+        array($class, 'processTree')
       ),
       '#element_validate' => array(
         array($class, 'taxonomy_manager_tree_validate')
       ),
-      '#tree' => TRUE,
-      '#theme' => 'taxonomy_manager_tree',
-      '#parent' => 0,
-      '#siblings_page' => 0,
-      '#operations' => "",
-      '#default_value' => array(),
-      '#multiple' => TRUE,
-      '#add_term_info' => TRUE,
-      '#required' => FALSE,
-      '#expand_all' => FALSE,
-      '#render_whole_tree' => FALSE,
-      '#search_string' => '',
-      '#terms_to_expand' => array(),
-      '#terms_to_highlight' => array(),
-      '#language' => NULL,
-      '#pager' => FALSE,
     );
+  }
+
+  public static function processTree(&$element, FormStateInterface $form_state, &$complete_form) {
+    $element['#tree'] = TRUE;
+
+    if (!empty($element['#vocabulary'])) {
+      $element['#attached']['library'][] = 'taxonomy_manager/tree';
+
+      $taxonomy_vocabulary = \Drupal::entityManager()->getStorage('taxonomy_vocabulary')->load($element['#vocabulary']);
+      $tree = \Drupal::entityManager()->getStorage('taxonomy_term')->loadTree($taxonomy_vocabulary->id(), 0, NULL, TRUE);
+
+      $nested_list = TaxonomyManagerTree::getNestedList($tree);
+      $nested_render_list = TaxonomyManagerTree::getNestedListRenderArray($nested_list);
+
+      $element['tree'] = $nested_render_list;
+      $element['tree']['#prefix'] = '<div id="tree">';
+      $element['tree']['#suffix'] = '</div>';
+    }
+
+    return $element;
+  }
+
+  /**
+   * Helper function that transforms a flat taxonomy tree in a nested array.
+   */
+  public static function getNestedList($tree = array(), $max_depth = NULL, $parent = 0, $parents_index = array(), $depth = 0) {
+    foreach ($tree as $term) {
+      foreach ($term->parents as $term_parent) {
+        if ($term_parent == $parent) {
+          $return[$term->id()] = $term;
+        }
+        else {
+          $parents_index[$term_parent][$term->id()] = $term;
+        }
+      }
+    }
+
+    foreach ($return as &$term) {
+      if (isset($parents_index[$term->id()]) && (is_null($max_depth) || $depth < $max_depth)) {
+        $term->children = TaxonomyManagerTree::getNestedList($parents_index[$term->id()], $max_depth, $term->id(), $parents_index, $depth + 1);
+      }
+    }
+
+    return $return;
+  }
+
+  /**
+   * Helper function that generates the nested taxonomy_manager_tree_item_list render array.
+   */
+  public static function getNestedListRenderArray($tree, $recursion = FALSE) {
+    $items = array();
+    if (!empty($tree)) {
+      foreach ($tree as $term) {
+        $item = array(
+          '#markup' => $term->getName(),
+        );
+        if (isset($term->children)) {
+          $item['children'] = array(
+            '#theme' => 'taxonomy_manager_tree_item_list',
+            '#items' => TaxonomyManagerTree::getNestedListRenderArray($term->children, TRUE),
+          );
+        }
+        $items[] = $item;
+      }
+    }
+    if ($recursion) {
+      return $items;
+    }
+    else {
+      return array(
+        '#theme' => 'taxonomy_manager_tree_item_list',
+        '#items' => $items,
+      );
+    }
   }
 
   /**

@@ -83,7 +83,7 @@ class TaxonomyManagerForm extends FormBase {
     }
 
     /* Toolbar. */
-    $form['toolbar'] = array(
+    /*$form['toolbar'] = array(
       '#type' => 'fieldset',
       '#title' => $this->t('Toolbar'),
     );
@@ -150,7 +150,7 @@ class TaxonomyManagerForm extends FormBase {
       '#markup' => '<div id="taxonomy-manager-toolbar-throbber"></div><div class="clear"></div>',
       '#weight' => 20,
       '#prefix' => '</div>',
-    );
+    );*/
 
     /* Taxonomy manager. */
     $form['taxonomy']['#tree'] = TRUE;
@@ -182,17 +182,9 @@ class TaxonomyManagerForm extends FormBase {
         . '</div>'
     );
 
-    /* Taxonomy manager tree. */
-    $tree = $this->storageController->loadTree($taxonomy_vocabulary->id(), 0, NULL, FALSE);
-    /* Temporary yeild of a list. */
-    $temp_tree = "<ul>";
-    foreach($tree as $key => $term_temp) {
-      $temp_tree .= "<li>" . $term_temp->name . "</li>";
-    }
-    $temp_tree .= "</ul>";
     $form['taxonomy']['manager']['tree'] = array(
-      '#type' => 'markup',
-      '#markup' => $temp_tree,
+      '#type' => 'taxonomy_manager_tree',
+      '#vocabulary' => $taxonomy_vocabulary->id(),
     );
 
     return $form;

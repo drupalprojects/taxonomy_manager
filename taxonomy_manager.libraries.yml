@@ -1,21 +1,52 @@
+fancytree:
+  version: 1.x
+  css:
+    component:
+      js/fancytree/dist/skin-lion/ui.fancytree.min.css: {}
+  js:
+    js/fancytree/dist/jquery.fancytree-all.min.js: {}
+  dependencies:
+    - core/jquery
+    - taxonomy_manager/jquery.ui.all
+
+tree:
+  version: 1.x
+  js:
+    js/custom/tree.js: {}
+  dependencies:
+    - taxonomy_manager/fancytree
+    - core/drupalSettings
+
+# @todo
+# Full jquery ui package. fancytree needs the 'ease' function and could not find
+# it in the separated jquery ui packages from core yet.
+jquery.ui.all:
+  version: 1.11.4
+  js:
+    js/jquery-ui.min.js: {}
+  dependencies:
+    - core/jquery
+
+
+# Old JS Files
 hideForm.js:
   js:
-    js/hideForm.js: {}
+    js/old/hideForm.js: {}
   dependencies:
       - core/jquery
 termData.js:
   js:
-    js/termData.js: {}
+    js/old/termData.js: {}
   dependencies:
       - core/jquery
 tree.js:
   js:
-    js/tree.js: {}
+    js/old/tree.js: {}
   dependencies:
       - core/jquery
 updateWeight.js:
   js:
-    js/updateWeight.js: {}
+    js/old/updateWeight.js: {}
   dependencies:
       - core/jquery
 taxonomy_manager.css:
