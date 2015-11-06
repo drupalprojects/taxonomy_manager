@@ -21,3 +21,11 @@ taxonomy_manager.settings:
     _form: '\Drupal\taxonomy_manager\Form\TaxonomyManagerAdmin'
   requirements:
     _permission: 'administer taxonomy'
+
+taxonomy_manager.subTree:
+  path: '/taxonomy_manager/subTree'
+  defaults:
+    _controller: '\Drupal\taxonomy_manager\Controller\TaxonomyManagerSubTreeController::json'
+    _title: 'Sub Tree'
+  requirements:
+    _permission: 'administer taxonomy'

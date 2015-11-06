@@ -37,10 +37,10 @@ class TaxonomyManagerTree extends FormElement {
       $element['#attached']['library'][] = 'taxonomy_manager/tree';
 
       $taxonomy_vocabulary = \Drupal::entityManager()->getStorage('taxonomy_vocabulary')->load($element['#vocabulary']);
-      $tree = \Drupal::entityManager()->getStorage('taxonomy_term')->loadTree($taxonomy_vocabulary->id(), 0, NULL, TRUE);
-
-      $nested_list = TaxonomyManagerTree::getNestedList($tree);
-      $nested_render_list = TaxonomyManagerTree::getNestedListRenderArray($nested_list);
+      $terms = TaxonomyManagerTree::loadTerms($taxonomy_vocabulary);
+      //$tree = \Drupal::entityManager()->getStorage('taxonomy_term')->loadTree($taxonomy_vocabulary->id(), 0, NULL, TRUE);
+      //$nested_list = TaxonomyManagerTree::getNestedList($tree);
+      $nested_render_list = TaxonomyManagerTree::getNestedListRenderArray($terms);
 
       $element['tree'] = $nested_render_list;
       $element['tree']['#prefix'] = '<div id="tree">';
@@ -48,6 +48,28 @@ class TaxonomyManagerTree extends FormElement {
     }
 
     return $element;
+  }
+
+  /**
+   * Load one single level of terms, sorted by weight and alphabet.
+   */
+  public static function loadTerms($vocabulary, $parent = 0) {
+    $database = \Drupal::database();
+    $query = $database->select('taxonomy_term_data', 'td');
+    $query->fields('td', array('tid'));
+    $query->condition('td.vid', $vocabulary->id());
+    $query->join('taxonomy_term_hierarchy', 'th', 'td.tid = th.tid AND th.parent = :parent', array(':parent' => $parent));
+    $query->join('taxonomy_term_field_data', 'tfd', 'td.tid = tfd.tid');
+    $query->orderBy('tfd.weight', 'DESC');
+    $query->orderBy('tfd.name', 'ASC');
+    $result = $query->execute();
+
+    $tids = array();
+    foreach ($result as $record) {
+      $tids[] = $record->tid;
+    }
+
+    return \Drupal::entityManager()->getStorage('taxonomy_term')->loadMultiple($tids);
   }
 
   /**
@@ -77,18 +99,30 @@ class TaxonomyManagerTree extends FormElement {
   /**
    * Helper function that generates the nested taxonomy_manager_tree_item_list render array.
    */
-  public static function getNestedListRenderArray($tree, $recursion = FALSE) {
+  public static function getNestedListRenderArray($terms, $recursion = FALSE) {
     $items = array();
-    if (!empty($tree)) {
-      foreach ($tree as $term) {
+    if (!empty($terms)) {
+      foreach ($terms as $term) {
         $item = array(
           '#markup' => $term->getName(),
+          '#wrapper_attributes' => array(
+            'id' => $term->id(),
+          ),
         );
-        if (isset($term->children)) {
-          $item['children'] = array(
-            '#theme' => 'taxonomy_manager_tree_item_list',
-            '#items' => TaxonomyManagerTree::getNestedListRenderArray($term->children, TRUE),
-          );
+
+        if (isset($term->children) || TaxonomyManagerTree::getChildCount($term->id()) >= 1) {
+          // If the given terms array is nested, directly process the terms.
+          if (isset($term->children)) {
+            $item['children'] = array(
+              '#theme' => 'taxonomy_manager_tree_item_list',
+              '#items' => TaxonomyManagerTree::getNestedListRenderArray($term->children, TRUE),
+            );
+          }
+          // It the term has children, but they are not present in the array,
+          // mark the item for lazy loading.
+          else {
+            $item['#wrapper_attributes']['class'][] = 'lazy';
+          }
         }
         $items[] = $item;
       }
@@ -105,6 +139,23 @@ class TaxonomyManagerTree extends FormElement {
   }
 
   /**
+   * @param $tid
+   * @return children count
+   */
+  public static function getChildCount($tid) {
+    static $tids = array();
+
+    if (!isset($tids[$tid])) {
+      $database = \Drupal::database();
+      $query = $database->select('taxonomy_term_hierarchy', 'h');
+      $query->condition('h.parent', $tid);
+      $tids[$tid] = $query->countQuery()->execute()->fetchField();
+    }
+
+    return $tids[$tid];
+  }
+
+  /**
    * validates submitted form values
    * checks if selected terms really belong to initial voc, if not --> form_set_error
    *
@@ -114,11 +165,4 @@ class TaxonomyManagerTree extends FormElement {
    */
   public static function taxonomy_manager_tree_validate($form, &$form_state) {}
 
-  /**
-   * Processes the tree form element
-   *
-   * @param $element
-   * @return the tree element
-   */
-  public static function taxonomy_manager_tree_process_elements($element) {}
 }

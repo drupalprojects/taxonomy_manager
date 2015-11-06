@@ -27,7 +27,15 @@
         quicksearch: false, // Navigate to next node by typing the first letters.
         selectMode: 2, // 1:single, 2:multi, 3:multi-hier
         tabbable: true, // Whole tree behaves as one single control
-        titlesTabbable: false // Node titles can receive keyboard focus
+        titlesTabbable: false, // Node titles can receive keyboard focus
+        lazyLoad: function(event, data){
+          // Load child nodes via ajax GET /taxonomy_manager/parent=1234
+          data.result = {
+            url: "/taxonomy_manager/subTree",
+            data: {parent: data.node.key},
+            cache: false
+          };
+        },
       });
     }
   };

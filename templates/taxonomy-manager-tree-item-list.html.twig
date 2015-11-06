@@ -24,7 +24,7 @@
 
 {% if items or empty %}
   {%- if items -%}
-    <ul{{ attributes }}>
+    <ul>
       {%- for item in items -%}
         <li{{ item.attributes }}>{{ item.value }}</li>
       {%- endfor -%}
