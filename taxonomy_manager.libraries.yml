@@ -7,7 +7,10 @@ fancytree:
     js/fancytree/dist/jquery.fancytree-all.min.js: {}
   dependencies:
     - core/jquery
-    - taxonomy_manager/jquery.ui.all
+    - core/jquery.ui
+    - core/jquery.ui.widget
+    - core/jquery.ui.effects.core
+    - core/jquery.ui.effects.blind
 
 tree:
   version: 1.x
@@ -16,17 +19,6 @@ tree:
   dependencies:
     - taxonomy_manager/fancytree
     - core/drupalSettings
-
-# @todo
-# Full jquery ui package. fancytree needs the 'ease' function and could not find
-# it in the separated jquery ui packages from core yet.
-jquery.ui.all:
-  version: 1.11.4
-  js:
-    js/jquery-ui.min.js: {}
-  dependencies:
-    - core/jquery
-
 
 # Old JS Files
 hideForm.js:
