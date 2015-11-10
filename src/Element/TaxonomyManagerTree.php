@@ -139,6 +139,35 @@ class TaxonomyManagerTree extends FormElement {
   }
 
   /**
+   * Helper function that generates the nested list for the JSON array structure.
+   */
+  public static function getNestedListJSONArray($terms, $recursion = FALSE) {
+    $items = array();
+    if (!empty($terms)) {
+      foreach ($terms as $term) {
+        $item = array(
+          'title' => $term->getName(),
+          'key'=> $term->id(),
+        );
+
+        if (isset($term->children) || TaxonomyManagerTree::getChildCount($term->id()) >= 1) {
+          // If the given terms array is nested, directly process the terms.
+          if (isset($term->children)) {
+            $item['children'] = TaxonomyManagerTree::getNestedListRenderArray($term->children, TRUE);
+          }
+          // It the term has children, but they are not present in the array,
+          // mark the item for lazy loading.
+          else {
+            $item['lazy'] = TRUE;
+          }
+        }
+        $items[] = $item;
+      }
+    }
+    return $items;
+  }
+
+  /**
    * @param $tid
    * @return children count
    */
