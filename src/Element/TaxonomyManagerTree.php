@@ -35,6 +35,7 @@ class TaxonomyManagerTree extends FormElement {
 
     if (!empty($element['#vocabulary'])) {
       $element['#attached']['library'][] = 'taxonomy_manager/tree';
+      $element['#attached']['drupalSettings']['taxonomy_manager']['tree'][] = array('id' => $element['#id']);
 
       $taxonomy_vocabulary = \Drupal::entityManager()->getStorage('taxonomy_vocabulary')->load($element['#vocabulary']);
       $terms = TaxonomyManagerTree::loadTerms($taxonomy_vocabulary);
@@ -43,7 +44,7 @@ class TaxonomyManagerTree extends FormElement {
       $nested_render_list = TaxonomyManagerTree::getNestedListRenderArray($terms);
 
       $element['tree'] = $nested_render_list;
-      $element['tree']['#prefix'] = '<div id="tree">';
+      $element['tree']['#prefix'] = '<div id="'. $element['#id'] .'">';
       $element['tree']['#suffix'] = '</div>';
     }
 
@@ -192,6 +193,9 @@ class TaxonomyManagerTree extends FormElement {
    *
    * @param $form
    */
-  public static function taxonomy_manager_tree_validate($form, &$form_state) {}
+  public static function taxonomy_manager_tree_validate($form, &$form_state) {
+    //dpm($form_state);
+  }
+
 
 }
