@@ -24,9 +24,6 @@ class TaxonomyManagerTree extends FormElement {
       '#process' => array(
         array($class, 'processTree')
       ),
-      '#element_validate' => array(
-        array($class, 'taxonomy_manager_tree_validate')
-      ),
     );
   }
 
@@ -35,7 +32,10 @@ class TaxonomyManagerTree extends FormElement {
 
     if (!empty($element['#vocabulary'])) {
       $element['#attached']['library'][] = 'taxonomy_manager/tree';
-      $element['#attached']['drupalSettings']['taxonomy_manager']['tree'][] = array('id' => $element['#id']);
+      $element['#attached']['drupalSettings']['taxonomy_manager']['tree'][] = array(
+        'id' => $element['#id'],
+        'name' => $element['#name'],
+      );
 
       $taxonomy_vocabulary = \Drupal::entityManager()->getStorage('taxonomy_vocabulary')->load($element['#vocabulary']);
       $terms = TaxonomyManagerTree::loadTerms($taxonomy_vocabulary);
@@ -185,16 +185,24 @@ class TaxonomyManagerTree extends FormElement {
     return $tids[$tid];
   }
 
+
   /**
-   * validates submitted form values
-   * checks if selected terms really belong to initial voc, if not --> form_set_error
-   *
-   * if all is valid, selected values get added to 'selected_terms' for easy use in submit
-   *
-   * @param $form
+   * {@inheritdoc}
    */
-  public static function taxonomy_manager_tree_validate($form, &$form_state) {
-    //dpm($form_state);
+  public static function valueCallback(&$element, $input, FormStateInterface $form_state) {
+    // Validate that all submitted terms belong to the original vocabulary and
+    // are not faked via manual $_POST changes.
+    $selected_terms = array();
+    if (is_array($input) && !empty($input)) {
+      foreach ($input as $tid) {
+        $term = \Drupal::entityManager()->getStorage('taxonomy_term')->load($tid);
+        if ($term && $term->getVocabularyId() == $element['#vocabulary']) {
+          $selected_terms[] = $tid;
+        }
+
+      }
+    }
+    return $selected_terms;
   }
 
 
