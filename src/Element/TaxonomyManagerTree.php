@@ -37,8 +37,10 @@ class TaxonomyManagerTree extends FormElement {
         'name' => $element['#name'],
       );
 
+
       $taxonomy_vocabulary = \Drupal::entityManager()->getStorage('taxonomy_vocabulary')->load($element['#vocabulary']);
-      $terms = TaxonomyManagerTree::loadTerms($taxonomy_vocabulary);
+      $pager_size = isset($element['#pager_size']) ? $element['#pager_size']: -1;
+      $terms = TaxonomyManagerTree::loadTerms($taxonomy_vocabulary, 0, $pager_size);
       //$tree = \Drupal::entityManager()->getStorage('taxonomy_term')->loadTree($taxonomy_vocabulary->id(), 0, NULL, TRUE);
       //$nested_list = TaxonomyManagerTree::getNestedList($tree);
       $nested_render_list = TaxonomyManagerTree::getNestedListRenderArray($terms);
@@ -54,15 +56,25 @@ class TaxonomyManagerTree extends FormElement {
   /**
    * Load one single level of terms, sorted by weight and alphabet.
    */
-  public static function loadTerms($vocabulary, $parent = 0) {
+  public static function loadTerms($vocabulary, $parent = 0, $pager_size = -1) {
     $database = \Drupal::database();
-    $query = $database->select('taxonomy_term_data', 'td');
+    if ($pager_size > 0) {
+      $query = $database->select('taxonomy_term_data', 'td')->extend('Drupal\Core\Database\Query\PagerSelectExtender');
+    }
+    else {
+      $query = $database->select('taxonomy_term_data', 'td');
+    }
     $query->fields('td', array('tid'));
     $query->condition('td.vid', $vocabulary->id());
     $query->join('taxonomy_term_hierarchy', 'th', 'td.tid = th.tid AND th.parent = :parent', array(':parent' => $parent));
     $query->join('taxonomy_term_field_data', 'tfd', 'td.tid = tfd.tid');
     $query->orderBy('tfd.weight', 'DESC');
     $query->orderBy('tfd.name', 'ASC');
+
+    if ($pager_size > 0) {
+      $query->limit($pager_size);
+    }
+
     $result = $query->execute();
 
     $tids = array();

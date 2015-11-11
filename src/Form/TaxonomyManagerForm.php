@@ -185,7 +185,15 @@ class TaxonomyManagerForm extends FormBase {
     $form['taxonomy']['manager']['tree'] = array(
       '#type' => 'taxonomy_manager_tree',
       '#vocabulary' => $taxonomy_vocabulary->id(),
+      '#pager_size' => \Drupal::config('taxonomy_manager.settings')->get('taxonomy_manager_pager_tree_page_size'),
     );
+
+    $form['taxonomy']['manager']['pager'] = array('#type' => 'pager');
+
+    /*$form['submit'] = array(
+      '#type' => 'submit',
+      '#value' => 'Submit',
+    );*/
 
     return $form;
 
@@ -196,7 +204,6 @@ class TaxonomyManagerForm extends FormBase {
   }
 
   public function submitForm(array &$form, FormStateInterface $form_state) {
-
   }
 
 }
