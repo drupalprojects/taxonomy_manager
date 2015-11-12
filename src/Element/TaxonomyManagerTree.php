@@ -31,21 +31,19 @@ class TaxonomyManagerTree extends FormElement {
     $element['#tree'] = TRUE;
 
     if (!empty($element['#vocabulary'])) {
+      $taxonomy_vocabulary = \Drupal::entityManager()->getStorage('taxonomy_vocabulary')->load($element['#vocabulary']);
+      $pager_size = isset($element['#pager_size']) ? $element['#pager_size']: -1;
+      $terms = TaxonomyManagerTree::loadTerms($taxonomy_vocabulary, 0, $pager_size);
+      $nested_json_list  = TaxonomyManagerTree::getNestedListJSONArray($terms);
+
       $element['#attached']['library'][] = 'taxonomy_manager/tree';
       $element['#attached']['drupalSettings']['taxonomy_manager']['tree'][] = array(
         'id' => $element['#id'],
         'name' => $element['#name'],
+        'source' => $nested_json_list,
       );
 
-
-      $taxonomy_vocabulary = \Drupal::entityManager()->getStorage('taxonomy_vocabulary')->load($element['#vocabulary']);
-      $pager_size = isset($element['#pager_size']) ? $element['#pager_size']: -1;
-      $terms = TaxonomyManagerTree::loadTerms($taxonomy_vocabulary, 0, $pager_size);
-      //$tree = \Drupal::entityManager()->getStorage('taxonomy_term')->loadTree($taxonomy_vocabulary->id(), 0, NULL, TRUE);
-      //$nested_list = TaxonomyManagerTree::getNestedList($tree);
-      $nested_render_list = TaxonomyManagerTree::getNestedListRenderArray($terms);
-
-      $element['tree'] = $nested_render_list;
+      $element['tree'] = array();
       $element['tree']['#prefix'] = '<div id="'. $element['#id'] .'">';
       $element['tree']['#suffix'] = '</div>';
     }
@@ -111,6 +109,8 @@ class TaxonomyManagerTree extends FormElement {
 
   /**
    * Helper function that generates the nested taxonomy_manager_tree_item_list render array.
+   *
+   * @deprecated Use getNestedListJSONArray instead.
    */
   public static function getNestedListRenderArray($terms, $recursion = FALSE) {
     $items = array();
@@ -211,7 +211,6 @@ class TaxonomyManagerTree extends FormElement {
         if ($term && $term->getVocabularyId() == $element['#vocabulary']) {
           $selected_terms[] = $tid;
         }
-
       }
     }
     return $selected_terms;
