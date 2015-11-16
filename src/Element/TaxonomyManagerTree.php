@@ -34,13 +34,21 @@ class TaxonomyManagerTree extends FormElement {
       $taxonomy_vocabulary = \Drupal::entityManager()->getStorage('taxonomy_vocabulary')->load($element['#vocabulary']);
       $pager_size = isset($element['#pager_size']) ? $element['#pager_size']: -1;
       $terms = TaxonomyManagerTree::loadTerms($taxonomy_vocabulary, 0, $pager_size);
-      $nested_json_list  = TaxonomyManagerTree::getNestedListJSONArray($terms);
+      $list  = TaxonomyManagerTree::getNestedListJSONArray($terms);
+
+      // Expand tree to given terms.
+      if (isset($element['#terms_to_expand'])) {
+        $terms_to_expand = is_array($element['#terms_to_expand']) ? $element['#terms_to_expand'] : array($element['#terms_to_expand']);
+        foreach ($terms_to_expand as $term_to_expand) {
+          TaxonomyManagerTree:self::getFirstPath($term_to_expand, $list);
+        }
+      }
 
       $element['#attached']['library'][] = 'taxonomy_manager/tree';
       $element['#attached']['drupalSettings']['taxonomy_manager']['tree'][] = array(
         'id' => $element['#id'],
         'name' => $element['#name'],
-        'source' => $nested_json_list,
+        'source' => $list,
       );
 
       $element['tree'] = array();
@@ -49,6 +57,24 @@ class TaxonomyManagerTree extends FormElement {
     }
 
     return $element;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function valueCallback(&$element, $input, FormStateInterface $form_state) {
+    // Validate that all submitted terms belong to the original vocabulary and
+    // are not faked via manual $_POST changes.
+    $selected_terms = array();
+    if (is_array($input) && !empty($input)) {
+      foreach ($input as $tid) {
+        $term = \Drupal::entityManager()->getStorage('taxonomy_term')->load($tid);
+        if ($term && $term->getVocabularyId() == $element['#vocabulary']) {
+          $selected_terms[] = $tid;
+        }
+      }
+    }
+    return $selected_terms;
   }
 
   /**
@@ -154,7 +180,7 @@ class TaxonomyManagerTree extends FormElement {
   /**
    * Helper function that generates the nested list for the JSON array structure.
    */
-  public static function getNestedListJSONArray($terms, $recursion = FALSE) {
+  public static function getNestedListJSONArray($terms) {
     $items = array();
     if (!empty($terms)) {
       foreach ($terms as $term) {
@@ -166,7 +192,7 @@ class TaxonomyManagerTree extends FormElement {
         if (isset($term->children) || TaxonomyManagerTree::getChildCount($term->id()) >= 1) {
           // If the given terms array is nested, directly process the terms.
           if (isset($term->children)) {
-            $item['children'] = TaxonomyManagerTree::getNestedListRenderArray($term->children, TRUE);
+            $item['children'] = TaxonomyManagerTree::getNestedListJSONArray($term->children);
           }
           // It the term has children, but they are not present in the array,
           // mark the item for lazy loading.
@@ -181,8 +207,97 @@ class TaxonomyManagerTree extends FormElement {
   }
 
   /**
-   * @param $tid
-   * @return children count
+   * Helper function that calculates the path to a child term and injects it
+   * into the json list structure.
+   */
+  public static function getFirstPath($tid, &$list) {
+    $path = array();
+    $next_tid = $tid;
+
+    $i = 0;
+    while ($i < 100) { //prevent infinite loop if inconsistent hierarchy
+      $parents = \Drupal::entityManager()->getStorage('taxonomy_term')->loadParents($next_tid);
+      if (count($parents)) {
+        // Takes first parent.
+        $parent = array_shift($parents);
+        $path[] = $parent;
+        $next_tid = $parent->id();
+        if (TaxonomyManagerTree::isRoot($parent->id())) {
+          break;
+        }
+      }
+      else {
+        break;
+      }
+      $i++;
+    }
+
+    if (count($path)) {
+      $path = array_reverse($path);
+      $root_term = $path[0];
+      foreach ($list as $current_index => $list_item) {
+        if ($list_item['key'] == $root_term->id()) {
+          $index = $current_index;
+          break;
+        }
+      }
+      if (isset($index)) {
+        $path[] = \Drupal::entityManager()->getStorage('taxonomy_term')->load($tid);
+        $list[$index]['children'] = TaxonomyManagerTree::getPartialTree($path);
+        $list[$index]['lazy'] = FALSE;
+        $list[$index]['expanded'] = TRUE;
+      }
+    }
+  }
+
+  /**
+   * Returns partial tree for a given path
+   */
+  function getPartialTree($path, $depth = 0) {
+    $tree = array();
+    $parent = $path[$depth];
+    $children = \Drupal::entityManager()->getStorage('taxonomy_term')->loadChildren($parent->id());
+    if (isset($path[++$depth])) {
+      $next_term = $path[$depth];
+    }
+    $index = 0;
+    foreach ($children as $child) {
+      $child->depth = $depth;
+      $child->parents = array(0 => $parent->tid);
+      $tree[] = array(
+        'title' => $child->getName(),
+        'key'=> $child->id(),
+        'expanded' => TRUE,
+        'selected' => TRUE,
+      );
+      if (isset($next_term) && $child->id() == $next_term->id()) {
+        $tree[$index]['children'] = TaxonomyManagerTree::getPartialTree($path, $depth);
+      }
+      $index++;
+    }
+    return $tree;
+  }
+
+  /**
+   * Helper function to check whether a given term is a root term
+   */
+  public static function isRoot($tid) {
+
+    $database = \Drupal::database();
+    $query = $database->select('taxonomy_term_hierarchy', 'h');
+    $query->fields('h', 'tid');
+    $query->condition('h.parent', 0);
+    $query->condition('h.tid', $tid);
+    $result = $query->countQuery()->execute()->fetchField();
+
+    if ($result == $tid) {
+      return TRUE;
+    }
+    return FALSE;
+  }
+
+  /**
+   * Helper function that returns the number of child terms.
    */
   public static function getChildCount($tid) {
     static $tids = array();
@@ -196,25 +311,4 @@ class TaxonomyManagerTree extends FormElement {
 
     return $tids[$tid];
   }
-
-
-  /**
-   * {@inheritdoc}
-   */
-  public static function valueCallback(&$element, $input, FormStateInterface $form_state) {
-    // Validate that all submitted terms belong to the original vocabulary and
-    // are not faked via manual $_POST changes.
-    $selected_terms = array();
-    if (is_array($input) && !empty($input)) {
-      foreach ($input as $tid) {
-        $term = \Drupal::entityManager()->getStorage('taxonomy_term')->load($tid);
-        if ($term && $term->getVocabularyId() == $element['#vocabulary']) {
-          $selected_terms[] = $tid;
-        }
-      }
-    }
-    return $selected_terms;
-  }
-
-
 }
