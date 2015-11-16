@@ -112,9 +112,6 @@ function taxonomy_manager_admin_menu_map() {
  */
 function taxonomy_manager_theme() {
   return array(
-    'taxonomy_manager_tree_item_list' => array(
-      'variables' => array('items' => array(), 'wrapper_attributes' => array(), 'attributes' => array(), 'empty' => NULL),
-    ),
     'taxonomy_manager_form' => array(
       'render element' => 'form',
     ),
