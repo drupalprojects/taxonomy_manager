@@ -19,6 +19,9 @@ fancytree:
 
 tree:
   version: 1.x
+  css:
+      component:
+        css/taxonomy_manager.fancytree.css: {}
   js:
     js/custom/tree.js: {}
   dependencies:
