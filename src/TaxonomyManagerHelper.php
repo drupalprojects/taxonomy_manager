@@ -28,15 +28,13 @@ class TaxonomyManagerHelper {
    *   The vocabulary id.
    * @param int $parents
    *   An array of parent term ids for the new inserted terms. Can be 0.
-   * @param $lang
-   *   The i18n language, if i18n exists.
    * @param $term_names_too_long
    *   Return value that is used to indicate that some term names were too long
    *   and truncated to 255 characters.
    *
    * @return An array of the newly inserted term objects
    */
-  public static function mass_add_terms($input, $vid, $parents, $lang = "", &$term_names_too_long = array()) {
+  public static function mass_add_terms($input, $vid, $parents, &$term_names_too_long = array()) {
     $new_terms = array();
     $terms = explode("\n", str_replace("\r", '', $input));
     $parents = count($parents) ? $parents : 0;

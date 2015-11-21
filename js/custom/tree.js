@@ -9,7 +9,9 @@
       var treeSettings = settings.taxonomy_manager.tree || [];
       if (treeSettings instanceof Array) {
         for (var i=0; i<treeSettings.length; i++) {
-          new Drupal.TaxonomyManagerFancyTree(treeSettings[i].id, treeSettings[i].name, treeSettings[i].source);
+          $("#"+ treeSettings[i].id).once('taxonomy-manager-tree').each(function() {
+            new Drupal.TaxonomyManagerFancyTree(treeSettings[i].id, treeSettings[i].name, treeSettings[i].source);
+          });
         }
       }
     }
@@ -54,10 +56,11 @@
         };
       },
       source: source,
-    });
-    $("#"+ id).closest('form').submit(function() {
-      // Render hidden <input> elements for active and selected nodes
-      $("#"+ id).fancytree("getTree").generateFormElements(name + '[]');
+      select: function(event, data) {
+        // We update the the form inputs on every checkbox state change as
+        // ajax events might require the latest state.
+        data.tree.generateFormElements(name + '[]');
+      }
     });
   }
 

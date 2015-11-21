@@ -29,3 +29,11 @@ taxonomy_manager.subTree:
     _title: 'Sub Tree'
   requirements:
     _permission: 'administer taxonomy'
+
+taxonomy_manager.admin_vocabulary.add:
+  path: '/admin/structure/taxonomy_manager/voc/{taxonomy_vocabulary}/add'
+  defaults:
+    _form: '\Drupal\taxonomy_manager\Form\AddTermsToVocabularyForm'
+    _title: 'Add terms'
+  requirements:
+    _permission: 'administer taxonomy'

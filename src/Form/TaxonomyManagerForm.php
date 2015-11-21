@@ -7,10 +7,13 @@
 
 namespace Drupal\taxonomy_manager\Form;
 
+use Drupal\Core\Ajax\AjaxResponse;
+use Drupal\Core\Ajax\OpenModalDialogCommand;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\Core\Entity\EntityManagerInterface;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Url;
 use Drupal\taxonomy\VocabularyInterface;
 use Drupal\taxonomy_manager\TaxonomyManagerHelper;
 
@@ -72,7 +75,10 @@ class TaxonomyManagerForm extends FormBase {
    */
   public function buildForm(array $form, FormStateInterface $form_state, VocabularyInterface $taxonomy_vocabulary = NULL) {
     $form['voc'] = array('#type' => 'value', "#value" => $taxonomy_vocabulary);
-    $form['#attached']['library'][] = 'taxonomy_manager/taxonomy_manager.css';
+    $form['#attached']['library'] = array(
+      'core/drupal.dialog.ajax',
+      'taxonomy_manager/taxonomy_manager.css',
+    );
 
     if (TaxonomyManagerHelper::_taxonomy_manager_voc_is_empty($taxonomy_vocabulary->id())) {
       $form['text'] = array(
@@ -83,11 +89,7 @@ class TaxonomyManagerForm extends FormBase {
     }
 
     /* Toolbar. */
-    /*$form['toolbar'] = array(
-      '#type' => 'fieldset',
-      '#title' => $this->t('Toolbar'),
-    );
-
+    /*
     $form['toolbar']['weight_up'] = array(
       '#type' => 'button',
       '#attributes' => array('class' => array('taxonomy-manager-buttons')),
@@ -100,13 +102,6 @@ class TaxonomyManagerForm extends FormBase {
       '#type' => 'button',
       '#attributes' => array('class' => array('taxonomy-manager-buttons')),
       '#value' => $this->t('Down'),
-      '#theme' => 'no_submit_button',
-    );
-
-    $form['toolbar']['add_show'] = array(
-      '#type' => 'button',
-      '#attributes' => array('class' => array('taxonomy-manager-buttons', 'add')),
-      '#value' => $this->t('Add'),
       '#theme' => 'no_submit_button',
     );
 
@@ -152,6 +147,26 @@ class TaxonomyManagerForm extends FormBase {
       '#prefix' => '</div>',
     );*/
 
+
+    //$url = $this->url('taxonomy_manager.admin_vocabulary.add', array('taxonomy_vocabulary' => $taxonomy_vocabulary->id()));
+    //$url = Url::fromRoute('taxonomy_manager.admin_vocabulary.add', array('taxonomy_vocabulary' => $taxonomy_vocabulary->id()));
+    //dsm($url);
+    //$form['#action'] = $url;
+
+    $form['toolbar'] = array(
+      '#type' => 'fieldset',
+      '#title' => $this->t('Toolbar'),
+    );
+    $form['toolbar']['add'] = array(
+      '#type' => 'submit',
+      '#name' => 'add',
+      '#value' => $this->t('Add'),
+      '#ajax' => array(
+        'callback' => array($this, 'addFromCallback'),
+      ),
+    );
+
+
     /* Taxonomy manager. */
     $form['taxonomy']['#tree'] = TRUE;
 
@@ -190,13 +205,12 @@ class TaxonomyManagerForm extends FormBase {
 
     $form['taxonomy']['manager']['pager'] = array('#type' => 'pager');
 
-    /*$form['submit'] = array(
+    $form['submit'] = array(
       '#type' => 'submit',
       '#value' => 'Submit',
-    );*/
+    );
 
     return $form;
-
   }
 
   public function validateForm(array &$form, FormStateInterface $form_state) {
@@ -204,6 +218,32 @@ class TaxonomyManagerForm extends FormBase {
   }
 
   public function submitForm(array &$form, FormStateInterface $form_state) {
+    $selected_terms = $form_state->getValue(['taxonomy', 'manager', 'tree']);
+    //dsm($selected_terms);
+  }
+
+  /**
+   * AJAX callback handler for add form.
+   */
+  public function addFromCallback($form, FormStateInterface $form_state) {
+    $taxonomy_vocabulary = $form_state->getValue('voc');
+    $selected_terms = $form_state->getValue(['taxonomy', 'manager', 'tree']);
+
+    // @todo Passing the selected terms does not work yet, as
+    // AddTermsToVocabularyForm::buildForm is called twice and the second time
+    // it missing the selected terms parameter.
+    $add_form = \Drupal::formBuilder()->getForm('Drupal\taxonomy_manager\Form\AddTermsToVocabularyForm', $taxonomy_vocabulary, $selected_terms);
+    $add_form['#attached']['library'][] = 'core/drupal.dialog.ajax';
+
+    // Change the form action url form the current site to the add form.
+    // @todo $this->url ended in an exception...
+    $add_form['#action'] = '/admin/structure/taxonomy_manager/voc/' . $taxonomy_vocabulary->id() . '/add';
+    //$add_form['#action'] = $this->url('taxonomy_manager.admin_vocabulary.add', array('taxonomy_vocabulary' => $taxonomy_vocabulary->id()));
+    //Url::fromRoute('taxonomy_manager.admin_vocabulary.add', array('taxonomy_vocabulary' => $taxonomy_vocabulary->id()));
+
+    $response = new AjaxResponse();
+    $response->addCommand(new OpenModalDialogCommand($this->t('Add terms'), $add_form, array('width' => '700')));
+    return $response;
   }
 
 }

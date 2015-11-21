@@ -22,38 +22,19 @@ class AddTermsToVocabularyForm extends FormBase {
    * @param \Drupal\taxonomy\VocabularyInterface $vocabulary
    * @return array
    */
-  public function buildForm(array $form, FormStateInterface $form_state, VocabularyInterface $vocabulary = NULL) {
-    $form['voc'] = array('#type' => 'value', "#value" => $vocabulary);
-    $form['#attached']['library'][] = 'taxonomy_manager/taxonomy_manager.css';
-
-    $attributes = array();
-    if ($hide_form) {
-      $form['#attached']['js'][] = array(
-        'data' => array('hideForm' => array(array(
-          'show_button' => 'edit-add-show',
-          'hide_button' => 'edit-add-cancel',
-          'div' => 'edit-add'))),
-        'type' => 'setting');
-      $attributes = array('style' => 'display:none;', 'id' => 'edit-add');
-      $form['toolbar']['add_show'] = array(
-        //'#type' => 'button',
-        '#attributes' => array('class' => 'taxonomy-manager-buttons add'),
-        '#value' => $this->t('Add'),
-        '#theme' => 'no_submit_button',
-      );
+  public function buildForm(array $form, FormStateInterface $form_state, VocabularyInterface $taxonomy_vocabulary = NULL, $parents = array()) {
+    $form['voc'] = array('#type' => 'value', '#value' => $taxonomy_vocabulary);
+    $form['parents']['#tree'] = TRUE;
+    foreach ($parents as $p) {
+      $form['parents'][$p] = array('#type' => 'value', '#value' => $p);
     }
 
     $description = $this->t("If you have selected one or more terms in the tree view, the new terms are automatically children of those.");
-
-    $form['add'] = array(
-      '#type' => 'fieldset',
-      '#tree' => TRUE,
-      '#attributes' => $attributes,
-      '#title' => $this->t('Add new terms'),
-      '#description' => $description,
+    $form['help'] = array(
+      '#markup' => $description,
     );
 
-    $form['add']['mass_add'] = array(
+    $form['mass_add'] = array(
       '#type' => 'textarea',
       '#title' => $this->t('Terms'),
       '#description' => $this->t("One term per line. Child terms can be prefixed with a
@@ -67,28 +48,13 @@ class AddTermsToVocabularyForm extends FormBase {
         -feline<br />
         --cat"),
       '#rows' => 10,
+      '#required' => TRUE,
     );
-    $form['add']['add'] = array(
+    $form['add'] = array(
       '#type' => 'submit',
-      '#attributes' => array('class' => array('taxonomy-manager-buttons', 'add')),
       '#value' => $this->t('Add'),
     );
-    $form['add']['cancel'] = array(
-      '#type' => 'button',
-      '#value' => $this->t('Cancel'),
-      '#theme' => 'no_submit_button',
-      '#attributes' => array('class' => array('taxonomy-manager-buttons', 'cancel')),
-    );
-
     return $form;
-  }
-
-  public function validateForm(array &$form, FormStateInterface $form_state) {
-    // Check if form is empty.
-    $values = $form_state->getValues();
-    if (empty($values['add']['mass_add'])) {
-      $form_state->setErrorByName('mass_add', $this->t('You must enter at least 1 term name.'));
-    }
   }
 
   /**
@@ -100,29 +66,21 @@ class AddTermsToVocabularyForm extends FormBase {
     $term_names_too_long = array();
     $term_names = array();
 
-    $selected_terms = $form_state->getValue(['taxonomy', 'manager', 'tree', 'selected_terms']);
-    $parents = isset($selected_terms) ? $selected_terms : array();
-    $language = $form_state->getValue(['taxonomy', 'manager', 'top', 'language']);
-    $lang = isset($language) ? $language : "";
+    $taxonomy_vocabulary = $form_state->getValue('voc');
+    $parents = $form_state->getValue('parents');
+    $mass_terms = $form_state->getValue('mass_add');
 
-    $mass_terms = $form_state->getValue(['add', 'mass_add']);
-    $vocabulary = $form_state->getValue(['voc']);
-
-    $new_terms = TaxonomyManagerHelper::mass_add_terms($mass_terms, $vocabulary->id(), $parents, $lang, $term_names_too_long);
+    $new_terms = TaxonomyManagerHelper::mass_add_terms($mass_terms, $taxonomy_vocabulary->id(), $parents, $term_names_too_long);
     foreach ($new_terms as $term) {
       $term_names[] = $term->label();
     }
-    if (\Drupal::moduleHandler()->moduleExists('i18n_taxonomy')
-      && !empty($lang)
-      && i18n_taxonomy_vocabulary_mode($vocabulary->id(), I18N_MODE_TRANSLATE)) {
-      drupal_set_message($this->t("Saving terms to language @lang",
-        array('@lang' => locale_language_name($language))));
-    }
+
     if (count($term_names_too_long)) {
       drupal_set_message($this->t("Following term names were too long and truncated to 255 characters: %names.",
         array('%names' => implode(', ', $term_names_too_long))), 'warning');
     }
     drupal_set_message($this->t("Terms added: %terms", array('%terms' => implode(', ', $term_names))));
+    $form_state->setRedirect('taxonomy_manager.admin_vocabulary', array('taxonomy_vocabulary' => $taxonomy_vocabulary->id()));
   }
 
   public function getFormId() {
