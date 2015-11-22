@@ -23,6 +23,9 @@ class AddTermsToVocabularyForm extends FormBase {
    * @return array
    */
   public function buildForm(array $form, FormStateInterface $form_state, VocabularyInterface $taxonomy_vocabulary = NULL, $parents = array()) {
+    // Cache form state so that we keep the parents in the modal dialog.
+    $form_state->setCached(TRUE);
+
     $form['voc'] = array('#type' => 'value', '#value' => $taxonomy_vocabulary);
     $form['parents']['#tree'] = TRUE;
     foreach ($parents as $p) {
