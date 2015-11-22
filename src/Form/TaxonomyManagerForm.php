@@ -161,7 +161,15 @@ class TaxonomyManagerForm extends FormBase {
       '#name' => 'add',
       '#value' => $this->t('Add'),
       '#ajax' => array(
-        'callback' => '::addFromCallback',
+        'callback' => '::addFormCallback',
+      ),
+    );
+    $form['toolbar']['delete'] = array(
+      '#type' => 'submit',
+      '#name' => 'delete',
+      '#value' => $this->t('Delete'),
+      '#ajax' => array(
+        'callback' => '::deleteFormCallback',
       ),
     );
 
@@ -224,7 +232,7 @@ class TaxonomyManagerForm extends FormBase {
   /**
    * AJAX callback handler for add form.
    */
-  public function addFromCallback($form, FormStateInterface $form_state) {
+  public function addFormCallback($form, FormStateInterface $form_state) {
     $taxonomy_vocabulary = $form_state->getValue('voc');
     $selected_terms = $form_state->getValue(['taxonomy', 'manager', 'tree']);
 
@@ -236,6 +244,24 @@ class TaxonomyManagerForm extends FormBase {
 
     $response = new AjaxResponse();
     $response->addCommand(new OpenModalDialogCommand($this->t('Add terms'), $add_form, array('width' => '700')));
+    return $response;
+  }
+
+  /**
+   * AJAX callback handler for delete form.
+   */
+  public function deleteFormCallback($form, FormStateInterface $form_state) {
+    $taxonomy_vocabulary = $form_state->getValue('voc');
+    $selected_terms = $form_state->getValue(['taxonomy', 'manager', 'tree']);
+
+    $del_form = \Drupal::formBuilder()->getForm('Drupal\taxonomy_manager\Form\DeleteTermsForm', $taxonomy_vocabulary, $selected_terms);
+    $del_form['#attached']['library'][] = 'core/drupal.dialog.ajax';
+
+    // Change the form action url form the current site to the add form.
+    $del_form['#action'] = $this->url('taxonomy_manager.admin_vocabulary.delete', array('taxonomy_vocabulary' => $taxonomy_vocabulary->id()));
+
+    $response = new AjaxResponse();
+    $response->addCommand(new OpenModalDialogCommand($this->t('Delete terms'), $del_form, array('width' => '700')));
     return $response;
   }
 

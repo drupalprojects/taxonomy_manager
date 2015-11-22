@@ -90,6 +90,66 @@ class TaxonomyManagerHelper {
   }
 
   /**
+   * Helper function that deletes terms.
+   * Optionally orphans (terms where parent get deleted) can be deleted as well
+   *
+   * Difference to core: deletion of orphans optional
+   *
+   * @param $tids array of term ids to delete
+   * @param $delete_orphans If TRUE, orphans get deleted
+   */
+  public static function delete_terms($tids, $delete_orphans = FALSE) {
+    $deleted_terms = array();
+    $remaining_child_terms = array();
+
+    while (count($tids) > 0) {
+      $orphans = array();
+      foreach ($tids as $tid) {
+        $children = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->loadChildren($tid);
+        if (!empty($children)) {
+          foreach ($children as $child) {
+            $parents = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->loadParents($child->id());
+            if ($delete_orphans) {
+              if (count($parents) == 1) {
+                $orphans[$child->tid] = $child->id();
+              }
+              else {
+                $remaining_child_terms[$child->id()] = $child->getName();
+              }
+            }
+            else {
+              $remaining_child_terms[$child->id()] = $child->getName();
+              if ($parents) {
+                // Parents structure see TermStorage::updateTermHierarchy
+                $parents_array = array();
+                foreach ($parents as $parent) {
+                  if ($parent->id() != $tid) {
+                    $parent->target_id = $parent->id();
+                    $parents_array[$parent->id()] = $parent;
+                  }
+                }
+                if (empty($parents_array)) {
+                  $parents_array = array(0);
+                }
+                $child->parent = $parents_array;
+                \Drupal::entityTypeManager()->getStorage('taxonomy_term')->deleteTermHierarchy(array($child->id()));
+                \Drupal::entityTypeManager()->getStorage('taxonomy_term')->updateTermHierarchy($child);
+              }
+            }
+          }
+        }
+        $term = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->load($tid);
+        if ($term) {
+          $deleted_terms[] = $term->getName();
+          $term->delete();
+        }
+      }
+      $tids = $orphans;
+    }
+    return array('deleted_terms' => $deleted_terms, 'remaining_child_terms' => $remaining_child_terms);
+  }
+
+  /**
    * Returns html markup for (un)select all checkboxes buttons.
    * @return string
    */
