@@ -92,8 +92,8 @@ class TaxonomyManagerTree extends FormElement {
     $query->condition('td.vid', $vocabulary->id());
     $query->join('taxonomy_term_hierarchy', 'th', 'td.tid = th.tid AND th.parent = :parent', array(':parent' => $parent));
     $query->join('taxonomy_term_field_data', 'tfd', 'td.tid = tfd.tid');
-    $query->orderBy('tfd.weight', 'DESC');
-    $query->orderBy('tfd.name', 'ASC');
+    $query->orderBy('tfd.weight');
+    $query->orderBy('tfd.name');
 
     if ($pager_size > 0) {
       $query->limit($pager_size);
