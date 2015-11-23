@@ -50,7 +50,7 @@ class TaxonomyManagerHelper {
       if (preg_match('/^(-){1,}/', $name, $matches)) {
         $depth = strlen($matches[0]);
         $name = substr($name, $depth);
-        $current_parents = isset($last_parents[$depth-1]) ? $last_parents[$depth-1]->tid : 0;
+        $current_parents = isset($last_parents[$depth-1]) ? array($last_parents[$depth-1]->id()) : 0;
       }
       // Parent term containing dashes at the beginning and is therefore wrapped
       // in double quotes
@@ -71,17 +71,19 @@ class TaxonomyManagerHelper {
 
       $filter_formats = filter_formats();
       $format = array_pop($filter_formats);
-      $settings = [
+      $values = [
         'name' => $name,
-        'parent' => $current_parents, //@TODO: to be fixed.
-        'format' => $format->id(),
+        'format' => $format->id(), // @todo do we need to set a format?
         'vid' => $vid,
-//      if (\Drupal::moduleHandler()->moduleExists('i18n_taxonomy') && !empty($lang) && i18n_taxonomy_vocabulary_mode($vid, I18N_MODE_TRANSLATE)) {
-//        $term->language = $lang;
-//      }
-        'langcode' => LanguageInterface::LANGCODE_NOT_SPECIFIED,
+        'langcode' => LanguageInterface::LANGCODE_NOT_SPECIFIED, // @todo default language per vocabulary setting?
       ];
-      $term = entity_create('taxonomy_term', $settings);
+      if (!empty($current_parents)) {
+        foreach ($current_parents as $p) {
+          $values['parent'][] = array('target_id' => $p);
+        }
+
+      }
+      $term = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->create($values);
       $term->save();
       $new_terms[] = $term;
       $last_parents[$depth] = $term;
