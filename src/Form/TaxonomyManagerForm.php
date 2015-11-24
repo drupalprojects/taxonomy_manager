@@ -74,10 +74,7 @@ class TaxonomyManagerForm extends FormBase {
    */
   public function buildForm(array $form, FormStateInterface $form_state, VocabularyInterface $taxonomy_vocabulary = NULL) {
     $form['voc'] = array('#type' => 'value', "#value" => $taxonomy_vocabulary);
-    $form['#attached']['library'] = array(
-      'core/drupal.dialog.ajax',
-      'taxonomy_manager/taxonomy_manager.css',
-    );
+    $form['#attached']['library'][] = 'core/drupal.dialog.ajax';
 
     if (TaxonomyManagerHelper::_taxonomy_manager_voc_is_empty($taxonomy_vocabulary->id())) {
       $form['text'] = array(

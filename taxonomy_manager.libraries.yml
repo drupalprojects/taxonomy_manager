@@ -49,7 +49,3 @@ updateWeight.js:
     js/old/updateWeight.js: {}
   dependencies:
       - core/jquery
-taxonomy_manager.css:
-  css:
-    theme:
-      css/taxonomy_manager.css: {}
