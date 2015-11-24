@@ -9,8 +9,6 @@ namespace Drupal\taxonomy_manager\Form;
 
 use Drupal\Core\Ajax\AjaxResponse;
 use Drupal\Core\Ajax\OpenModalDialogCommand;
-use Symfony\Component\DependencyInjection\ContainerInterface;
-use Drupal\Core\Entity\EntityManagerInterface;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\taxonomy\VocabularyInterface;
@@ -21,31 +19,6 @@ class TaxonomyManagerForm extends FormBase {
 
   public function getFormId() {
     return 'taxonomy_manager.vocabulary_terms_form';
-  }
-
-  /**
-   * The term storage controller.
-   *
-   * @var \Drupal\taxonomy\TermStorageInterface
-   */
-  protected $storageController;
-
-  /**
-   * Constructs an OverviewTerms object.
-   * @param \Drupal\Core\Entity\EntityManagerInterface $entity_manager
-   * The entity manager service.
-   */
-  public function __construct(EntityManagerInterface $entity_manager) {
-    $this->storageController = $entity_manager->getStorage('taxonomy_term');
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public static function create(ContainerInterface $container) {
-    return new static(
-      $container->get('entity.manager')
-    );
   }
 
   /**

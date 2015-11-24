@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @file
  * Contains \Drupal\taxonomy_manager\Element\TaxonomyManagerTree.
@@ -32,7 +33,7 @@ class TaxonomyManagerTree extends FormElement {
     $element['#tree'] = TRUE;
 
     if (!empty($element['#vocabulary'])) {
-      $taxonomy_vocabulary = \Drupal::entityManager()->getStorage('taxonomy_vocabulary')->load($element['#vocabulary']);
+      $taxonomy_vocabulary = \Drupal::entityTypeManager()->getStorage('taxonomy_vocabulary')->load($element['#vocabulary']);
       $pager_size = isset($element['#pager_size']) ? $element['#pager_size']: -1;
       $terms = TaxonomyManagerTree::loadTerms($taxonomy_vocabulary, 0, $pager_size);
       $list  = TaxonomyManagerTree::getNestedListJSONArray($terms);
@@ -69,7 +70,7 @@ class TaxonomyManagerTree extends FormElement {
     $selected_terms = array();
     if (is_array($input) && !empty($input)) {
       foreach ($input as $tid) {
-        $term = \Drupal::entityManager()->getStorage('taxonomy_term')->load($tid);
+        $term = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->load($tid);
         if ($term && $term->getVocabularyId() == $element['#vocabulary']) {
           $selected_terms[] = $tid;
         }
@@ -107,7 +108,7 @@ class TaxonomyManagerTree extends FormElement {
       $tids[] = $record->tid;
     }
 
-    return \Drupal::entityManager()->getStorage('taxonomy_term')->loadMultiple($tids);
+    return \Drupal::entityTypeManager()->getStorage('taxonomy_term')->loadMultiple($tids);
   }
 
   /**
@@ -173,7 +174,7 @@ class TaxonomyManagerTree extends FormElement {
 
     $i = 0;
     while ($i < 100) { //prevent infinite loop if inconsistent hierarchy
-      $parents = \Drupal::entityManager()->getStorage('taxonomy_term')->loadParents($next_tid);
+      $parents = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->loadParents($next_tid);
       if (count($parents)) {
         // Takes first parent.
         $parent = array_shift($parents);
@@ -199,7 +200,7 @@ class TaxonomyManagerTree extends FormElement {
         }
       }
       if (isset($index)) {
-        $path[] = \Drupal::entityManager()->getStorage('taxonomy_term')->load($tid);
+        $path[] = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->load($tid);
         $list[$index]['children'] = TaxonomyManagerTree::getPartialTree($path);
         $list[$index]['lazy'] = FALSE;
         $list[$index]['expanded'] = TRUE;
@@ -213,7 +214,7 @@ class TaxonomyManagerTree extends FormElement {
   function getPartialTree($path, $depth = 0) {
     $tree = array();
     $parent = $path[$depth];
-    $children = \Drupal::entityManager()->getStorage('taxonomy_term')->loadChildren($parent->id());
+    $children = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->loadChildren($parent->id());
     if (isset($path[++$depth])) {
       $next_term = $path[$depth];
     }

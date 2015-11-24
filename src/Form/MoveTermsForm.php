@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * @file
+ * Contains \Drupal\taxonomy_manager\Form\MoveTermsForm.
+ */
 
 namespace Drupal\taxonomy_manager\Form;
 
@@ -28,7 +32,7 @@ class MoveTermsForm extends FormBase {
 
     $items = array();
     foreach ($selected_terms as $t) {
-      $term = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->load($t);
+      $term = $this->entityTypeManager()->getStorage('taxonomy_term')->load($t);
       $items[] = $term->getName();
       $form['selected_terms'][$t] = array('#type' => 'value', '#value' => $t);
     }

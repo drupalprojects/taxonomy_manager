@@ -16,6 +16,7 @@ use Drupal\taxonomy_manager\TaxonomyManagerHelper;
  * Form for adding terms to a given vocabulary.
  */
 class AddTermsToVocabularyForm extends FormBase {
+
   /**
    * @param array $form
    * @param \Drupal\Core\Form\FormStateInterface $form_state
@@ -26,7 +27,7 @@ class AddTermsToVocabularyForm extends FormBase {
     // Cache form state so that we keep the parents in the modal dialog.
     // For non modals (non POST request), form state caching on is not allowed.
     // @see FormState::setCached()
-    if (\Drupal::request()->getMethod() == 'POST') {
+    if ($this->getRequest()->getMethod() == 'POST') {
       $form_state->setCached(TRUE);
     }
 
