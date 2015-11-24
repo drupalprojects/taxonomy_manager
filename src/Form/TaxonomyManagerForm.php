@@ -15,6 +15,7 @@ use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\taxonomy\VocabularyInterface;
 use Drupal\taxonomy_manager\TaxonomyManagerHelper;
+use Drupal\Component\Utility\HTML;
 
 class TaxonomyManagerForm extends FormBase {
 
@@ -176,7 +177,7 @@ class TaxonomyManagerForm extends FormBase {
 
     $form['taxonomy']['manager'] = array(
       '#type' => 'fieldset',
-      '#title' => $taxonomy_vocabulary->label() . TaxonomyManagerHelper::_taxonomy_manager_select_all_helpers_markup(),
+      '#title' => HTML::escape($taxonomy_vocabulary->label()),
       '#tree' => TRUE,
     );
 
