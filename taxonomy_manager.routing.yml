@@ -42,6 +42,14 @@ taxonomy_manager.admin_vocabulary.delete:
   path: '/admin/structure/taxonomy_manager/voc/{taxonomy_vocabulary}/delete'
   defaults:
     _form: '\Drupal\taxonomy_manager\Form\DeleteTermsForm'
-    _title: 'Add terms'
+    _title: 'Delete terms'
+  requirements:
+    _permission: 'administer taxonomy'
+
+taxonomy_manager.admin_vocabulary.move:
+  path: '/admin/structure/taxonomy_manager/voc/{taxonomy_vocabulary}/move'
+  defaults:
+    _form: '\Drupal\taxonomy_manager\Form\MoveTermsForm'
+    _title: 'Move terms'
   requirements:
     _permission: 'administer taxonomy'

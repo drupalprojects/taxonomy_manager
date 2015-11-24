@@ -85,71 +85,6 @@ class TaxonomyManagerForm extends FormBase {
       return $form;
     }
 
-    /* Toolbar. */
-    /*
-    $form['toolbar']['weight_up'] = array(
-      '#type' => 'button',
-      '#attributes' => array('class' => array('taxonomy-manager-buttons')),
-      '#value' => $this->t('Up'),
-      '#theme' => 'no_submit_button',
-      '#prefix' => '<div id="taxonomy-manager-toolbar-buttons">',
-    );
-
-    $form['toolbar']['weight-down'] = array(
-      '#type' => 'button',
-      '#attributes' => array('class' => array('taxonomy-manager-buttons')),
-      '#value' => $this->t('Down'),
-      '#theme' => 'no_submit_button',
-    );
-
-    $form['toolbar']['delete_confirm'] = array(
-      '#type' => 'button',
-      '#attributes' => array('class' => array('taxonomy-manager-buttons', 'delete')),
-      '#value' => $this->t('Delete'),
-      '#theme' => 'no_submit_button',
-    );
-
-    $form['toolbar']['term_merge_show'] = array(
-      '#type' => 'button',
-      '#attributes' => array('class' => array('taxonomy-manager-buttons', 'merge')),
-      '#value' => $this->t('Term merge'),
-      '#theme' => 'no_submit_button',
-    );
-
-    $form['toolbar']['move_show'] = array(
-      '#type' => 'button',
-      '#value' => $this->t('Move'),
-      '#attributes' => array('class' => array('taxonomy-manager-buttons', 'move')),
-      '#theme' => 'no_submit_button',
-    );
-
-    $form['toolbar']['export_show'] = array(
-      '#type' => 'button',
-      '#attributes' => array('class' => array('taxonomy-manager-buttons', 'export')),
-      '#value' => $this->t('Export'),
-      '#theme' => 'no_submit_button',
-    );
-
-    $form['toolbar']['search_show'] = array(
-      '#type' => 'button',
-      '#attributes' => array('class' => array('taxonomy-manager-buttons', 'search')),
-      '#value' => $this->t('Search'),
-      '#theme' => 'no_submit_button',
-    );
-
-    $form['toolbar']['wrapper'] = array(
-      '#type' => 'markup',
-      '#markup' => '<div id="taxonomy-manager-toolbar-throbber"></div><div class="clear"></div>',
-      '#weight' => 20,
-      '#prefix' => '</div>',
-    );*/
-
-
-    //$url = $this->url('taxonomy_manager.admin_vocabulary.add', array('taxonomy_vocabulary' => $taxonomy_vocabulary->id()));
-    //$url = Url::fromRoute('taxonomy_manager.admin_vocabulary.add', array('taxonomy_vocabulary' => $taxonomy_vocabulary->id()));
-    //dsm($url);
-    //$form['#action'] = $url;
-
     $form['toolbar'] = array(
       '#type' => 'fieldset',
       '#title' => $this->t('Toolbar'),
@@ -170,7 +105,14 @@ class TaxonomyManagerForm extends FormBase {
         'callback' => '::deleteFormCallback',
       ),
     );
-
+    $form['toolbar']['move'] = array(
+      '#type' => 'submit',
+      '#name' => 'move',
+      '#value' => $this->t('Move'),
+      '#ajax' => array(
+        'callback' => '::moveFormCallback',
+      ),
+    );
 
     /* Taxonomy manager. */
     $form['taxonomy']['#tree'] = TRUE;
@@ -210,11 +152,6 @@ class TaxonomyManagerForm extends FormBase {
 
     $form['taxonomy']['manager']['pager'] = array('#type' => 'pager');
 
-    $form['submit'] = array(
-      '#type' => 'submit',
-      '#value' => 'Submit',
-    );
-
     return $form;
   }
 
@@ -240,6 +177,13 @@ class TaxonomyManagerForm extends FormBase {
    */
   public function deleteFormCallback($form, FormStateInterface $form_state) {
     return $this->modalHelper($form_state, 'Drupal\taxonomy_manager\Form\DeleteTermsForm', 'taxonomy_manager.admin_vocabulary.delete', $this->t('Delete terms'));
+  }
+
+  /**
+   * AJAX callback handler for move form.
+   */
+  public function moveFormCallback($form, FormStateInterface $form_state) {
+    return $this->modalHelper($form_state, 'Drupal\taxonomy_manager\Form\MoveTermsForm', 'taxonomy_manager.admin_vocabulary.move', $this->t('Move terms'));
   }
 
   /**
