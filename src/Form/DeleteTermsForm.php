@@ -9,13 +9,41 @@ namespace Drupal\taxonomy_manager\Form;
 
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\taxonomy\TermStorage;
 use Drupal\taxonomy\VocabularyInterface;
 use Drupal\taxonomy_manager\TaxonomyManagerHelper;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Form for deleting given terms.
  */
 class DeleteTermsForm extends FormBase {
+
+  /**
+   * The current request
+   *
+   * @var \Drupal\taxonomy\TermStorageInterface
+   */
+  protected $termStorage;
+
+  /**
+   * Constructs a TaxonomyManagerSubTreeController object.
+   *
+   * @param \Symfony\Component\HttpFoundation\Request $request
+   *   The current request.
+   */
+  public function __construct(TermStorage $termStorage) {
+    $this->termStorage = $termStorage;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function create(ContainerInterface $container) {
+    return new static(
+      $container->get('entity_type.manager')->getStorage('taxonomy_term')
+    );
+  }
 
   public function buildForm(array $form, FormStateInterface $form_state, VocabularyInterface $taxonomy_vocabulary = NULL, $selected_terms = array()) {
     if (empty($selected_terms)) {
@@ -32,7 +60,7 @@ class DeleteTermsForm extends FormBase {
 
     $items = array();
     foreach ($selected_terms as $t) {
-      $term = $this->entityTypeManager()->getStorage('taxonomy_term')->load($t);
+      $term = $this->termStorage->load($t);
       $items[] = $term->getName();
       $form['selected_terms'][$t] = array('#type' => 'value', '#value' => $t);
     }
