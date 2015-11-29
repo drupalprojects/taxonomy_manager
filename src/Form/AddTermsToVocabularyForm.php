@@ -94,4 +94,5 @@ class AddTermsToVocabularyForm extends FormBase {
   public function getFormId() {
     return 'taxonomy_manager.add_form';
   }
+
 }
