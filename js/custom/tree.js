@@ -47,7 +47,7 @@
       selectMode: 2, // 1:single, 2:multi, 3:multi-hier
       tabbable: true, // Whole tree behaves as one single control
       titlesTabbable: false, // Node titles can receive keyboard focus
-      lazyLoad: function(event, data){
+      lazyLoad: function(event, data) {
         // Load child nodes via ajax GET /taxonomy_manager/parent=1234
         data.result = {
           url: "/taxonomy_manager/subTree",
@@ -60,7 +60,10 @@
         // We update the the form inputs on every checkbox state change as
         // ajax events might require the latest state.
         data.tree.generateFormElements(name + '[]');
-      }
+      },
+      focus: function(event, data) {
+        new Drupal.TaxonomyManagerTermData(data.node.key, data.tree);
+      },
     });
   }
 

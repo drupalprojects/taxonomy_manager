@@ -28,15 +28,23 @@ tree:
     - taxonomy_manager/fancytree
     - core/drupalSettings
 
+termData:
+  js:
+    js/custom/termData.js: {}
+  dependencies:
+    - taxonomy_manager/fancytree
+
+form:
+  css:
+    component:
+      css/taxonomy_manager.css: {}
+  dependencies:
+    - taxonomy_manager/termData
+
 # Old JS Files
 hideForm.js:
   js:
     js/old/hideForm.js: {}
-  dependencies:
-      - core/jquery
-termData.js:
-  js:
-    js/old/termData.js: {}
   dependencies:
       - core/jquery
 tree.js:
