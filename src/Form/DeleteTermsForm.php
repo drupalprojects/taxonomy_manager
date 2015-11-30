@@ -20,7 +20,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 class DeleteTermsForm extends FormBase {
 
   /**
-   * The current request
+   * The current request.
    *
    * @var \Drupal\taxonomy\TermStorageInterface
    */
@@ -68,7 +68,7 @@ class DeleteTermsForm extends FormBase {
     $form['terms'] = array(
       '#theme' => 'item_list',
       '#items' => $items,
-      '#title' => $this->t('Selected terms for deletion:')
+      '#title' => $this->t('Selected terms for deletion:'),
     );
 
     $form['delete_orphans'] = array(

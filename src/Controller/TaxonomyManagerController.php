@@ -37,9 +37,7 @@ class TaxonomyManagerController extends ControllerBase {
     );
 
     $voc_list = array();
-    $vocabularies = $this->entityTypeManager()
-      ->getStorage('taxonomy_vocabulary')
-      ->loadMultiple();
+    $vocabularies = $this->entityTypeManager()->getStorage('taxonomy_vocabulary')->loadMultiple();
     foreach ($vocabularies as $vocabulary) {
       $vocabulary_form = Url::fromRoute('taxonomy_manager.admin_vocabulary',
         array('taxonomy_vocabulary' => $vocabulary->id()));

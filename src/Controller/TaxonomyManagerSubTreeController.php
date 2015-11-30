@@ -16,7 +16,7 @@ use Drupal\taxonomy_manager\Element\TaxonomyManagerTree;
 class TaxonomyManagerSubTreeController extends ControllerBase {
 
   /**
-   * The current request
+   * The current request.
    *
    * @var \Symfony\Component\HttpFoundation\Request
    */
@@ -42,7 +42,7 @@ class TaxonomyManagerSubTreeController extends ControllerBase {
   }
 
   /**
-   * JSON callback for subtree
+   * JSON callback for subtree.
    *
    * @return \Symfony\Component\HttpFoundation\JsonResponse
    */

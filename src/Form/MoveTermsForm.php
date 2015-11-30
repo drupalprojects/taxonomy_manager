@@ -68,7 +68,7 @@ class MoveTermsForm extends FormBase {
     $form['terms'] = array(
       '#theme' => 'item_list',
       '#items' => $items,
-      '#title' => $this->t('Selected terms to move:')
+      '#title' => $this->t('Selected terms to move:'),
     );
 
     // @todo Add autocomplete to select/add parent term.

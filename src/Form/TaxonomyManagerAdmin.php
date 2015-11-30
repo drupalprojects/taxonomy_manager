@@ -69,10 +69,12 @@ class TaxonomyManagerAdmin extends ConfigFormBase {
    * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
-    $this->config('taxonomy_manager.settings')
-      ->set('taxonomy_manager_disable_mouseover', $form_state->getValue('taxonomy_manager_disable_mouseover'))
-      ->set('taxonomy_manager_pager_tree_page_size', $form_state->getValue('taxonomy_manager_pager_tree_page_size'))
-      ->save();
+    $config = $this->config('taxonomy_manager.settings');
+    $mouse_over = $form_state->getValue('taxonomy_manager_disable_mouseover');
+    $page_size = $form_state->getValue('taxonomy_manager_pager_tree_page_size');
+    $config->set('taxonomy_manager_disable_mouseover', $mouse_over);
+    $config->set('taxonomy_manager_pager_tree_page_size', $page_size);
+    $config->save();
 
     parent::submitForm($form, $form_state);
   }
