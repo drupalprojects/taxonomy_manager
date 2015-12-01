@@ -27,10 +27,10 @@ class DeleteTermsForm extends FormBase {
   protected $termStorage;
 
   /**
-   * Constructs a TaxonomyManagerSubTreeController object.
+   * DeleteTermsForm constructor.
    *
-   * @param \Symfony\Component\HttpFoundation\Request $request
-   *   The current request.
+   * @param \Drupal\taxonomy\TermStorage $termStorage
+   *    Object with convenient methods to manage terms.
    */
   public function __construct(TermStorage $termStorage) {
     $this->termStorage = $termStorage;

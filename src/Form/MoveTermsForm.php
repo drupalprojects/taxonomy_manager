@@ -11,7 +11,6 @@ use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\taxonomy\TermStorage;
 use Drupal\taxonomy\VocabularyInterface;
-use Drupal\taxonomy_manager\TaxonomyManagerHelper;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -20,17 +19,17 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 class MoveTermsForm extends FormBase {
 
   /**
-   * The current request
+   * The current request.
    *
    * @var \Drupal\taxonomy\TermStorageInterface
    */
   protected $termStorage;
 
   /**
-   * Constructs a TaxonomyManagerSubTreeController object.
+   * MoveTermsForm constructor.
    *
-   * @param \Symfony\Component\HttpFoundation\Request $request
-   *   The current request.
+   * @param \Drupal\taxonomy\TermStorage $termStorage
+   *    Object with convenient methods to manage terms.
    */
   public function __construct(TermStorage $termStorage) {
     $this->termStorage = $termStorage;

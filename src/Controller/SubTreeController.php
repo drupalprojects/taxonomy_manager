@@ -2,7 +2,7 @@
 
 /**
  * @file
- * Contains \Drupal\taxonomy_manager\Controller\TaxonomyManagerSubTreeController.
+ * Contains \Drupal\taxonomy_manager\Controller\SubTreeController.
  */
 
 namespace Drupal\taxonomy_manager\Controller;
@@ -13,7 +13,12 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Drupal\taxonomy_manager\Element\TaxonomyManagerTree;
 
-class TaxonomyManagerSubTreeController extends ControllerBase {
+/**
+ * Exposes a list of terms to any JS library via JSON.
+ *
+ * @package Drupal\taxonomy_manager\Controller
+ */
+class SubTreeController extends ControllerBase {
 
   /**
    * The current request.
@@ -23,7 +28,7 @@ class TaxonomyManagerSubTreeController extends ControllerBase {
   protected $request;
 
   /**
-   * Constructs a TaxonomyManagerSubTreeController object.
+   * Constructs a SubTreeController object.
    *
    * @param \Symfony\Component\HttpFoundation\Request $request
    *   The current request.
@@ -45,6 +50,7 @@ class TaxonomyManagerSubTreeController extends ControllerBase {
    * JSON callback for subtree.
    *
    * @return \Symfony\Component\HttpFoundation\JsonResponse
+   *   JSON object with list of terms.
    */
   public function json() {
     $list = array();

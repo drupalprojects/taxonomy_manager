@@ -1,7 +1,7 @@
 taxonomy_manager.admin:
   path: '/admin/structure/taxonomy_manager/voc'
   defaults:
-    _controller: '\Drupal\taxonomy_manager\Controller\TaxonomyManagerController::taxonomy_manager_voc_list'
+    _controller: '\Drupal\taxonomy_manager\Controller\MainController::listVocabularies'
     _title: 'Taxonomy Manager'
   requirements:
     _permission: 'administer taxonomy'
@@ -25,7 +25,7 @@ taxonomy_manager.settings:
 taxonomy_manager.subTree:
   path: '/taxonomy_manager/subTree'
   defaults:
-    _controller: '\Drupal\taxonomy_manager\Controller\TaxonomyManagerSubTreeController::json'
+    _controller: '\Drupal\taxonomy_manager\Controller\SubTreeController::json'
     _title: 'Sub Tree'
   requirements:
     _permission: 'administer taxonomy'

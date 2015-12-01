@@ -2,7 +2,7 @@
 
 /**
  * @file
- * Contains \Drupal\taxonomy_manager\Controller\TaxonomyManagerController.
+ * Contains \Drupal\taxonomy_manager\Controller\MainController.
  */
 
 namespace Drupal\taxonomy_manager\Controller;
@@ -13,7 +13,7 @@ use Drupal\Core\Url;
 /**
  * Controller routines for taxonomy_manager routes.
  */
-class TaxonomyManagerController extends ControllerBase {
+class MainController extends ControllerBase {
 
   /**
    * List of vocabularies, which link to Taxonomy Manager interface.
@@ -21,7 +21,7 @@ class TaxonomyManagerController extends ControllerBase {
    * @return array
    *   A render array representing the page.
    */
-  public function taxonomy_manager_voc_list() {
+  public function listVocabularies() {
     $new_voc_url = Url::fromRoute('entity.taxonomy_vocabulary.add_form');
     $new_voc_admin_link = $this->l(t('Add new vocabulary'), $new_voc_url);
 
