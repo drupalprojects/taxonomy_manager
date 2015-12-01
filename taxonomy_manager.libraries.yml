@@ -23,14 +23,14 @@ tree:
       component:
         css/taxonomy_manager.fancytree.css: {}
   js:
-    js/custom/tree.js: {}
+    js/tree.js: {}
   dependencies:
     - taxonomy_manager/fancytree
     - core/drupalSettings
 
 termData:
   js:
-    js/custom/termData.js: {}
+    js/termData.js: {}
   dependencies:
     - taxonomy_manager/fancytree
 
@@ -40,20 +40,3 @@ form:
       css/taxonomy_manager.css: {}
   dependencies:
     - taxonomy_manager/termData
-
-# Old JS Files
-hideForm.js:
-  js:
-    js/old/hideForm.js: {}
-  dependencies:
-      - core/jquery
-tree.js:
-  js:
-    js/old/tree.js: {}
-  dependencies:
-      - core/jquery
-updateWeight.js:
-  js:
-    js/old/updateWeight.js: {}
-  dependencies:
-      - core/jquery
