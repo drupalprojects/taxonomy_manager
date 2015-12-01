@@ -46,6 +46,14 @@ taxonomy_manager.admin_vocabulary.delete:
   requirements:
     _permission: 'administer taxonomy'
 
+taxonomy_manager.admin_vocabulary.export:
+  path: '/admin/structure/taxonomy_manager/voc/{taxonomy_vocabulary}/export'
+  defaults:
+    _form: '\Drupal\taxonomy_manager\Form\ExportTermsForm'
+    _title: 'Export terms'
+  requirements:
+    _permission: 'administer taxonomy'
+
 taxonomy_manager.admin_vocabulary.move:
   path: '/admin/structure/taxonomy_manager/voc/{taxonomy_vocabulary}/move'
   defaults:

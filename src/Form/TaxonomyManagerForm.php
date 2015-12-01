@@ -88,6 +88,14 @@ class TaxonomyManagerForm extends FormBase {
         'callback' => '::moveFormCallback',
       ),
     );
+    $form['toolbar']['export'] = array(
+      '#type' => 'submit',
+      '#name' => 'export',
+      '#value' => $this->t('Export'),
+      '#ajax' => array(
+        'callback' => '::exportFormCallback',
+      ),
+    );
 
     /* Taxonomy manager. */
     $form['taxonomy']['#tree'] = TRUE;
@@ -172,6 +180,13 @@ class TaxonomyManagerForm extends FormBase {
    */
   public function moveFormCallback($form, FormStateInterface $form_state) {
     return $this->modalHelper($form_state, 'Drupal\taxonomy_manager\Form\MoveTermsForm', 'taxonomy_manager.admin_vocabulary.move', $this->t('Move terms'));
+  }
+
+  /**
+   * AJAX callback handler for export terms from a given vocabulary.
+   */
+  public function exportFormCallback($form, FormStateInterface $form_state) {
+    return $this->modalHelper($form_state, 'Drupal\taxonomy_manager\Form\ExportTermsForm', 'taxonomy_manager.admin_vocabulary.export', $this->t('Export terms'));
   }
 
   /**
