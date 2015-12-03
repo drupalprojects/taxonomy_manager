@@ -12,6 +12,7 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\taxonomy\TermStorage;
 use Drupal\taxonomy\VocabularyInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 /**
  * Form for exporting given terms.
@@ -80,7 +81,7 @@ class ExportTermsForm extends FormBase {
 
     $form['export'] = array(
       '#type' => 'submit',
-      '#value' => $this->t('Export'),
+      '#value' => $this->t('Simple tree'),
     );
     return $form;
   }
@@ -91,8 +92,12 @@ class ExportTermsForm extends FormBase {
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $taxonomy_vocabulary = $form_state->getValue('voc');
     $selected_terms = $form_state->getValue('selected_terms');
-
-//    $form_state->setRedirect('taxonomy_manager.admin_vocabulary', array('taxonomy_vocabulary' => $taxonomy_vocabulary->id()));
+    $file_data = '';
+    foreach ($selected_terms as $term_id) {
+      $file_data .= ' ' . $term_id;
+    }
+    $file = file_save_data($file_data, 'public://terms.txt', FILE_EXISTS_REPLACE);
+    // Throw the file in the browser window via headers.
   }
 
   /**
