@@ -731,7 +731,7 @@ function taxonomy_manager_tree_term_extra_info($term) {
   $term_parents = taxonomy_get_parents($term->tid);
 
   if ($term_children_count > 0) {
-    $extra_info = t('Children Count:') . ' ' . $term_children_count;
+    $extra_info = t('Children Count: @count', array('@count' => $term_children_count));
   }
 
   if (count($term_parents) >= 1) {
