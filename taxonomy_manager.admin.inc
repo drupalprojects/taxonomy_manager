@@ -23,7 +23,15 @@ function taxonomy_manager_voc_list() {
   $voc_list = array();
 
   foreach ($vocabularies as $vocabulary) {
-    $voc_list[] = l($vocabulary->name, 'admin/structure/taxonomy_manager/voc/' . $vocabulary->machine_name);
+    $voc_list[] = l($vocabulary->name,
+      'admin/structure/taxonomy_manager/voc/' . $vocabulary->machine_name,
+      array(
+        'attributes' => array(
+          'title' => $vocabulary->description,
+          'alt' => $vocabulary->description,
+        ),
+      )
+    );
   }
   if (!count($voc_list)) {
     $voc_list[] = t('No Vocabularies available');
