@@ -36,7 +36,7 @@ class MainController extends ControllerBase {
     foreach ($vocabularies as $vocabulary) {
       $vocabulary_form = Url::fromRoute('taxonomy_manager.admin_vocabulary',
         array('taxonomy_vocabulary' => $vocabulary->id()));
-      $voc_list[] = $this->l($vocabulary->id(), $vocabulary_form);
+      $voc_list[] = $this->l($vocabulary->get('name'), $vocabulary_form);
     }
     if (!count($voc_list)) {
       $voc_list[] = array('#markup' => $this->t('No Vocabularies available'));
