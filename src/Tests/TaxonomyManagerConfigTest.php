@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Definition of Drupal\taxonomy_manager\Tests\TaxonomyManagerConfigTest.
- */
-
 namespace Drupal\taxonomy_manager\Tests;
 
 use Drupal\simpletest\WebTestBase;

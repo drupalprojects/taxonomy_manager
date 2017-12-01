@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\taxonomy_manager\Form\TaxonomyManagerAdmin.
- */
-
 namespace Drupal\taxonomy_manager\Form;
 
 use Drupal\Core\Form\FormStateInterface;

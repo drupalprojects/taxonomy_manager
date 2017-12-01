@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\taxonomy_manager\Form\MoveTermsForm.
- */
-
 namespace Drupal\taxonomy_manager\Form;
 
 use Drupal\Core\Form\FormBase;

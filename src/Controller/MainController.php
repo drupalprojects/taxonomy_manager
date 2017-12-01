@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\taxonomy_manager\Controller\MainController.
- */
-
 namespace Drupal\taxonomy_manager\Controller;
 
 use Drupal\Core\Controller\ControllerBase;
