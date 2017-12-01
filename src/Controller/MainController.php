@@ -23,13 +23,9 @@ class MainController extends ControllerBase {
     $edit_voc_url = Url::fromRoute('entity.taxonomy_vocabulary.collection');
     $edit_voc_admin_link = $this->l(t('Edit vocabulary settings'), $edit_voc_url);
 
-    $build = array(
-      '#markup' => t('!new_voc_admin_link | !edit_voc_admin_link', array(
-          '!new_voc_admin_link' => $new_voc_admin_link,
-          '!edit_voc_admin_link' => $edit_voc_admin_link,
-        )
-      ),
-    );
+    $build = [
+      '#markup' => "$new_voc_admin_link | $edit_voc_admin_link",
+    ];
 
     $voc_list = array();
     $vocabularies = $this->entityTypeManager()->getStorage('taxonomy_vocabulary')->loadMultiple();
