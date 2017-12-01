@@ -8,7 +8,7 @@ use Drupal\Core\Ajax\ReplaceCommand;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Render\Element;
-use Drupal\Component\Utility\HTML;
+use Drupal\Component\Utility\Html;
 use Drupal\taxonomy\VocabularyInterface;
 use Drupal\taxonomy_manager\TaxonomyManagerHelper;
 
@@ -97,7 +97,7 @@ class TaxonomyManagerForm extends FormBase {
 
     $form['taxonomy']['manager'] = array(
       '#type' => 'fieldset',
-      '#title' => HTML::escape($taxonomy_vocabulary->label()),
+      '#title' => Html::escape($taxonomy_vocabulary->label()),
       '#tree' => TRUE,
     );
 

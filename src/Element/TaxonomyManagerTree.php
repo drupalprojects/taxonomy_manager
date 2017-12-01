@@ -4,7 +4,7 @@ namespace Drupal\taxonomy_manager\Element;
 
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Render\Element\FormElement;
-use Drupal\Component\Utility\HTML;
+use Drupal\Component\Utility\Html;
 
 /**
  * Taxonomy Manager Tree Form Element
@@ -138,7 +138,7 @@ class TaxonomyManagerTree extends FormElement {
     if (!empty($terms)) {
       foreach ($terms as $term) {
         $item = array(
-          'title' => HTML::escape($term->getName()),
+          'title' => Html::escape($term->getName()),
           'key' => $term->id(),
         );
 

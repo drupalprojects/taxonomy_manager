@@ -50,7 +50,7 @@
       lazyLoad: function(event, data) {
         // Load child nodes via ajax GET /taxonomy_manager/parent=1234
         data.result = {
-          url: "/taxonomy_manager/subTree",
+          url: Drupal.url("taxonomy_manager/subTree"),
           data: {parent: data.node.key},
           cache: false
         };
