@@ -53,10 +53,9 @@ class MoveTermsForm extends FormBase {
     $form['selected_terms']['#tree'] = TRUE;
 
     $items = array();
-    foreach ($selected_terms as $t) {
-      $term = $this->termStorage->load($t);
-      $items[] = $term->getName();
-      $form['selected_terms'][$t] = array('#type' => 'value', '#value' => $t);
+    foreach ($this->termStorage->loadMultiple($selected_terms) as $term) {
+      $items[] = $term->label();
+      $form['selected_terms'][$term->id()] = array('#type' => 'value', '#value' => $term->id());
     }
 
     $form['terms'] = array(
@@ -91,6 +90,6 @@ class MoveTermsForm extends FormBase {
   }
 
   public function getFormId() {
-    return 'taxonomy_manager.move_form';
+    return 'taxonomy_manager_move_form';
   }
 }
