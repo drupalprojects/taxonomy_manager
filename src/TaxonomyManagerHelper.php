@@ -12,8 +12,9 @@ class TaxonomyManagerHelper {
    * @return true, if terms already exists, else false
    */
   public static function _taxonomy_manager_voc_is_empty($vid) {
-    $has_rows = (bool) db_query_range("SELECT 1 FROM {taxonomy_term_data} t INNER JOIN {taxonomy_term_hierarchy} h ON t.tid = h.tid WHERE vid = :vid AND h.parent = 0", 0, 1, array(':vid' => $vid))->fetchField();
-    return !$has_rows;
+    /** @var \Drupal\taxonomy\TermStorageInterface $term_storage */
+    $term_storage = \Drupal::entityTypeManager()->getStorage('taxonomy_term');
+    return empty($term_storage->loadTree($vid));
   }
 
   /**

@@ -2,9 +2,11 @@
 
 namespace Drupal\taxonomy_manager\Element;
 
+use Drupal\Core\Entity\Query\QueryException;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Render\Element\FormElement;
 use Drupal\Component\Utility\Html;
+use Drupal\taxonomy\Entity\Term;
 
 /**
  * Taxonomy Manager Tree Form Element
@@ -78,6 +80,28 @@ class TaxonomyManagerTree extends FormElement {
    * Load one single level of terms, sorted by weight and alphabet.
    */
   public static function loadTerms($vocabulary, $parent = 0, $pager_size = -1) {
+    $pager_size = 2;
+    try {
+      $query = \Drupal::entityQuery('taxonomy_term')
+        ->condition('vid', $vocabulary->id())
+        ->condition('parent', $parent)
+        ->sort('weight')
+        ->sort('name');
+      if (!empty($pager_size)) {
+        $query->pager($pager_size);
+      }
+      $tids = $query->execute();
+      return \Drupal::entityTypeManager()->getStorage('taxonomy_term')->loadMultiple($tids);
+    }
+    catch (QueryException $e) {
+      // This site is still using the pre-Drupal 8.5 database schema, where
+      // https://www.drupal.org/project/drupal/issues/2543726 was not yet
+      // committed to Drupal core.
+      // @todo Remove both the try/catch wrapper and the code below the catch-
+      // statement once the taxonomy_manager module only supports Drupal 8.5 or
+      // newer.
+    }
+
     $database = \Drupal::database();
     if ($pager_size > 0) {
       $query = $database->select('taxonomy_term_data', 'td')->extend('Drupal\Core\Database\Query\PagerSelectExtender');
@@ -235,18 +259,7 @@ class TaxonomyManagerTree extends FormElement {
    * Helper function to check whether a given term is a root term.
    */
   public static function isRoot($tid) {
-
-    $database = \Drupal::database();
-    $query = $database->select('taxonomy_term_hierarchy', 'h');
-    $query->fields('h', 'tid');
-    $query->condition('h.parent', 0);
-    $query->condition('h.tid', $tid);
-    $result = $query->countQuery()->execute()->fetchField();
-
-    if ($result == $tid) {
-      return TRUE;
-    }
-    return FALSE;
+    return empty(static::getTermStorage()->loadParents($tid));
   }
 
   /**
@@ -256,12 +269,20 @@ class TaxonomyManagerTree extends FormElement {
     static $tids = array();
 
     if (!isset($tids[$tid])) {
-      $database = \Drupal::database();
-      $query = $database->select('taxonomy_term_hierarchy', 'h');
-      $query->condition('h.parent', $tid);
-      $tids[$tid] = $query->countQuery()->execute()->fetchField();
+      /** @var \Drupal\taxonomy\TermInterface $term */
+      $term = Term::load($tid);
+      $tids[$tid] = count(static::getTermStorage()->loadTree($term->bundle(), $tid, 1));
+
     }
 
     return $tids[$tid];
   }
+
+  /**
+   * @return \Drupal\taxonomy\TermStorageInterface $term_storage
+   */
+  protected static function getTermStorage() {
+    return \Drupal::entityTypeManager()->getStorage('taxonomy_term');
+  }
+
 }
