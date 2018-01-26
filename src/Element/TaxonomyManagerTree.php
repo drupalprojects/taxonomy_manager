@@ -80,7 +80,6 @@ class TaxonomyManagerTree extends FormElement {
    * Load one single level of terms, sorted by weight and alphabet.
    */
   public static function loadTerms($vocabulary, $parent = 0, $pager_size = -1) {
-    $pager_size = 2;
     try {
       $query = \Drupal::entityQuery('taxonomy_term')
         ->condition('vid', $vocabulary->id())
