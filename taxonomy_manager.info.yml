@@ -4,7 +4,6 @@ core: 8.x
 dependencies:
   - taxonomy
 package: Taxonomy
-version: 8.x-1.0
 project: taxonomy_manager
 type: module
 configure: taxonomy_manager.settings
