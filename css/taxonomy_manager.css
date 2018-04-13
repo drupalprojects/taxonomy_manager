@@ -13,3 +13,7 @@
 .form-item-load-term-data {
   display: none;
 }
+
+.taxonomy-managervocabulary-terms-form #edit-exportg {
+  display: none;
+}
