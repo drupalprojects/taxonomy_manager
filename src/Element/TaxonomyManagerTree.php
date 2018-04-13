@@ -18,12 +18,12 @@ class TaxonomyManagerTree extends FormElement {
   public function getInfo() {
     $class = get_class($this);
 
-    return array(
+    return [
       '#input' => TRUE,
-      '#process' => array(
-        array($class, 'processTree')
-      ),
-    );
+      '#process' => [
+        [$class, 'processTree']
+      ],
+    ];
   }
 
   public static function processTree(&$element, FormStateInterface $form_state, &$complete_form) {
@@ -37,20 +37,20 @@ class TaxonomyManagerTree extends FormElement {
 
       // Expand tree to given terms.
       if (isset($element['#terms_to_expand'])) {
-        $terms_to_expand = is_array($element['#terms_to_expand']) ? $element['#terms_to_expand'] : array($element['#terms_to_expand']);
+        $terms_to_expand = is_array($element['#terms_to_expand']) ? $element['#terms_to_expand'] : [$element['#terms_to_expand']];
         foreach ($terms_to_expand as $term_to_expand) {
           TaxonomyManagerTree:self::getFirstPath($term_to_expand, $list);
         }
       }
 
       $element['#attached']['library'][] = 'taxonomy_manager/tree';
-      $element['#attached']['drupalSettings']['taxonomy_manager']['tree'][] = array(
+      $element['#attached']['drupalSettings']['taxonomy_manager']['tree'][] = [
         'id' => $element['#id'],
         'name' => $element['#name'],
         'source' => $list,
-      );
+      ];
 
-      $element['tree'] = array();
+      $element['tree'] = [];
       $element['tree']['#prefix'] = '<div id="' . $element['#id'] . '">';
       $element['tree']['#suffix'] = '</div>';
     }
@@ -64,7 +64,7 @@ class TaxonomyManagerTree extends FormElement {
   public static function valueCallback(&$element, $input, FormStateInterface $form_state) {
     // Validate that all submitted terms belong to the original vocabulary and
     // are not faked via manual $_POST changes.
-    $selected_terms = array();
+    $selected_terms = [];
     if (is_array($input) && !empty($input)) {
       foreach ($input as $tid) {
         $term = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->load($tid);
@@ -108,9 +108,9 @@ class TaxonomyManagerTree extends FormElement {
     else {
       $query = $database->select('taxonomy_term_data', 'td');
     }
-    $query->fields('td', array('tid'));
+    $query->fields('td', ['tid']);
     $query->condition('td.vid', $vocabulary->id());
-    $query->join('taxonomy_term_hierarchy', 'th', 'td.tid = th.tid AND th.parent = :parent', array(':parent' => $parent));
+    $query->join('taxonomy_term_hierarchy', 'th', 'td.tid = th.tid AND th.parent = :parent', [':parent' => $parent]);
     $query->join('taxonomy_term_field_data', 'tfd', 'td.tid = tfd.tid');
     $query->orderBy('tfd.weight');
     $query->orderBy('tfd.name');
@@ -121,7 +121,7 @@ class TaxonomyManagerTree extends FormElement {
 
     $result = $query->execute();
 
-    $tids = array();
+    $tids = [];
     foreach ($result as $record) {
       $tids[] = $record->tid;
     }
@@ -132,7 +132,7 @@ class TaxonomyManagerTree extends FormElement {
   /**
    * Helper function that transforms a flat taxonomy tree in a nested array.
    */
-  public static function getNestedList($tree = array(), $max_depth = NULL, $parent = 0, $parents_index = array(), $depth = 0) {
+  public static function getNestedList($tree = [], $max_depth = NULL, $parent = 0, $parents_index = [], $depth = 0) {
     foreach ($tree as $term) {
       foreach ($term->parents as $term_parent) {
         if ($term_parent == $parent) {
@@ -157,13 +157,13 @@ class TaxonomyManagerTree extends FormElement {
    * Helper function that generates the nested list for the JSON array structure.
    */
   public static function getNestedListJSONArray($terms) {
-    $items = array();
+    $items = [];
     if (!empty($terms)) {
       foreach ($terms as $term) {
-        $item = array(
+        $item = [
           'title' => Html::escape($term->getName()),
           'key' => $term->id(),
-        );
+        ];
 
         if (isset($term->children) || TaxonomyManagerTree::getChildCount($term->id()) >= 1) {
           // If the given terms array is nested, directly process the terms.
@@ -187,7 +187,7 @@ class TaxonomyManagerTree extends FormElement {
    * into the json list structure.
    */
   public static function getFirstPath($tid, &$list) {
-    $path = array();
+    $path = [];
     $next_tid = $tid;
 
     $i = 0;
@@ -230,7 +230,7 @@ class TaxonomyManagerTree extends FormElement {
    * Returns partial tree for a given path
    */
   function getPartialTree($path, $depth = 0) {
-    $tree = array();
+    $tree = [];
     $parent = $path[$depth];
     $children = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->loadChildren($parent->id());
     if (isset($path[++$depth])) {
@@ -239,13 +239,13 @@ class TaxonomyManagerTree extends FormElement {
     $index = 0;
     foreach ($children as $child) {
       $child->depth = $depth;
-      $child->parents = array(0 => $parent->tid);
-      $tree[] = array(
+      $child->parents = [0 => $parent->tid];
+      $tree[] = [
         'title' => $child->getName(),
         'key' => $child->id(),
         'expanded' => TRUE,
         'selected' => TRUE,
-      );
+      ];
       if (isset($next_term) && $child->id() == $next_term->id()) {
         $tree[$index]['children'] = TaxonomyManagerTree::getPartialTree($path, $depth);
       }
@@ -265,7 +265,7 @@ class TaxonomyManagerTree extends FormElement {
    * Helper function that returns the number of child terms.
    */
   public static function getChildCount($tid) {
-    static $tids = array();
+    static $tids = [];
 
     if (!isset($tids[$tid])) {
       /** @var \Drupal\taxonomy\TermInterface $term */

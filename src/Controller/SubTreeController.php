@@ -48,7 +48,7 @@ class SubTreeController extends ControllerBase {
    *   JSON object with list of terms.
    */
   public function json() {
-    $list = array();
+    $list = [];
     $parent = $this->request->get('parent');
 
     $term = $this->entityTypeManager()->getStorage('taxonomy_term')->load($parent);

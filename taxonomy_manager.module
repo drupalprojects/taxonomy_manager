@@ -22,12 +22,12 @@ function taxonomy_manager_admin_menu_map() {
   if (!user_access('administer taxonomy')) {
     return;
   }
-  $map['admin/structure/taxonomy_manager/voc/%taxonomy_vocabulary_machine_name'] = array(
+  $map['admin/structure/taxonomy_manager/voc/%taxonomy_vocabulary_machine_name'] = [
     'parent' => 'admin/structure/taxonomy_manager/voc',
-    'arguments' => array(
-      array('%taxonomy_vocabulary_machine_name' => array_keys(taxonomy_vocabulary_get_names())),
-    ),
-  );
+    'arguments' => [
+      ['%taxonomy_vocabulary_machine_name' => array_keys(taxonomy_vocabulary_get_names())],
+    ],
+  ];
   return $map;
 }
 

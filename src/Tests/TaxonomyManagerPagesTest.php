@@ -18,7 +18,7 @@ class TaxonomyManagerPagesTest extends WebTestBase {
   protected function setUp() {
     parent::setUp();
 
-    $this->admin_user = $this->drupalCreateUser(array('administer taxonomy'));
+    $this->admin_user = $this->drupalCreateUser(['administer taxonomy']);
     $this->vocabulary = $this->createVocabulary();
   }
 
@@ -27,7 +27,7 @@ class TaxonomyManagerPagesTest extends WebTestBase {
    *
    * @var array
    */
-  public static $modules = array('taxonomy_manager');
+  public static $modules = ['taxonomy_manager'];
 
   /**
    * Configuration page is accessible.

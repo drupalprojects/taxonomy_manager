@@ -39,42 +39,42 @@ class MoveTermsForm extends FormBase {
     );
   }
 
-  public function buildForm(array $form, FormStateInterface $form_state, VocabularyInterface $taxonomy_vocabulary = NULL, $selected_terms = array()) {
+  public function buildForm(array $form, FormStateInterface $form_state, VocabularyInterface $taxonomy_vocabulary = NULL, $selected_terms = []) {
     if (empty($selected_terms)) {
-      $form['info'] = array(
+      $form['info'] = [
         '#markup' => $this->t('Please select the terms you want to move.'),
-      );
+      ];
       return $form;
     }
 
     // Cache form state so that we keep the parents in the modal dialog.
     $form_state->setCached(TRUE);
-    $form['voc'] = array('#type' => 'value', '#value' => $taxonomy_vocabulary);
+    $form['voc'] = ['#type' => 'value', '#value' => $taxonomy_vocabulary];
     $form['selected_terms']['#tree'] = TRUE;
 
-    $items = array();
+    $items = [];
     foreach ($this->termStorage->loadMultiple($selected_terms) as $term) {
       $items[] = $term->label();
-      $form['selected_terms'][$term->id()] = array('#type' => 'value', '#value' => $term->id());
+      $form['selected_terms'][$term->id()] = ['#type' => 'value', '#value' => $term->id()];
     }
 
-    $form['terms'] = array(
+    $form['terms'] = [
       '#theme' => 'item_list',
       '#items' => $items,
       '#title' => $this->t('Selected terms to move:'),
-    );
+    ];
 
     // @todo Add autocomplete to select/add parent term.
 
-    $form['keep_old_parents'] = array(
+    $form['keep_old_parents'] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Keep old parents and add new ones (multi-parent). Otherwise old parents get replaced.'),
-    );
+    ];
 
-    $form['delete'] = array(
+    $form['delete'] = [
       '#type' => 'submit',
       '#value' => $this->t('Move'),
-    );
+    ];
     return $form;
   }
 
@@ -85,7 +85,7 @@ class MoveTermsForm extends FormBase {
 
     // @todo
     drupal_set_message('Move operation not yet implemented.', 'error');
-    $form_state->setRedirect('taxonomy_manager.admin_vocabulary', array('taxonomy_vocabulary' => $taxonomy_vocabulary->id()));
+    $form_state->setRedirect('taxonomy_manager.admin_vocabulary', ['taxonomy_vocabulary' => $taxonomy_vocabulary->id()]);
 
   }
 

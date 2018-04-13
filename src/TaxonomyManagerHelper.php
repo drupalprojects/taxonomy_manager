@@ -35,23 +35,23 @@ class TaxonomyManagerHelper {
    *
    * @return An array of the newly inserted term objects
    */
-  public static function mass_add_terms($input, $vid, $parents, &$term_names_too_long = array()) {
-    $new_terms = array();
+  public static function mass_add_terms($input, $vid, $parents, &$term_names_too_long = []) {
+    $new_terms = [];
     $terms = explode("\n", str_replace("\r", '', $input));
     $parents = count($parents) ? $parents : 0;
 
     // Stores the current lineage of newly inserted terms.
-    $last_parents = array();
+    $last_parents = [];
     foreach ($terms as $name) {
       if (empty($name)) {
         continue;
       }
-      $matches = array();
+      $matches = [];
       // Child term prefixed with one or more dashes
       if (preg_match('/^(-){1,}/', $name, $matches)) {
         $depth = strlen($matches[0]);
         $name = substr($name, $depth);
-        $current_parents = isset($last_parents[$depth-1]) ? array($last_parents[$depth-1]->id()) : 0;
+        $current_parents = isset($last_parents[$depth-1]) ? [$last_parents[$depth-1]->id()] : 0;
       }
       // Parent term containing dashes at the beginning and is therefore wrapped
       // in double quotes
@@ -80,7 +80,7 @@ class TaxonomyManagerHelper {
       ];
       if (!empty($current_parents)) {
         foreach ($current_parents as $p) {
-          $values['parent'][] = array('target_id' => $p);
+          $values['parent'][] = ['target_id' => $p];
         }
 
       }
@@ -102,11 +102,11 @@ class TaxonomyManagerHelper {
    * @param $delete_orphans If TRUE, orphans get deleted
    */
   public static function delete_terms($tids, $delete_orphans = FALSE) {
-    $deleted_terms = array();
-    $remaining_child_terms = array();
+    $deleted_terms = [];
+    $remaining_child_terms = [];
 
     while (count($tids) > 0) {
-      $orphans = array();
+      $orphans = [];
       foreach ($tids as $tid) {
         $children = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->loadChildren($tid);
         if (!empty($children)) {
@@ -124,7 +124,7 @@ class TaxonomyManagerHelper {
               $remaining_child_terms[$child->id()] = $child->getName();
               if ($parents) {
                 // Parents structure see TermStorage::updateTermHierarchy
-                $parents_array = array();
+                $parents_array = [];
                 foreach ($parents as $parent) {
                   if ($parent->id() != $tid) {
                     $parent->target_id = $parent->id();
@@ -132,10 +132,10 @@ class TaxonomyManagerHelper {
                   }
                 }
                 if (empty($parents_array)) {
-                  $parents_array = array(0);
+                  $parents_array = [0];
                 }
                 $child->parent = $parents_array;
-                \Drupal::entityTypeManager()->getStorage('taxonomy_term')->deleteTermHierarchy(array($child->id()));
+                \Drupal::entityTypeManager()->getStorage('taxonomy_term')->deleteTermHierarchy([$child->id()]);
                 \Drupal::entityTypeManager()->getStorage('taxonomy_term')->updateTermHierarchy($child);
               }
             }
@@ -149,7 +149,7 @@ class TaxonomyManagerHelper {
       }
       $tids = $orphans;
     }
-    return array('deleted_terms' => $deleted_terms, 'remaining_child_terms' => $remaining_child_terms);
+    return ['deleted_terms' => $deleted_terms, 'remaining_child_terms' => $remaining_child_terms];
   }
 
   /**

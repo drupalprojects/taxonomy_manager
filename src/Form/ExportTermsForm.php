@@ -42,41 +42,41 @@ class ExportTermsForm extends FormBase {
   /**
    * {@inheritdoc}
    */
-  public function buildForm(array $form, FormStateInterface $form_state, VocabularyInterface $taxonomy_vocabulary = NULL, $selected_terms = array()) {
+  public function buildForm(array $form, FormStateInterface $form_state, VocabularyInterface $taxonomy_vocabulary = NULL, $selected_terms = []) {
     if (empty($selected_terms)) {
-      $form['info'] = array(
+      $form['info'] = [
         '#markup' => $this->t('Please select the terms you want to export.'),
-      );
+      ];
       return $form;
     }
 
     // Cache form state so that we keep the parents in the modal dialog.
     $form_state->setCached(TRUE);
-    $form['voc'] = array('#type' => 'value', '#value' => $taxonomy_vocabulary);
+    $form['voc'] = ['#type' => 'value', '#value' => $taxonomy_vocabulary];
     $form['selected_terms']['#tree'] = TRUE;
 
-    $items = array();
+    $items = [];
     foreach ($selected_terms as $t) {
       $term = $this->termStorage->load($t);
       $items[] = $term->getName();
-      $form['selected_terms'][$t] = array('#type' => 'value', '#value' => $t);
+      $form['selected_terms'][$t] = ['#type' => 'value', '#value' => $t];
     }
 
-    $form['terms'] = array(
+    $form['terms'] = [
       '#theme' => 'item_list',
       '#items' => $items,
       '#title' => $this->t('Selected terms for export:'),
-    );
+    ];
 
-    $form['download_csv'] = array(
+    $form['download_csv'] = [
       '#type' => 'submit',
       '#value' => $this->t('Download CSV'),
-    );
+    ];
 
-    $form['export'] = array(
+    $form['export'] = [
       '#type' => 'submit',
       '#value' => $this->t('Export'),
-    );
+    ];
     return $form;
   }
 
