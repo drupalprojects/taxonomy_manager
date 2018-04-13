@@ -12,19 +12,29 @@ use Drupal\Component\Utility\Html;
 use Drupal\taxonomy\VocabularyInterface;
 use Drupal\taxonomy_manager\TaxonomyManagerHelper;
 
+/**
+ * Taxonomy manager class.
+ */
 class TaxonomyManagerForm extends FormBase {
 
+  /**
+   * {@inheritdoc}
+   */
   public function getFormId() {
     return 'taxonomy_manager.vocabulary_terms_form';
   }
 
   /**
-   * Returns the title for the whole page
-   * @param String $taxonomy_vocabulary the name of the vocabulary
-   * @return string The title, itself
+   * Returns the title for the whole page.
+   *
+   * @param string $taxonomy_vocabulary
+   *   The name of the vocabulary.
+   *
+   * @return string
+   *   The title, itself
    */
   public function getTitle($taxonomy_vocabulary) {
-    return  $this->t("Taxonomy Manager - %voc_name", ["%voc_name" => $taxonomy_vocabulary->label()]);
+    return $this->t("Taxonomy Manager - %voc_name", ["%voc_name" => $taxonomy_vocabulary->label()]);
   }
 
   /**
@@ -37,8 +47,8 @@ class TaxonomyManagerForm extends FormBase {
    *   An associative array containing the structure of the form.
    * @param \Drupal\Core\Form\FormStateInterface $form_state
    *   The current state of the form.
-   * @param VocabularyInterface $taxonomy_vocabulary
-   *   The vocabulary being with worked with
+   * @param \Drupal\taxonomy\VocabularyInterface $taxonomy_vocabulary
+   *   The vocabulary being with worked with.
    *
    * @return array
    *   The form structure.
@@ -107,21 +117,6 @@ class TaxonomyManagerForm extends FormBase {
       '#suffix' => '</div>',
     ];
 
-    /*$grippie_image = array(
-      '#theme' => 'image',
-      '#uri' => drupal_get_path('module', 'taxonomy_manager') . "/images/grippie.png",
-      '#alt' => $this->t("Resize tree"),
-      '#title' => $this->t("Resize tree"),
-      '#attributes' => array('class' => array('div-grippie')),
-    );
-
-    $form['taxonomy']['manager']['top']['size'] = array(
-      '#markup' =>
-        '<div class="taxonomy-manager-tree-size">'
-        . \Drupal::service('renderer')->render($grippie_image, true)
-        . '</div>'
-    );*/
-
     $form['taxonomy']['manager']['tree'] = [
       '#type' => 'taxonomy_manager_tree',
       '#vocabulary' => $taxonomy_vocabulary->id(),
@@ -146,13 +141,11 @@ class TaxonomyManagerForm extends FormBase {
     return $form;
   }
 
-  public function validateForm(array &$form, FormStateInterface $form_state) {
-
-  }
-
+  /**
+   * {@inheritdoc}
+   */
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $selected_terms = $form_state->getValue(['taxonomy', 'manager', 'tree']);
-    //dsm($selected_terms);
   }
 
   /**
@@ -160,7 +153,6 @@ class TaxonomyManagerForm extends FormBase {
    */
   public function addFormCallback($form, FormStateInterface $form_state) {
     return $this->modalHelper($form_state, 'Drupal\taxonomy_manager\Form\AddTermsToVocabularyForm', 'taxonomy_manager.admin_vocabulary.add', $this->t('Add terms'));
-
   }
 
   /**
@@ -215,24 +207,31 @@ class TaxonomyManagerForm extends FormBase {
     return $response;
   }
 
+  /**
+   * Term data submit handler.
+   *
+   * @TODO: redirect to taxonomy manager
+   */
   public static function termDataFormSubmit($form, FormStateInterface $form_state) {
-    // @todo redirect to taxonomy manager
+
   }
 
   /**
    * Helper function to generate a modal form within an AJAX callback.
    *
-   * @param $form_state
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
    *   The form state of the current (parent) form.
-   * @param $class_name
+   * @param string $class_name
    *   The class name of the form to embed in the modal.
-   * @param $route_name
+   * @param string $route_name
    *   The route name the form is located.
-   * @param $title
+   * @param string $title
    *   The modal title.
+   *
    * @return \Drupal\Core\Ajax\AjaxResponse
+   *   The ajax response.
    */
-  protected function modalHelper($form_state, $class_name, $route_name, $title) {
+  protected function modalHelper(FormStateInterface $form_state, $class_name, $route_name, $title) {
     $taxonomy_vocabulary = $form_state->getValue('voc');
     $selected_terms = $form_state->getValue(['taxonomy', 'manager', 'tree']);
 

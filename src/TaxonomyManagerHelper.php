@@ -4,12 +4,19 @@ namespace Drupal\taxonomy_manager;
 
 use Drupal\Core\Language\LanguageInterface;
 
+/**
+ * Class for taxonomy manager helper.
+ */
 class TaxonomyManagerHelper {
+
   /**
-   * checks if voc has terms
+   * Checks if voc has terms.
    *
-   * @param $vid voc id
-   * @return true, if terms already exists, else false
+   * @param int $vid
+   *   The term ID.
+   *
+   * @return bool
+   *   True, if terms already exists, else false
    */
   public static function _taxonomy_manager_voc_is_empty($vid) {
     /** @var \Drupal\taxonomy\TermStorageInterface $term_storage */
@@ -20,22 +27,23 @@ class TaxonomyManagerHelper {
   /**
    * Helper function for mass adding of terms.
    *
-   * @param $input
-   *   The textual input with terms. Each line contains a single term. Child term
-   *   can be prefixed with a dash '-' (one dash for each level). Term names
-   *   starting with a dash and should not become a child term need to be wrapped
-   *   in quotes.
-   * @param $vid
+   * @param string $input
+   *   The textual input with terms. Each line contains a single term. Child
+   *   term can be prefixed with a dash '-' (one dash for each level). Term
+   *   names starting with a dash and should not become a child term need
+   *   to be wrapped in quotes.
+   * @param int $vid
    *   The vocabulary id.
    * @param int $parents
    *   An array of parent term ids for the new inserted terms. Can be 0.
-   * @param $term_names_too_long
+   * @param array $term_names_too_long
    *   Return value that is used to indicate that some term names were too long
    *   and truncated to 255 characters.
    *
-   * @return An array of the newly inserted term objects
+   * @return array
+   *   An array of the newly inserted term objects
    */
-  public static function mass_add_terms($input, $vid, $parents, &$term_names_too_long = []) {
+  public static function mass_add_terms($input, $vid, $parents, array &$term_names_too_long = []) {
     $new_terms = [];
     $terms = explode("\n", str_replace("\r", '', $input));
     $parents = count($parents) ? $parents : 0;
@@ -47,14 +55,14 @@ class TaxonomyManagerHelper {
         continue;
       }
       $matches = [];
-      // Child term prefixed with one or more dashes
+      // Child term prefixed with one or more dashes.
       if (preg_match('/^(-){1,}/', $name, $matches)) {
         $depth = strlen($matches[0]);
         $name = substr($name, $depth);
-        $current_parents = isset($last_parents[$depth-1]) ? [$last_parents[$depth-1]->id()] : 0;
+        $current_parents = isset($last_parents[$depth - 1]) ? [$last_parents[$depth - 1]->id()] : 0;
       }
       // Parent term containing dashes at the beginning and is therefore wrapped
-      // in double quotes
+      // in double quotes.
       elseif (preg_match('/^\"(-){1,}.*\"/', $name, $matches)) {
         $name = substr($name, 1, -1);
         $depth = 0;
@@ -74,9 +82,11 @@ class TaxonomyManagerHelper {
       $format = array_pop($filter_formats);
       $values = [
         'name' => $name,
-        'format' => $format->id(), // @todo do we need to set a format?
+        // @todo do we need to set a format?
+        'format' => $format->id(),
         'vid' => $vid,
-        'langcode' => LanguageInterface::LANGCODE_NOT_SPECIFIED, // @todo default language per vocabulary setting?
+        // @todo default language per vocabulary setting?
+        'langcode' => LanguageInterface::LANGCODE_NOT_SPECIFIED,
       ];
       if (!empty($current_parents)) {
         foreach ($current_parents as $p) {
@@ -94,14 +104,17 @@ class TaxonomyManagerHelper {
 
   /**
    * Helper function that deletes terms.
-   * Optionally orphans (terms where parent get deleted) can be deleted as well
    *
-   * Difference to core: deletion of orphans optional
+   * Optionally orphans (terms where parent get deleted) can be deleted as well.
    *
-   * @param $tids array of term ids to delete
-   * @param $delete_orphans If TRUE, orphans get deleted
+   * Difference to core: deletion of orphans optional.
+   *
+   * @param array $tids
+   *   Array of term ids to delete.
+   * @param bool $delete_orphans
+   *   If TRUE, orphans get deleted.
    */
-  public static function delete_terms($tids, $delete_orphans = FALSE) {
+  public static function delete_terms(array $tids, $delete_orphans = FALSE) {
     $deleted_terms = [];
     $remaining_child_terms = [];
 
@@ -123,7 +136,7 @@ class TaxonomyManagerHelper {
             else {
               $remaining_child_terms[$child->id()] = $child->getName();
               if ($parents) {
-                // Parents structure see TermStorage::updateTermHierarchy
+                // Parents structure see TermStorage::updateTermHierarchy.
                 $parents_array = [];
                 foreach ($parents as $parent) {
                   if ($parent->id() != $tid) {
@@ -150,17 +163,6 @@ class TaxonomyManagerHelper {
       $tids = $orphans;
     }
     return ['deleted_terms' => $deleted_terms, 'remaining_child_terms' => $remaining_child_terms];
-  }
-
-  /**
-   * Returns html markup for (un)select all checkboxes buttons.
-   * @return string
-   */
-  public static function _taxonomy_manager_select_all_helpers_markup() {
-    return '<span class="taxonomy-manager-select-helpers">' .
-    '<span class="select-all-children" title="' . t("Select all") . '">&nbsp;&nbsp;&nbsp;&nbsp;</span>' .
-    '<span class="deselect-all-children" title="' . t("Remove selection") . '">&nbsp;&nbsp;&nbsp;&nbsp;</span>' .
-    '</span>';
   }
 
 }

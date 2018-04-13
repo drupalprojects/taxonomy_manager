@@ -24,7 +24,7 @@ class MoveTermsForm extends FormBase {
    * MoveTermsForm constructor.
    *
    * @param \Drupal\taxonomy\TermStorage $termStorage
-   *    Object with convenient methods to manage terms.
+   *   Object with convenient methods to manage terms.
    */
   public function __construct(TermStorage $termStorage) {
     $this->termStorage = $termStorage;
@@ -39,6 +39,9 @@ class MoveTermsForm extends FormBase {
     );
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function buildForm(array $form, FormStateInterface $form_state, VocabularyInterface $taxonomy_vocabulary = NULL, $selected_terms = []) {
     if (empty($selected_terms)) {
       $form['info'] = [
@@ -78,6 +81,9 @@ class MoveTermsForm extends FormBase {
     return $form;
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $taxonomy_vocabulary = $form_state->getValue('voc');
     $selected_terms = $form_state->getValue('selected_terms');
@@ -89,7 +95,11 @@ class MoveTermsForm extends FormBase {
 
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function getFormId() {
     return 'taxonomy_manager_move_form';
   }
+
 }

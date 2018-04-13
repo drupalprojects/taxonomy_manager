@@ -5,5 +5,5 @@ dependencies:
   - taxonomy
 package: Taxonomy
 project: taxonomy_manager
-type: module
+type: modulegit st
 configure: taxonomy_manager.settings

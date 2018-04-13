@@ -9,23 +9,29 @@ use Drupal\Component\Utility\Html;
 use Drupal\taxonomy\Entity\Term;
 
 /**
- * Taxonomy Manager Tree Form Element
+ * Taxonomy Manager Tree Form Element.
  *
  * @FormElement("taxonomy_manager_tree")
  */
 class TaxonomyManagerTree extends FormElement {
 
+  /**
+   * {@inheritdoc}
+   */
   public function getInfo() {
     $class = get_class($this);
 
     return [
       '#input' => TRUE,
       '#process' => [
-        [$class, 'processTree']
+        [$class, 'processTree'],
       ],
     ];
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public static function processTree(&$element, FormStateInterface $form_state, &$complete_form) {
     $element['#tree'] = TRUE;
 
@@ -154,7 +160,7 @@ class TaxonomyManagerTree extends FormElement {
   }
 
   /**
-   * Helper function that generates the nested list for the JSON array structure.
+   * Function that generates the nested list for the JSON array structure.
    */
   public static function getNestedListJSONArray($terms) {
     $items = [];
@@ -183,6 +189,8 @@ class TaxonomyManagerTree extends FormElement {
   }
 
   /**
+   * Helper function to calculate path.
+   *
    * Helper function that calculates the path to a child term and injects it
    * into the json list structure.
    */
@@ -191,7 +199,8 @@ class TaxonomyManagerTree extends FormElement {
     $next_tid = $tid;
 
     $i = 0;
-    while ($i < 100) { //prevent infinite loop if inconsistent hierarchy
+    // Prevent infinite loop if inconsistent hierarchy.
+    while ($i < 100) {
       $parents = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->loadParents($next_tid);
       if (count($parents)) {
         // Takes first parent.
@@ -227,9 +236,9 @@ class TaxonomyManagerTree extends FormElement {
   }
 
   /**
-   * Returns partial tree for a given path
+   * Returns partial tree for a given path.
    */
-  function getPartialTree($path, $depth = 0) {
+  public function getPartialTree($path, $depth = 0) {
     $tree = [];
     $parent = $path[$depth];
     $children = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->loadChildren($parent->id());
@@ -278,7 +287,10 @@ class TaxonomyManagerTree extends FormElement {
   }
 
   /**
-   * @return \Drupal\taxonomy\TermStorageInterface $term_storage
+   * Function to get term storage.
+   *
+   * @return \Drupal\taxonomy\TermStorageInterface
+   *   The term storage.
    */
   protected static function getTermStorage() {
     return \Drupal::entityTypeManager()->getStorage('taxonomy_term');

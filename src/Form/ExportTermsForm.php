@@ -24,7 +24,7 @@ class ExportTermsForm extends FormBase {
    * ExportTermsForm constructor.
    *
    * @param \Drupal\taxonomy\TermStorage $termStorage
-   *    Object with convenient methods to manage terms.
+   *   Object with convenient methods to manage terms.
    */
   public function __construct(TermStorage $termStorage) {
     $this->termStorage = $termStorage;
@@ -87,7 +87,7 @@ class ExportTermsForm extends FormBase {
     $taxonomy_vocabulary = $form_state->getValue('voc');
     $selected_terms = $form_state->getValue('selected_terms');
 
-//    $form_state->setRedirect('taxonomy_manager.admin_vocabulary', array('taxonomy_vocabulary' => $taxonomy_vocabulary->id()));
+    // $form_state->setRedirect('taxonomy_manager.admin_vocabulary', array('taxonomy_vocabulary' => $taxonomy_vocabulary->id()));
   }
 
   /**

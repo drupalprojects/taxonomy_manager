@@ -13,10 +13,7 @@ use Drupal\taxonomy_manager\TaxonomyManagerHelper;
 class AddTermsToVocabularyForm extends FormBase {
 
   /**
-   * @param array $form
-   * @param \Drupal\Core\Form\FormStateInterface $form_state
-   * @param \Drupal\taxonomy\VocabularyInterface $vocabulary
-   * @return array
+   * {@inheritdoc}
    */
   public function buildForm(array $form, FormStateInterface $form_state, VocabularyInterface $taxonomy_vocabulary = NULL, $parents = []) {
     // Cache form state so that we keep the parents in the modal dialog.
@@ -61,9 +58,7 @@ class AddTermsToVocabularyForm extends FormBase {
   }
 
   /**
-   * Submit handler for adding terms.
-   * @param array $form
-   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $term_names_too_long = [];
@@ -86,6 +81,9 @@ class AddTermsToVocabularyForm extends FormBase {
     $form_state->setRedirect('taxonomy_manager.admin_vocabulary', ['taxonomy_vocabulary' => $taxonomy_vocabulary->id()]);
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function getFormId() {
     return 'taxonomy_manager.add_form';
   }
