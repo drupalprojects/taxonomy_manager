@@ -89,7 +89,7 @@ class DeleteTermsForm extends FormBase {
     $selected_terms = $form_state->getValue('selected_terms');
     $delete_orphans = $form_state->getValue('delete_orphans');
 
-    $info = TaxonomyManagerHelper::delete_terms($selected_terms, $delete_orphans);
+    $info = TaxonomyManagerHelper::deleteTerms($selected_terms, $delete_orphans);
     drupal_set_message(t("Deleted terms: %deleted_term_names", ['%deleted_term_names' => implode(', ', $info['deleted_terms'])]));
     if (count($info['remaining_child_terms'])) {
       drupal_set_message(t("Remaining child terms with different parents: %remaining_child_term_names", ['%remaining_child_term_names' => implode(', ', $info['remaining_child_terms'])]));

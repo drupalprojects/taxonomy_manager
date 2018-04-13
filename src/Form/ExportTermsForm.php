@@ -85,9 +85,10 @@ class ExportTermsForm extends FormBase {
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $taxonomy_vocabulary = $form_state->getValue('voc');
-    $selected_terms = $form_state->getValue('selected_terms');
-
-    // $form_state->setRedirect('taxonomy_manager.admin_vocabulary', array('taxonomy_vocabulary' => $taxonomy_vocabulary->id()));
+    $form_state->setRedirect(
+      'taxonomy_manager.admin_vocabulary',
+      array('taxonomy_vocabulary' => $taxonomy_vocabulary->id())
+    );
   }
 
   /**

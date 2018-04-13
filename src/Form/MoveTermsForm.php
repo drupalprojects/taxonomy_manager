@@ -41,6 +41,8 @@ class MoveTermsForm extends FormBase {
 
   /**
    * {@inheritdoc}
+   *
+   * @TODO: Add autocomplete to select/add parent term.
    */
   public function buildForm(array $form, FormStateInterface $form_state, VocabularyInterface $taxonomy_vocabulary = NULL, $selected_terms = []) {
     if (empty($selected_terms)) {
@@ -67,8 +69,6 @@ class MoveTermsForm extends FormBase {
       '#title' => $this->t('Selected terms to move:'),
     ];
 
-    // @todo Add autocomplete to select/add parent term.
-
     $form['keep_old_parents'] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Keep old parents and add new ones (multi-parent). Otherwise old parents get replaced.'),
@@ -86,11 +86,11 @@ class MoveTermsForm extends FormBase {
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $taxonomy_vocabulary = $form_state->getValue('voc');
-    $selected_terms = $form_state->getValue('selected_terms');
-    $keep_old_parents = $form_state->getValue('keep_old_parents');
 
-    // @todo
-    drupal_set_message('Move operation not yet implemented.', 'error');
+    drupal_set_message(
+      $this->t('Move operation not yet implemented.'),
+      'error'
+    );
     $form_state->setRedirect('taxonomy_manager.admin_vocabulary', ['taxonomy_vocabulary' => $taxonomy_vocabulary->id()]);
 
   }

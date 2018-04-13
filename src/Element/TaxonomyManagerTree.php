@@ -39,7 +39,7 @@ class TaxonomyManagerTree extends FormElement {
       $taxonomy_vocabulary = \Drupal::entityTypeManager()->getStorage('taxonomy_vocabulary')->load($element['#vocabulary']);
       $pager_size = isset($element['#pager_size']) ? $element['#pager_size'] : -1;
       $terms = TaxonomyManagerTree::loadTerms($taxonomy_vocabulary, 0, $pager_size);
-      $list = TaxonomyManagerTree::getNestedListJSONArray($terms);
+      $list = TaxonomyManagerTree::getNestedListJsonArray($terms);
 
       // Expand tree to given terms.
       if (isset($element['#terms_to_expand'])) {
@@ -162,7 +162,7 @@ class TaxonomyManagerTree extends FormElement {
   /**
    * Function that generates the nested list for the JSON array structure.
    */
-  public static function getNestedListJSONArray($terms) {
+  public static function getNestedListJsonArray($terms) {
     $items = [];
     if (!empty($terms)) {
       foreach ($terms as $term) {
@@ -174,7 +174,7 @@ class TaxonomyManagerTree extends FormElement {
         if (isset($term->children) || TaxonomyManagerTree::getChildCount($term->id()) >= 1) {
           // If the given terms array is nested, directly process the terms.
           if (isset($term->children)) {
-            $item['children'] = TaxonomyManagerTree::getNestedListJSONArray($term->children);
+            $item['children'] = TaxonomyManagerTree::getNestedListJsonArray($term->children);
           }
           // It the term has children, but they are not present in the array,
           // mark the item for lazy loading.

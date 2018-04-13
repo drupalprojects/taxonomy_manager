@@ -18,7 +18,7 @@ class TaxonomyManagerHelper {
    * @return bool
    *   True, if terms already exists, else false
    */
-  public static function _taxonomy_manager_voc_is_empty($vid) {
+  public static function vocabularyIsEmpty($vid) {
     /** @var \Drupal\taxonomy\TermStorageInterface $term_storage */
     $term_storage = \Drupal::entityTypeManager()->getStorage('taxonomy_term');
     return empty($term_storage->loadTree($vid));
@@ -43,7 +43,7 @@ class TaxonomyManagerHelper {
    * @return array
    *   An array of the newly inserted term objects
    */
-  public static function mass_add_terms($input, $vid, $parents, array &$term_names_too_long = []) {
+  public static function massAddTerms($input, $vid, $parents, array &$term_names_too_long = []) {
     $new_terms = [];
     $terms = explode("\n", str_replace("\r", '', $input));
     $parents = count($parents) ? $parents : 0;
@@ -114,7 +114,7 @@ class TaxonomyManagerHelper {
    * @param bool $delete_orphans
    *   If TRUE, orphans get deleted.
    */
-  public static function delete_terms(array $tids, $delete_orphans = FALSE) {
+  public static function deleteTerms(array $tids, $delete_orphans = FALSE) {
     $deleted_terms = [];
     $remaining_child_terms = [];
 

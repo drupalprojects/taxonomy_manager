@@ -2,8 +2,8 @@ name: 'Taxonomy Manager'
 description: 'Tool for administrating taxonomy terms.'
 core: 8.x
 dependencies:
-  - taxonomy
+  - drupal:taxonomy
 package: Taxonomy
 project: taxonomy_manager
-type: modulegit st
+type: module
 configure: taxonomy_manager.settings

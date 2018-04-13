@@ -18,10 +18,16 @@ class MainController extends ControllerBase {
    */
   public function listVocabularies() {
     $new_voc_url = Url::fromRoute('entity.taxonomy_vocabulary.add_form');
-    $new_voc_admin_link = $this->l(t('Add new vocabulary'), $new_voc_url);
+    $new_voc_admin_link = $this->l(
+      $this->t('Add new vocabulary'),
+      $new_voc_url
+    );
 
     $edit_voc_url = Url::fromRoute('entity.taxonomy_vocabulary.collection');
-    $edit_voc_admin_link = $this->l(t('Edit vocabulary settings'), $edit_voc_url);
+    $edit_voc_admin_link = $this->l(
+      $this->t('Edit vocabulary settings'),
+      $edit_voc_url
+    );
 
     $build = [
       '#markup' => "$new_voc_admin_link | $edit_voc_admin_link",

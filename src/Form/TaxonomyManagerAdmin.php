@@ -24,13 +24,13 @@ class TaxonomyManagerAdmin extends ConfigFormBase {
     $config = $this->config('taxonomy_manager.settings');
     $form['taxonomy_manager_disable_mouseover'] = [
       '#type' => 'checkbox',
-      '#title' => t('Disable mouse-over effect for terms (weights and direct link)'),
+      '#title' => $this->t('Disable mouse-over effect for terms (weights and direct link)'),
       '#default_value' => $config->get('taxonomy_manager_disable_mouseover'),
-      '#description' => t('Disabling this feature speeds up the Taxonomy Manager'),
+      '#description' => $this->t('Disabling this feature speeds up the Taxonomy Manager'),
     ];
     $form['taxonomy_manager_pager_tree_page_size'] = [
       '#type' => 'select',
-      '#title' => t('Pager count'),
+      '#title' => $this->t('Pager count'),
       '#options' => [
         25 => 25,
         50 => 50,
@@ -48,7 +48,7 @@ class TaxonomyManagerAdmin extends ConfigFormBase {
         10000 => 10000,
       ],
       '#default_value' => $config->get('taxonomy_manager_pager_tree_page_size'),
-      '#description' => t('Select how many terms should be listed on one page. Huge page counts can slow down the Taxonomy Manager'),
+      '#description' => $this->t('Select how many terms should be listed on one page. Huge page counts can slow down the Taxonomy Manager'),
     ];
 
     return parent::buildForm($form, $form_state);

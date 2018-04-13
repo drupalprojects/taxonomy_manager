@@ -7,10 +7,6 @@
  * Administration interface for managing taxonomy vocabularies.
  */
 
-// Default value for the tree pager. Value can be overridden with the variable
-// taxonomy_manager_pager_tree_page_size.
-define('TAXONOMY_MANAGER_PAGER_TREE_PAGE_SIZE_DEFAULT', 500);
-
 /**
  * Implements hook_admin_menu_map().
  */

@@ -68,7 +68,7 @@ class AddTermsToVocabularyForm extends FormBase {
     $parents = $form_state->getValue('parents');
     $mass_terms = $form_state->getValue('mass_add');
 
-    $new_terms = TaxonomyManagerHelper::mass_add_terms($mass_terms, $taxonomy_vocabulary->id(), $parents, $term_names_too_long);
+    $new_terms = TaxonomyManagerHelper::massAddTerms($mass_terms, $taxonomy_vocabulary->id(), $parents, $term_names_too_long);
     foreach ($new_terms as $term) {
       $term_names[] = $term->label();
     }

@@ -57,7 +57,7 @@ class TaxonomyManagerForm extends FormBase {
     $form['voc'] = ['#type' => 'value', "#value" => $taxonomy_vocabulary];
     $form['#attached']['library'][] = 'taxonomy_manager/form';
 
-    if (TaxonomyManagerHelper::_taxonomy_manager_voc_is_empty($taxonomy_vocabulary->id())) {
+    if (TaxonomyManagerHelper::vocabularyIsEmpty($taxonomy_vocabulary->id())) {
       $form['text'] = [
         '#markup' => $this->t('No terms available'),
       ];
