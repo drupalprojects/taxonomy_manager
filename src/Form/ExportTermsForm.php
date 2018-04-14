@@ -87,7 +87,7 @@ class ExportTermsForm extends FormBase {
     $taxonomy_vocabulary = $form_state->getValue('voc');
     $form_state->setRedirect(
       'taxonomy_manager.admin_vocabulary',
-      array('taxonomy_vocabulary' => $taxonomy_vocabulary->id())
+      ['taxonomy_vocabulary' => $taxonomy_vocabulary->id()]
     );
   }
 

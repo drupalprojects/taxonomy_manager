@@ -35,11 +35,12 @@ INSTALLATION
      administer > site building > modules
 
 
-UPGRAGE to 7.x
+UPGRADE to 7.x
 ---------------
 The table 'taxonomy_manager_merge' is deprecated and won't be used by now.
 This table stores which terms were merged into which destination term. If you
 do not need this information, you can manually remove this table.
+
 
 USING THE TAXONOMY MANAGER
 --------------------------
@@ -81,19 +82,19 @@ lines describe all operations and some terminology.
      you want to change the weight, you have 3 ways to do that.
        1st way: select the terms you want to move by one position (can be more
        terms at once) and press
-		either the up or the down button in the toolbar. All saving is
-		done automatically through AJAX.
+        either the up or the down button in the toolbar. All saving is
+        done automatically through AJAX.
        2nd way: every term in tree view has a mouseover effect. When you move
        your mouse over a term, two
-		small up and down arrows will appear. Click them to move this
-		term by one position.
+        small up and down arrows will appear. Click them to move this
+        term by one position.
        3rd way: click on the term, where you want to change the weight. A form
        for editing the
-		term data appears on the right side of the tree view. At the
-		bottom of this form, there is a select field, which shows the
-		current weight. By changing the value, the tree view gets
-		automatically reordered and the values are saved to the database
-		through AJAX.
+        term data appears on the right side of the tree view. At the
+        bottom of this form, there is a select field, which shows the
+        current weight. By changing the value, the tree view gets
+        automatically reordered and the values are saved to the database
+        through AJAX.
 
  - Deleting
      If you want to delete terms from the vocabulary, select them by marking the
@@ -145,18 +146,18 @@ lines describe all operations and some terminology.
 
      NOTE: At the moment, the Taxonomy Manager only cares about the term-node
      association inserted
-	   into the term_node table (by the taxonomy module). If you are using
-	   any CCK modules, like CCK Taxonomy or Content Taxonomy, which (can)
-	   save the term - node association in cck tables, don't use the Merging
-	   action, because changes are not handled.  If you are using Views
-	   filters instead of the default taxonomy term page, merged terms are
-	   either respected.  If you want to customize this by yourself or have
-	   some other module, you can use following function
-	   taxonomy_manager_merge_get_main_term($tid) for getting the main term
-	   id (if there is any main term, else return 0). The term merge history
-	   gets saved in the taxonomy_manager_merge table (main_tid, merged_tid)
-	   and gets additional cached, so that checking for a merged terms
-	   causes nearly no performance loss.
+       into the term_node table (by the taxonomy module). If you are using
+       any CCK modules, like CCK Taxonomy or Content Taxonomy, which (can)
+       save the term - node association in cck tables, don't use the Merging
+       action, because changes are not handled.  If you are using Views
+       filters instead of the default taxonomy term page, merged terms are
+       either respected.  If you want to customize this by yourself or have
+       some other module, you can use following function
+       taxonomy_manager_merge_get_main_term($tid) for getting the main term
+       id (if there is any main term, else return 0). The term merge history
+       gets saved in the taxonomy_manager_merge table (main_tid, merged_tid)
+       and gets additional cached, so that checking for a merged terms
+       causes nearly no performance loss.
 
  - Editing term data
      If you want to edit or read some term properties, click on the term. A
