@@ -92,7 +92,7 @@ class TaxonomyManagerTree extends FormElement {
         ->condition('parent', $parent)
         ->sort('weight')
         ->sort('name');
-      if (!empty($pager_size)) {
+      if ($pager_size > 0) {
         $query->pager($pager_size);
       }
       $tids = $query->execute();
